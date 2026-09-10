@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fish-clicker-v3';
+const CACHE_NAME = 'fish-clicker-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
