@@ -2,7 +2,7 @@
 
   <img src="icons/icon-192.png" alt="Fish Clicker Logo" width="128" height="128" style="image-rendering: pixelated;">
 
-  # 🎣 FISH CLICKER: PIXEL EDITION
+  # 🎣 FISH CLICKER
   
   **Um jogo clicker retrô de pescaria em pixel art pura, rico em espécies, aquário com buffs, customização e suporte mobile offline.**
 
@@ -126,5 +126,5 @@ Abra no navegador: `http://localhost:3000`
 
 <div align="center">
   Desenvolvido com carinho e paixão por jogos retrô 🎣✨<br>
-  <b>Fish Clicker: Pixel Edition</b> — Por <a href="https://github.com/StayFlinstons">StayFlinstons</a>
+  <b>Fish Clicker</b> — Por <a href="https://github.com/StayFlinstons">StayFlinstons</a>
 </div>
