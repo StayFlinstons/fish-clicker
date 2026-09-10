@@ -1,7 +1,9 @@
-const CACHE_NAME = 'fish-clicker-v2';
+const CACHE_NAME = 'fish-clicker-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './style.css',
+  './tailwind.min.js',
   './game.js',
   './itemsData.js',
   './fishData.js',
@@ -42,7 +44,7 @@ self.addEventListener('fetch', (event) => {
     fetch(event.request)
       .then((networkResponse) => {
         // Atualiza o cache dinamicamente para requisições bem-sucedidas do mesmo domínio
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
