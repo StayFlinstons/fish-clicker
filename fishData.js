@@ -42,3 +42,134 @@ export const FISH_LIST = [
   // ── MÍTICOS (quase impossíveis) ──
   { id:'serpente_solar', name:'Serpente Solar Cósmica', rarity:'MITICO', icon:'serpente', minWeight:80.0, maxWeight:400.0, baseValue:8000, desc:'Entidade celestial que nada entre estrelas.', buff:{ type:'mythic_mastery', value:0.30, text:'+25% Ouro, +15% Sorte, +10% Dupla' } }
 ];
+
+// Afinidades temáticas naturais dos peixes (determina preferências de buffs)
+export const FISH_AFFINITIES = {
+  lambari: ['fishing_speed', 'gold_multiplier'],
+  tilapia: ['gold_multiplier', 'double_catch_chance'],
+  sardinha: ['fishing_speed', 'double_catch_chance'],
+  carpa: ['luck_bonus', 'gold_multiplier'],
+  bagre: ['luck_bonus', 'auto_fish_speed'],
+  piranha: ['double_catch_chance', 'fishing_speed'],
+  robalo: ['fishing_speed', 'luck_bonus'],
+  truta: ['fishing_speed', 'gold_multiplier'],
+  salmao: ['gold_multiplier', 'double_catch_chance'],
+  peixe_palhaco: ['luck_bonus', 'gold_multiplier'],
+  pescada: ['auto_fish_speed', 'gold_multiplier'],
+  dourado: ['gold_multiplier', 'luck_bonus'],
+  baiacu_eletrico: ['fishing_speed', 'auto_fish_speed'],
+  peixe_espada: ['double_catch_chance', 'fishing_speed'],
+  pirarucu: ['luck_bonus', 'gold_multiplier'],
+  tubarao_martelo: ['gold_multiplier', 'double_catch_chance'],
+  arraia_diamante: ['luck_bonus', 'gold_multiplier'],
+  peixe_dragao: ['auto_fish_speed', 'fishing_speed'],
+  celacanto_anciao: ['all_stats', 'luck_bonus'],
+  abissal_bioluminescente: ['double_catch_chance', 'luck_bonus', 'all_stats'],
+  serpente_solar: ['mythic_mastery', 'gold_multiplier', 'all_stats']
+};
+
+// Configuração de probabilidades, chances de buff duplo e faixas numéricas estritas por raridade
+export const BUFF_CONFIG = {
+  COMUM: {
+    chance: 0.05,
+    doubleChance: 0.0,
+    ranges: {
+      gold_multiplier: [0.01, 0.02, '% Ouro'],
+      luck_bonus: [0.01, 0.01, '% Sorte'],
+      fishing_speed: [0.01, 0.02, '% Vel. Pesca'],
+      double_catch_chance: [0.01, 0.01, '% Pesca Dupla'],
+      auto_fish_speed: [0.01, 0.02, '% Vel. Auto']
+    }
+  },
+  INCOMUM: {
+    chance: 0.25,
+    doubleChance: 0.03,
+    ranges: {
+      gold_multiplier: [0.02, 0.04, '% Ouro'],
+      luck_bonus: [0.02, 0.03, '% Sorte'],
+      fishing_speed: [0.02, 0.04, '% Vel. Pesca'],
+      double_catch_chance: [0.02, 0.03, '% Pesca Dupla'],
+      auto_fish_speed: [0.02, 0.04, '% Vel. Auto']
+    }
+  },
+  RARO: {
+    chance: 1.0,
+    doubleChance: 0.08,
+    ranges: {
+      gold_multiplier: [0.04, 0.08, '% Ouro'],
+      luck_bonus: [0.03, 0.06, '% Sorte'],
+      fishing_speed: [0.05, 0.09, '% Vel. Pesca'],
+      double_catch_chance: [0.03, 0.06, '% Pesca Dupla'],
+      auto_fish_speed: [0.05, 0.10, '% Vel. Auto']
+    }
+  },
+  EPICO: {
+    chance: 1.0,
+    doubleChance: 0.15,
+    ranges: {
+      gold_multiplier: [0.09, 0.16, '% Ouro'],
+      luck_bonus: [0.07, 0.13, '% Sorte'],
+      fishing_speed: [0.10, 0.18, '% Vel. Pesca'],
+      double_catch_chance: [0.07, 0.13, '% Pesca Dupla'],
+      auto_fish_speed: [0.12, 0.20, '% Vel. Auto']
+    }
+  },
+  LENDARIO: {
+    chance: 1.0,
+    doubleChance: 0.25,
+    ranges: {
+      gold_multiplier: [0.18, 0.28, '% Ouro'],
+      luck_bonus: [0.12, 0.20, '% Sorte'],
+      double_catch_chance: [0.12, 0.18, '% Pesca Dupla'],
+      fishing_speed: [0.15, 0.25, '% Vel. Pesca'],
+      all_stats: [0.06, 0.10, '% Tudo']
+    }
+  },
+  MITICO: {
+    chance: 1.0,
+    doubleChance: 1.0,
+    ranges: {
+      mythic_mastery: [0.25, 0.35, '% Maestria Mítica'],
+      gold_multiplier: [0.20, 0.35, '% Ouro'],
+      luck_bonus: [0.15, 0.25, '% Sorte'],
+      all_stats: [0.10, 0.18, '% Tudo']
+    }
+  }
+};
+
+export function generateFishBuffs(fishId, rarity) {
+  const conf = BUFF_CONFIG[rarity] || BUFF_CONFIG.COMUM;
+  if (Math.random() > conf.chance) return [];
+
+  const aff = FISH_AFFINITIES[fishId] || ['gold_multiplier', 'luck_bonus'];
+  const allTypes = Object.keys(conf.ranges);
+
+  const isDouble = Math.random() < conf.doubleChance;
+  const count = isDouble ? 2 : 1;
+  const chosenTypes = [];
+
+  // Primeiro buff tem 75% de chance de seguir a afinidade do peixe
+  const affPool = aff.filter(t => conf.ranges[t]);
+  const firstType = affPool.length > 0 && Math.random() < 0.75
+    ? affPool[Math.floor(Math.random() * affPool.length)]
+    : allTypes[Math.floor(Math.random() * allTypes.length)];
+  chosenTypes.push(firstType);
+
+  if (count === 2) {
+    const remaining = allTypes.filter(t => !chosenTypes.includes(t));
+    if (remaining.length > 0) {
+      chosenTypes.push(remaining[Math.floor(Math.random() * remaining.length)]);
+    }
+  }
+
+  return chosenTypes.map(type => {
+    const [min, max, label] = conf.ranges[type];
+    const val = +(min + Math.random() * (max - min)).toFixed(3);
+    const pct = Math.round(val * 100);
+    return {
+      type,
+      value: val,
+      text: '+' + pct + label
+    };
+  });
+}

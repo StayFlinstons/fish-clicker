@@ -1,4 +1,4 @@
-import { RARITIES, FISH_LIST } from './fishData.js';
+import { RARITIES, FISH_LIST, generateFishBuffs } from './fishData.js';
 import { RODS, BAITS, UPGRADES } from './itemsData.js';
 import { sound } from './sound.js';
 import { ACHIEVEMENTS } from './achievementsData.js';
@@ -890,18 +890,31 @@ class FishingGame {
     return u ? u.getValue(this.upgradeLevels.aquario_cap || 0) : 3;
   }
 
+  getFishBuffs(fish) {
+    if (!fish) return [];
+    if (Array.isArray(fish.buffs) && fish.buffs.length > 0) return fish.buffs;
+    if (fish.buff) return [fish.buff];
+    return [];
+  }
+
   _applyFishBuff(b, mult, out) {
-    if (b.type === 'gold_multiplier')    out.goldMultiplier += b.value * mult;
-    if (b.type === 'luck_bonus')         out.luckBonus += b.value * mult;
-    if (b.type === 'fishing_speed')      out.fishingSpeedBonus += b.value * mult;
+    if (!b) return;
+    if (b.type === 'gold_multiplier')     out.goldMultiplier += b.value * mult;
+    if (b.type === 'luck_bonus')          out.luckBonus += b.value * mult;
+    if (b.type === 'fishing_speed')       out.fishingSpeedBonus += b.value * mult;
     if (b.type === 'double_catch_chance') out.doubleCatchChance += b.value * mult;
-    if (b.type === 'auto_fish_speed')    out.autoFishSpeedBonus += b.value * mult;
+    if (b.type === 'auto_fish_speed')     out.autoFishSpeedBonus += b.value * mult;
     if (b.type === 'all_stats') {
-      out.goldMultiplier += b.value * mult; out.luckBonus += b.value * mult;
-      out.fishingSpeedBonus += b.value * mult; out.doubleCatchChance += b.value * mult;
+      out.goldMultiplier += b.value * mult;
+      out.luckBonus += b.value * mult;
+      out.fishingSpeedBonus += b.value * mult;
+      out.doubleCatchChance += b.value * mult;
     }
     if (b.type === 'mythic_mastery') {
-      out.goldMultiplier += 0.25 * mult; out.luckBonus += 0.15 * mult; out.doubleCatchChance += 0.10 * mult;
+      const base = b.value || 0.25;
+      out.goldMultiplier += base * mult;
+      out.luckBonus += (base * 0.6) * mult;
+      out.doubleCatchChance += (base * 0.4) * mult;
     }
   }
 
@@ -909,10 +922,14 @@ class FishingGame {
     const out = { goldMultiplier:0, luckBonus:0, fishingSpeedBonus:0, doubleCatchChance:0, autoFishSpeedBonus:0 };
 
     // Buffs do inventário (1x)
-    this.inventory.forEach(fish => { if (fish.buff) this._applyFishBuff(fish.buff, 1.0, out); });
+    this.inventory.forEach(fish => {
+      this.getFishBuffs(fish).forEach(b => this._applyFishBuff(b, 1.0, out));
+    });
 
     // Buffs do aquário (1.5x!)
-    this.aquarium.forEach(fish => { if (fish.buff) this._applyFishBuff(fish.buff, 1.5, out); });
+    this.aquarium.forEach(fish => {
+      this.getFishBuffs(fish).forEach(b => this._applyFishBuff(b, 1.5, out));
+    });
 
     const rod = RODS.find(r => r.id === this.selectedRodId);
     if (rod) { out.luckBonus += rod.luckBonus || 0; out.fishingSpeedBonus += rod.speedBonus || 0; }
@@ -1044,6 +1061,8 @@ class FishingGame {
     const weightFactor = weight / template.minWeight;
     const rawValue = Math.round(template.baseValue * Math.pow(weightFactor, 0.7));
 
+    const generatedBuffs = generateFishBuffs(template.id, template.rarity);
+
     return {
       uid: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       id: template.id,
@@ -1053,7 +1072,9 @@ class FishingGame {
       weight,
       baseValue: rawValue,
       desc: template.desc,
-      buff: template.buff ? { ...template.buff } : null,
+      buffs: generatedBuffs,
+      buff: generatedBuffs[0] || null,
+      isDoubleBuff: generatedBuffs.length >= 2,
       locked: false
     };
   }
@@ -1299,7 +1320,8 @@ class FishingGame {
     const idx = this.inventory.findIndex(f => f.uid === uid);
     if (idx === -1) return;
     const fish = this.inventory[idx];
-    if (!fish.buff) { this.showToast('Só peixes com buff!', 'warning'); return; }
+    const buffs = this.getFishBuffs(fish);
+    if (buffs.length === 0) { this.showToast('Só peixes com buff!', 'warning'); return; }
     const maxAq = this.getMaxAquarium();
     if (this.aquarium.length >= maxAq) { this.showToast('AQUÁRIO CHEIO!', 'warning'); return; }
     this.inventory.splice(idx, 1);
@@ -1508,32 +1530,40 @@ class FishingGame {
     } else if (this.invSortMode === 'peso_desc') {
       sortedFish.sort((a, b) => b.weight - a.weight);
     } else if (this.invSortMode === 'buffs') {
-      sortedFish.sort((a, b) => (b.buff ? 1 : 0) - (a.buff ? 1 : 0));
+      sortedFish.sort((a, b) => this.getFishBuffs(b).length - this.getFishBuffs(a).length);
     }
 
     c.innerHTML = sortedFish.map(fish => {
       const r = RARITIES[fish.rarity] || RARITIES.COMUM;
       const sell = Math.round(fish.baseValue * (1 + buffs.goldMultiplier));
       const spriteURL = this.getFishSpriteURL(fish.icon);
+      const buffsList = this.getFishBuffs(fish);
+      const hasBuff = buffsList.length > 0;
+      const isDouble = buffsList.length >= 2;
 
       return `
-        <div class="group p-2 border-2 bg-slate-900/90 flex items-center justify-between gap-1.5 sm:gap-2 rarity-${fish.rarity}" style="background:${r.bg};">
+        <div class="group p-2 border-2 bg-slate-900/90 flex items-center justify-between gap-1.5 sm:gap-2 rarity-${fish.rarity} ${isDouble ? 'border-amber-400/80' : ''}" style="background:${r.bg};">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <img src="${spriteURL}" class="fish-icon-canvas w-11 h-7 sm:w-12 sm:h-8 object-contain shrink-0" alt="${fish.name}" style="image-rendering:pixelated;">
             <div class="min-w-0 flex-1">
               <div class="flex items-baseline gap-1.5 flex-wrap">
                 <span class="text-[9px] sm:text-[10px] font-bold text-slate-100 leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
                 <span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+                ${isDouble ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : ''}
               </div>
               <div class="flex items-center gap-1.5 text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">
                 <span>${fish.weight}kg</span>
                 <span class="text-amber-300 font-bold">${sell}G</span>
               </div>
-              ${fish.buff ? `<div class="text-[8px] text-purple-300 mt-1 leading-snug break-words" style="font-family:var(--font-pixel);">★ ${fish.buff.text}</div>` : ''}
+              ${hasBuff ? `
+                <div class="flex flex-col gap-0.5 mt-1">
+                  ${buffsList.map(b => `<span class="text-[8px] text-purple-300 leading-snug break-words" style="font-family:var(--font-pixel);">★ ${b.text}</span>`).join('')}
+                </div>
+              ` : ''}
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
-            ${fish.buff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário" class="px-1.5 py-1 border text-[10px] bg-purple-900/40 border-purple-600 text-purple-300 hover:bg-purple-800/60">${PIXEL_ICONS.aquarium}</button>` : ''}
+            ${hasBuff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário" class="px-1.5 py-1 border text-[10px] bg-purple-900/40 border-purple-600 text-purple-300 hover:bg-purple-800/60">${PIXEL_ICONS.aquarium}</button>` : ''}
             <button onclick="window.game.toggleLockFish('${fish.uid}')" class="px-1.5 py-1 border text-[10px] ${fish.locked ? 'bg-amber-900/40 border-amber-600 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-500 hover:text-slate-200'}">${fish.locked ? PIXEL_ICONS.lockClosed : PIXEL_ICONS.lockOpen}</button>
             <button onclick="window.game.sellFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} class="pixel-btn px-1.5 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 cursor-not-allowed border-slate-800' : 'bg-emerald-800 text-emerald-200 border-emerald-600'} text-[9px] sm:text-[10px]" style="font-family:var(--font-pixel);">SELL</button>
           </div>
@@ -1567,14 +1597,16 @@ class FishingGame {
     const rarityRank = { MITICO: 6, LENDARIO: 5, EPICO: 4, RARO: 3, INCOMUM: 2, COMUM: 1 };
     let displayFish = [...this.aquarium];
 
-    if (filter === 'gold_multiplier') {
-      displayFish = displayFish.filter(f => f.buff && (f.buff.type === 'gold_multiplier' || f.buff.type === 'all_stats' || f.buff.type === 'mythic_mastery'));
+    if (filter === 'double_buffs') {
+      displayFish = displayFish.filter(f => this.getFishBuffs(f).length >= 2);
+    } else if (filter === 'gold_multiplier') {
+      displayFish = displayFish.filter(f => this.getFishBuffs(f).some(b => b.type === 'gold_multiplier' || b.type === 'all_stats' || b.type === 'mythic_mastery'));
     } else if (filter === 'luck_bonus') {
-      displayFish = displayFish.filter(f => f.buff && (f.buff.type === 'luck_bonus' || f.buff.type === 'all_stats' || f.buff.type === 'mythic_mastery'));
+      displayFish = displayFish.filter(f => this.getFishBuffs(f).some(b => b.type === 'luck_bonus' || b.type === 'all_stats' || b.type === 'mythic_mastery'));
     } else if (filter === 'fishing_speed') {
-      displayFish = displayFish.filter(f => f.buff && (f.buff.type === 'fishing_speed' || f.buff.type === 'auto_fish_speed' || f.buff.type === 'all_stats' || f.buff.type === 'mythic_mastery'));
+      displayFish = displayFish.filter(f => this.getFishBuffs(f).some(b => b.type === 'fishing_speed' || b.type === 'auto_fish_speed' || b.type === 'all_stats' || b.type === 'mythic_mastery'));
     } else if (filter === 'double_catch_chance') {
-      displayFish = displayFish.filter(f => f.buff && (f.buff.type === 'double_catch_chance' || f.buff.type === 'all_stats' || f.buff.type === 'mythic_mastery'));
+      displayFish = displayFish.filter(f => this.getFishBuffs(f).some(b => b.type === 'double_catch_chance' || b.type === 'all_stats' || b.type === 'mythic_mastery'));
     } else if (filter === 'raridade_desc') {
       displayFish.sort((a, b) => (rarityRank[b.rarity] || 0) - (rarityRank[a.rarity] || 0));
     } else if (filter === 'peso_desc') {
@@ -1593,18 +1625,22 @@ class FishingGame {
     c.innerHTML = displayFish.map(fish => {
       const r = RARITIES[fish.rarity] || RARITIES.COMUM;
       const spriteURL = this.getFishSpriteURL(fish.icon);
-      const buffText = fish.buff ? fish.buff.text : '';
+      const buffsList = this.getFishBuffs(fish);
+      const isDouble = buffsList.length >= 2;
 
       return `
-        <div class="group p-2 border-2 bg-purple-950/30 flex items-center justify-between gap-1.5 sm:gap-2" style="border-color:${r.border};">
+        <div class="group p-2 border-2 bg-purple-950/30 flex items-center justify-between gap-1.5 sm:gap-2 ${isDouble ? 'border-amber-400/80' : ''}" style="border-color:${isDouble ? '#f59e0b' : r.border};">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <img src="${spriteURL}" class="fish-icon-canvas w-11 h-7 sm:w-12 sm:h-8 object-contain shrink-0" alt="${fish.name}" style="image-rendering:pixelated;">
             <div class="min-w-0 flex-1">
               <div class="flex items-baseline gap-1.5 flex-wrap">
                 <span class="text-[9px] sm:text-[10px] font-bold text-slate-100 leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
                 <span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+                ${isDouble ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : ''}
               </div>
-              <div class="text-[8px] text-emerald-300 mt-1 leading-snug break-words" style="font-family:var(--font-pixel);">★ ${buffText} <span class="text-emerald-400">(1.5x)</span></div>
+              <div class="flex flex-col gap-0.5 mt-1">
+                ${buffsList.map(b => `<span class="text-[8px] text-emerald-300 leading-snug break-words" style="font-family:var(--font-pixel);">★ ${b.text} <span class="text-emerald-400 font-bold">(1.5x)</span></span>`).join('')}
+              </div>
             </div>
           </div>
           <button onclick="window.game.moveToInventory('${fish.uid}')" title="Devolver ao Balde" class="pixel-btn px-1.5 sm:px-2 py-1.5 bg-slate-800 text-slate-300 border-slate-600 text-[8px] sm:text-[9px] hover:bg-slate-700 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">↩ BALDE</button>
@@ -1636,19 +1672,22 @@ class FishingGame {
     if (!c) return;
     const r = RARITIES[fish.rarity] || RARITIES.COMUM;
     const spriteURL = this.getFishSpriteURL(fish.icon);
+    const buffsList = this.getFishBuffs(fish);
+    const isDouble = buffsList.length >= 2;
     const card = document.createElement('div');
-    card.className = `catch-popup p-2.5 border-2 flex items-center gap-2 rarity-${fish.rarity}`;
+    card.className = `catch-popup p-2.5 border-2 flex items-center gap-2 rarity-${fish.rarity} ${isDouble ? 'ring-2 ring-amber-400' : ''}`;
     card.style.background = 'rgba(15,23,42,0.95)';
-    card.style.borderColor = r.border;
+    card.style.borderColor = isDouble ? '#f59e0b' : r.border;
     card.innerHTML = `
-      <img src="${spriteURL}" class="fish-icon-canvas w-12 h-8" style="image-rendering:pixelated;">
+      <img src="${spriteURL}" class="fish-icon-canvas w-12 h-8 shrink-0" style="image-rendering:pixelated;">
       <div>
-        <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1.5 flex-wrap">
           <span class="text-[8px] font-bold px-1 py-0.5 border" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+          ${isDouble ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel);">★ BUFF DUPLO!</span>' : ''}
           <span class="text-[8px] text-slate-400" style="font-family:var(--font-pixel);">${fish.weight}kg</span>
         </div>
         <h3 class="text-[11px] font-bold text-slate-100 mt-0.5" style="font-family:var(--font-pixel);">${fish.name}</h3>
-        ${fish.buff ? `<p class="text-[8px] text-purple-300" style="font-family:var(--font-pixel);">★ ${fish.buff.text}</p>` : ''}
+        ${buffsList.map(b => `<p class="text-[8px] text-purple-300" style="font-family:var(--font-pixel);">★ ${b.text}</p>`).join('')}
       </div>`;
     c.appendChild(card);
     setTimeout(() => card.remove(), 2200);
