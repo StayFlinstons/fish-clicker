@@ -1079,7 +1079,16 @@ class FishingGame {
     };
   }
 
-  // ── VENDAS ──
+  // ── OURO & VENDAS ──
+  setGold(amount = 0) {
+    const val = parseInt(amount);
+    this.gold = isNaN(val) ? 0 : Math.max(0, val);
+    this.renderAll();
+    this.saveGame();
+    this.showToast(`Ouro definido para ${this.gold.toLocaleString('pt-BR')} G!`, 'info');
+    return this.gold;
+  }
+
   sellFish(uid) {
     const idx = this.inventory.findIndex(f => f.uid === uid);
     if (idx === -1) return;
@@ -2007,6 +2016,7 @@ class FishingGame {
       case 'help':
         this.consoleLog('=== COMANDOS ===', '#ffd700');
         this.consoleLog('gold <qtd>     - Adiciona ouro', '#ccc');
+        this.consoleLog('goldset <qtd>  - Define ouro para valor exato (ex: goldset 0)', '#ccc');
         this.consoleLog('goldenfish     - Spawna peixe dourado', '#ccc');
         this.consoleLog('catch [n]      - Pesca n peixes (default: 1)', '#ccc');
         this.consoleLog('maxupgrades    - Maximiza upgrades', '#ccc');
@@ -2023,6 +2033,15 @@ class FishingGame {
         this.totalGoldEarned += amount;
         this.consoleLog('+ ' + amount.toLocaleString() + ' ouro', '#ffd700');
         this.renderAll();
+        break;
+      }
+
+      case 'goldset':
+      case 'setgold': {
+        const val = parseInt(arg);
+        const amount = isNaN(val) ? 0 : Math.max(0, val);
+        this.setGold(amount);
+        this.consoleLog(`Ouro definido exatamente para: ${amount.toLocaleString('pt-BR')} G`, '#ffd700');
         break;
       }
 
