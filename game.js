@@ -1975,24 +1975,49 @@ class FishingGame {
     document.getElementById('btn-reset-game')?.after(btn);
 
     // Input handler
-    document.getElementById('console-input')?.addEventListener('keydown', (e) => {
+    const inputEl = document.getElementById('console-input');
+    inputEl?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const val = e.target.value.trim();
         if (val) { this.execConsoleCmd(val); e.target.value = ''; }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        this.toggleConsole(false);
       }
     });
 
-    // Tecla ` para toggle
+    // Atalhos de teclado
     document.addEventListener('keydown', (e) => {
-      if (e.key === '`' || e.key === '~') { e.preventDefault(); this.toggleConsole(); }
+      // Ctrl + Shift + ' (ou ")
+      const isQuote = e.key === "'" || e.key === '"' || e.code === 'Quote';
+      if (e.ctrlKey && e.shiftKey && isQuote) {
+        e.preventDefault();
+        this.toggleConsole();
+        return;
+      }
+
+      // Esc para fechar quando o console estiver aberto
+      if (e.key === 'Escape' && this.consoleOpen) {
+        e.preventDefault();
+        this.toggleConsole(false);
+        return;
+      }
+
+      // Mantém ` ou ~
+      if (e.key === '`' || e.key === '~') {
+        e.preventDefault();
+        this.toggleConsole();
+      }
     });
   }
 
-  toggleConsole() {
-    this.consoleOpen = !this.consoleOpen;
+  toggleConsole(forceState = null) {
+    this.consoleOpen = forceState !== null ? forceState : !this.consoleOpen;
     const el = document.getElementById('dev-console');
     if (el) el.style.display = this.consoleOpen ? 'flex' : 'none';
-    if (this.consoleOpen) document.getElementById('console-input')?.focus();
+    if (this.consoleOpen) {
+      setTimeout(() => document.getElementById('console-input')?.focus(), 50);
+    }
   }
 
   consoleLog(text, color = '#a0f0a0') {
@@ -2270,6 +2295,9 @@ class FishingGame {
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (this.consoleOpen) {
+          this.toggleConsole(false);
+        }
         allModals.forEach(id => {
           const m = document.getElementById(id);
           if (m && !m.classList.contains('hidden')) {
