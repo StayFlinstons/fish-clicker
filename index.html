@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0891b2">
+  <meta name="description" content="Jogo de pescaria clicker retrô em pixel art com dezenas de peixes, aquário e conquistas.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  
+  <!-- Apple iOS Web App Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FishClicker">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: {} } }
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="h-screen text-slate-100 flex flex-col overflow-hidden antialiased">
+
+  <!-- ═══════════ TOPBAR ═══════════ -->
+  <header class="shrink-0 border-b-4 border-slate-800 bg-slate-950 px-4 py-2 z-40" style="box-shadow: 0 4px 0 #0f172a;">
+    <div class="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-slate-950 border-2 border-cyan-400 flex items-center justify-center p-0.5 overflow-hidden" style="box-shadow:2px 2px 0 #000;">
+          <img src="icons/icon-192.png" alt="Fish Clicker" class="w-full h-full object-contain" style="image-rendering:pixelated;">
+        </div>
+        <div>
+          <h1 class="text-sm font-bold tracking-widest text-cyan-300" style="font-family:var(--font-pixel);">FISH CLICKER</h1>
+          <p class="text-[8px] text-slate-500 tracking-wider uppercase hidden sm:block" style="font-family:var(--font-pixel);">PIXEL EDITION</p>
+        </div>
+      </div>
+
+      <!-- Buffs inline no header -->
+      <div id="active-buffs-list" class="hidden lg:flex items-center gap-2 flex-wrap min-h-[24px]">
+        <span class="text-[9px] text-slate-600 italic" style="font-family:var(--font-pixel);">Nenhum buff</span>
+      </div>
+
+      <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 max-w-full">
+        <!-- Indicador de Horário -->
+        <button id="btn-toggle-time" title="Mudar Horário (Dia / Tarde / Noite)" class="h-9 w-9 bg-slate-900 border-2 border-slate-700 flex items-center justify-center pixel-btn text-amber-300 shrink-0">
+          <svg class="w-4 h-4 inline-block" viewBox="0 0 8 8" style="image-rendering:pixelated;"><path d="M2 1 A3 3 0 0 0 6 7 A4 4 0 1 1 2 1 Z" fill="#fef08a"/></svg>
+        </button>
+        <!-- Botão do Álbum / Enciclopédia -->
+        <button id="btn-open-album" title="Álbum de Peixes" class="h-9 px-2 sm:px-2.5 bg-slate-900 border-2 border-slate-700 flex items-center gap-1.5 text-xs pixel-btn hover:border-cyan-500 shrink-0">
+          <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="2" width="4" height="6" fill="#0284c7"/><rect x="5" y="2" width="4" height="6" fill="#38bdf8"/><rect x="2" y="3" width="2" height="4" fill="#f8fafc"/><rect x="6" y="3" width="2" height="4" fill="#f8fafc"/></svg></span>
+          <span id="album-badge" class="text-[8px] font-bold text-cyan-300" style="font-family:var(--font-pixel);">0/21</span>
+        </button>
+        <!-- Botão de Perfil do Pescador -->
+        <button id="btn-open-profile" title="Perfil e Roupas do Pescador" class="h-9 px-2 sm:px-2.5 bg-slate-900 border-2 border-slate-700 flex items-center gap-1.5 text-xs pixel-btn hover:border-emerald-500 shrink-0">
+          <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="5" fill="#fed7aa" stroke="#0f172a" stroke-width="0.8"/><rect x="2" y="2" width="8" height="2" fill="#fde047"/><rect x="1" y="6" width="10" height="5" fill="#15803d" stroke="#0f172a" stroke-width="0.8"/><rect x="4" y="3" width="1" height="1" fill="#0f172a"/><rect x="7" y="3" width="1" height="1" fill="#0f172a"/><rect x="5" y="5" width="2" height="1" fill="#c2410c"/></svg></span>
+          <span id="profile-btn-name" class="text-[8px] font-bold text-emerald-300 max-w-[60px] sm:max-w-[80px] truncate" style="font-family:var(--font-pixel);">Pescador</span>
+        </button>
+        <!-- Botão de Conquistas / Sala de Troféus -->
+        <button id="btn-open-achievements" title="Sala de Troféus / Conquistas" class="h-9 px-2 sm:px-2.5 bg-slate-900 border-2 border-slate-700 flex items-center gap-1.5 text-xs pixel-btn hover:border-amber-400 shrink-0">
+          <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="5" fill="#facc15" stroke="#ca8a04" stroke-width="0.8"/><rect x="1" y="2" width="2" height="3" fill="#f59e0b"/><rect x="9" y="2" width="2" height="3" fill="#f59e0b"/><rect x="5" y="6" width="2" height="2" fill="#ca8a04"/><rect x="3" y="8" width="6" height="2" fill="#b45309"/><rect x="4" y="2" width="4" height="2" fill="#fef08a"/></svg></span>
+          <span id="achievements-badge" class="text-[8px] font-bold text-amber-300" style="font-family:var(--font-pixel);">0/20</span>
+        </button>
+        <!-- Botão do Portal / Capítulo 1 -->
+        <button id="btn-open-chapter1" title="Capítulo 1: O Portal Dimensional" class="h-9 px-2 sm:px-2.5 bg-slate-900 border-2 border-slate-700 flex items-center gap-1.5 text-xs pixel-btn hover:border-cyan-400 shrink-0">
+          <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="4" y="1" width="4" height="1" fill="#a855f7"/><rect x="2" y="2" width="8" height="1" fill="#06b6d4"/><rect x="1" y="3" width="10" height="6" fill="#8b5cf6"/><rect x="3" y="4" width="6" height="4" fill="#0891b2"/><rect x="4" y="5" width="4" height="2" fill="#67e8f9"/><rect x="5" y="5" width="2" height="2" fill="#ffffff"/><rect x="2" y="9" width="8" height="1" fill="#06b6d4"/><rect x="4" y="10" width="4" height="1" fill="#a855f7"/></svg></span>
+          <span id="chapter1-badge" class="text-[8px] font-bold text-cyan-300" style="font-family:var(--font-pixel);">CAP. 1</span>
+        </button>
+        <div class="flex items-center gap-2 bg-slate-900 border-2 border-amber-600 px-2.5 sm:px-3 py-1.5 shrink-0" style="box-shadow:2px 2px 0 #000;">
+          <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="1" width="6" height="8" fill="#eab308"/><rect x="1" y="2" width="8" height="6" fill="#facc15"/><rect x="3" y="3" width="4" height="4" fill="#fef08a"/><rect x="4" y="4" width="2" height="2" fill="#eab308"/></svg></span>
+          <div id="player-gold" class="text-xs sm:text-sm font-bold text-amber-300" style="font-family:var(--font-pixel);">0</div>
+        </div>
+        <!-- Botão Instalar PWA (Mobile/Desktop) -->
+        <button id="btn-install-pwa" title="Instalar Aplicativo no Celular" class="hidden h-9 px-2 sm:px-2.5 bg-cyan-900 border-2 border-cyan-400 items-center gap-1.5 text-xs pixel-btn hover:border-cyan-300 text-cyan-200 shrink-0">
+          <svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><path d="M5 1 L5 7 M2 4 L5 7 L8 4" stroke="#38bdf8" stroke-width="1.5" fill="none"/><rect x="1" y="8" width="8" height="1.5" fill="#38bdf8"/></svg>
+          <span class="text-[8px] font-bold" style="font-family:var(--font-pixel);">INSTALAR</span>
+        </button>
+        <button id="btn-toggle-sound" title="Som" class="w-9 h-9 bg-slate-900 border-2 border-slate-700 flex items-center justify-center pixel-btn shrink-0">
+          <svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="3" width="3" height="4" fill="#94a3b8"/><path d="M4 3 L7 1 L7 9 L4 7 Z" fill="#cbd5e1"/><rect x="8" y="3" width="1" height="4" fill="#38bdf8"/></svg>
+        </button>
+        <button id="btn-reset-game" onclick="window.game.resetProgress()" title="Resetar Todo o Progresso" class="w-9 h-9 bg-slate-900 border-2 border-slate-700 flex items-center justify-center pixel-btn hover:border-red-600 shrink-0">
+          <svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><path d="M2 4 A 3 3 0 1 1 5 8" fill="none" stroke="#f87171" stroke-width="1.5"/><polygon points="2,1 2,5 6,5" fill="#f87171"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════ MAIN GAME ═══════════ -->
+  <main class="flex-1 min-h-0 max-w-[1600px] mx-auto w-full p-2 md:p-3 grid grid-cols-1 lg:grid-cols-12 gap-2 md:gap-3">
+
+    <!-- ═══ COLUNA ESQUERDA: UPGRADES ═══ -->
+    <aside class="lg:col-span-3 min-h-0 bg-slate-950 border-2 border-slate-700 p-3 flex flex-col pixel-border order-2 lg:order-1 max-h-[42vh] lg:max-h-none" style="border-color:#334155;">
+      <div class="shrink-0 flex items-center gap-2 pb-2 border-b-2 border-slate-800 mb-2">
+        <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="2" width="2" height="2" fill="#94a3b8"/><rect x="4" y="4" width="2" height="2" fill="#64748b"/><rect x="6" y="6" width="2" height="2" fill="#b45309"/><rect x="7" y="7" width="2" height="2" fill="#78350f"/></svg></span>
+        <h2 class="text-[10px] font-bold text-slate-200 tracking-widest" style="font-family:var(--font-pixel);">UPGRADES</h2>
+      </div>
+
+      <div class="shrink-0 grid grid-cols-3 gap-1 bg-slate-900 p-1 border-2 border-slate-800 mb-2">
+        <button data-tab="varas" class="tab-btn py-1.5 text-[9px] font-bold bg-slate-700 text-white border border-cyan-500/50" style="font-family:var(--font-pixel);box-shadow:1px 1px 0 #000;">Varas</button>
+        <button data-tab="iscas" class="tab-btn py-1.5 text-[9px] font-bold text-slate-500 border border-transparent" style="font-family:var(--font-pixel);">Iscas</button>
+        <button data-tab="upgrades" class="tab-btn py-1.5 text-[9px] font-bold text-slate-500 border border-transparent" style="font-family:var(--font-pixel);">Geral</button>
+      </div>
+
+      <div id="upgrades-content-list" class="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5"></div>
+    </aside>
+
+    <!-- ═══ COLUNA CENTRAL: CENÁRIO DE PESCA ═══ -->
+    <section class="lg:col-span-6 min-h-0 flex flex-col gap-2 order-1 lg:order-2">
+      <div id="fishing-lake-area" class="water-container scanlines relative flex-1 min-h-[200px] bg-gradient-to-b from-[#0a1628] via-[#0c2040] to-[#0e3a5f] border-4 border-slate-700 p-4 flex flex-col justify-end items-center overflow-hidden" style="box-shadow:4px 4px 0 #000;">
+        <canvas id="water-particles-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+        <div id="catch-toast-container" class="absolute top-3 left-0 right-0 z-30 flex flex-col items-center gap-2 pointer-events-none"></div>
+
+        <!-- Estrelas -->
+        <div class="absolute top-0 left-0 w-full h-16 pointer-events-none overflow-hidden opacity-60">
+          <div class="absolute w-1 h-1 bg-white top-2 left-[10%]"></div>
+          <div class="absolute w-1 h-1 bg-slate-300 top-5 left-[25%]"></div>
+          <div class="absolute w-1 h-1 bg-white top-1 left-[45%]"></div>
+          <div class="absolute w-1 h-1 bg-cyan-200 top-6 left-[62%]"></div>
+          <div class="absolute w-1 h-1 bg-white top-3 left-[78%]"></div>
+          <div class="absolute w-2 h-2 bg-amber-300 top-2 right-5 animate-pulse"></div>
+        </div>
+
+        <!-- Pescador Pixel Art Unificado (Corpo + Vara em punho no mesmo canvas) -->
+        <div class="absolute left-2 bottom-[26px] z-10 pointer-events-none">
+          <canvas id="fisherman-canvas" class="drop-shadow-lg" style="width:128px;height:128px;image-rendering:pixelated;"></canvas>
+        </div>
+
+        <!-- Linha de Pesca + Bóia + Isca (Sai exatamente da ponta da vara) -->
+        <svg id="rod-svg" class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <!-- Linha de pesca com posicionamento dinâmico calculado cirurgicamente -->
+          <path id="fishing-line-path" d="M 21.5 58 Q 36 68, 55 72" fill="none" stroke="#94a3b8" stroke-width="0.35" stroke-dasharray="1.2 0.8" opacity="0.8">
+            <animate attributeName="stroke-dashoffset" from="0" to="-4" dur="1.2s" repeatCount="indefinite"/>
+          </path>
+
+          <!-- Bóia flutuando com animação e grupo dinâmico -->
+          <g id="svg-buoy-group">
+            <animateTransform attributeName="transform" type="translate" values="0,0;0,-0.8;0,0" dur="2.5s" repeatCount="indefinite"/>
+            <rect x="54" y="70.5" width="2.4" height="3.2" rx="0.4" fill="#ef4444" stroke="#991b1b" stroke-width="0.25"/>
+            <rect x="54.5" y="72" width="1.4" height="1.4" rx="0.2" fill="#ffffff"/>
+            <!-- Linha descendo da bóia até a isca -->
+            <line x1="55.2" y1="73.8" x2="55.2" y2="78" stroke="#94a3b8" stroke-width="0.2" opacity="0.6"/>
+            <!-- Isca pendurada -->
+            <rect id="svg-bait-1" x="54.2" y="78" width="2.2" height="1.8" rx="0.4" fill="#cd853f"/>
+            <rect id="svg-bait-2" x="54.6" y="78.8" width="1.4" height="1.2" rx="0.3" fill="#a0522d"/>
+          </g>
+        </svg>
+
+        <!-- Pier de madeira reforçado -->
+        <div class="absolute left-0 bottom-4 w-32 h-8 z-[5]" style="background:#92400e; border-top:4px solid #b45309; box-shadow: 0 4px 0 #78350f, inset 0 -2px 0 rgba(0,0,0,0.2);">
+          <div class="absolute inset-0" style="background:repeating-linear-gradient(90deg, transparent 0px, transparent 14px, rgba(0,0,0,0.15) 14px, rgba(0,0,0,0.15) 16px);"></div>
+        </div>
+
+        <!-- Plaquinha de nome do pescador no pier -->
+        <div id="fisherman-name-tag" class="absolute left-2 bottom-12 z-[15] px-2 py-0.5 bg-slate-950/85 border border-amber-600/70 text-[8px] font-bold text-amber-300 pointer-events-none select-none max-w-[110px] truncate" style="font-family:var(--font-pixel);box-shadow:2px 2px 0 #000;">Pescador</div>
+
+        <!-- Botão PESCAR -->
+        <div class="w-full z-20 flex flex-col items-center">
+          <button id="btn-pescar-main" class="btn-pescar w-full max-w-xs py-3 px-6 bg-red-600 text-white text-sm tracking-[0.25em] uppercase cursor-pointer flex items-center justify-center gap-3" style="font-family:var(--font-pixel);">
+            <svg class="w-4 h-4" viewBox="0 0 12 12" style="image-rendering:pixelated;"><path d="M2 10 L10 2" stroke="#fff" stroke-width="1.8"/><rect x="1" y="9" width="2" height="2" fill="#facc15"/><rect x="9" y="1" width="2" height="2" fill="#facc15"/></svg>
+            <span>PESCAR</span>
+            <svg class="w-4 h-4 transform -scale-x-100" viewBox="0 0 12 12" style="image-rendering:pixelated;"><path d="M2 10 L10 2" stroke="#fff" stroke-width="1.8"/><rect x="1" y="9" width="2" height="2" fill="#facc15"/><rect x="9" y="1" width="2" height="2" fill="#facc15"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="shrink-0 bg-slate-950 border-2 border-slate-700 px-4 py-2 flex items-center justify-around text-center pixel-border-thin" style="border-color:#334155;">
+        <div>
+          <div class="text-[8px] text-slate-500" style="font-family:var(--font-pixel);">PESCADOS</div>
+          <div id="stat-catches" class="text-xs font-bold text-cyan-400 mt-0.5" style="font-family:var(--font-pixel);">0</div>
+        </div>
+        <div class="w-px h-6 bg-slate-800"></div>
+        <div>
+          <div class="text-[8px] text-slate-500" style="font-family:var(--font-pixel);">OURO TOTAL</div>
+          <div id="stat-total-gold" class="text-xs font-bold text-amber-400 mt-0.5" style="font-family:var(--font-pixel);">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ COLUNA DIREITA: INVENTÁRIO ═══ -->
+    <aside id="inventory-panel" class="lg:col-span-3 min-h-0 bg-slate-950 border-2 border-slate-700 p-3 flex flex-col pixel-border order-3 max-h-[42vh] lg:max-h-none" style="border-color:#334155;">
+      <!-- Tabs: Inventário / Aquário -->
+      <div class="shrink-0 flex items-center justify-between pb-2 border-b-2 border-slate-800 mb-1">
+        <div class="grid grid-cols-2 gap-1 bg-slate-900 p-0.5 border-2 border-slate-800 flex-1 mr-2">
+          <button data-inv-tab="inventory" class="inv-tab-btn py-1.5 text-[8px] font-bold bg-slate-700 text-white border border-cyan-500/50 flex items-center justify-center gap-1.5" style="font-family:var(--font-pixel);box-shadow:1px 1px 0 #000;">
+            <svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="1" width="6" height="1" fill="#94a3b8"/><rect x="1" y="2" width="8" height="2" fill="#0284c7"/><rect x="2" y="4" width="6" height="5" fill="#0369a1"/></svg>
+            <span>Balde</span>
+          </button>
+          <button data-inv-tab="aquarium" class="inv-tab-btn py-1.5 text-[8px] font-bold text-slate-500 border border-transparent flex items-center justify-center gap-1.5" style="font-family:var(--font-pixel);">
+            <svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="2" width="8" height="6" fill="#38bdf8" fill-opacity="0.6" stroke="#9333ea" stroke-width="1"/><rect x="4" y="4" width="3" height="2" fill="#f97316"/></svg>
+            <span>Aquário</span>
+          </button>
+        </div>
+        <div id="inv-counter-badge" class="px-2 py-1 bg-slate-800 border-2 border-slate-700 text-[9px] font-bold text-cyan-400 shrink-0" style="font-family:var(--font-pixel);">0/10</div>
+      </div>
+
+      <!-- Barra de Ordenação do Balde -->
+      <div id="inv-sort-bar" class="shrink-0 flex items-center justify-between gap-1 pb-2 mb-1 border-b border-slate-800 text-[8px]" style="font-family:var(--font-pixel);">
+        <span class="text-slate-500">ORDENAR:</span>
+        <select id="select-inv-sort" class="bg-slate-900 border border-slate-700 text-cyan-300 px-1.5 py-1 text-[8px] focus:outline-none focus:border-cyan-500 cursor-pointer">
+          <option value="recentes">Recentes</option>
+          <option value="raridade_desc">Raridade</option>
+          <option value="valor_desc">Maior Valor</option>
+          <option value="peso_desc">Mais Pesados</option>
+          <option value="buffs">Com Buffs</option>
+        </select>
+      </div>
+
+      <!-- Barra de Filtro do Aquário -->
+      <div id="aquarium-filter-bar" class="hidden shrink-0 flex items-center justify-between gap-1 pb-2 mb-1 border-b border-slate-800 text-[8px]" style="font-family:var(--font-pixel);">
+        <span class="text-purple-400">FILTRAR/BUFF:</span>
+        <select id="select-aquarium-filter" class="bg-slate-900 border border-purple-900/60 text-purple-300 px-1.5 py-1 text-[8px] focus:outline-none focus:border-purple-500 cursor-pointer">
+          <option value="todos">Todos</option>
+          <option value="gold_multiplier">+Ouro (%)</option>
+          <option value="luck_bonus">+Sorte</option>
+          <option value="fishing_speed">+Velocidade</option>
+          <option value="double_catch_chance">+Dupla (%)</option>
+          <option value="raridade_desc">Maior Raridade</option>
+          <option value="peso_desc">Mais Pesados</option>
+        </select>
+      </div>
+
+      <!-- Conteúdo das tabs -->
+      <div id="inventory-fish-list" class="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5"></div>
+      <div id="aquarium-fish-list" class="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5 hidden"></div>
+
+      <!-- Barra do Contador da Venda Automática -->
+      <div id="auto-sell-bar" class="hidden shrink-0 py-1 px-2 mb-1 bg-slate-900/90 border border-slate-800 flex items-center justify-between text-[8px]" style="font-family:var(--font-pixel);">
+        <div class="flex items-center gap-1.5 text-slate-400">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>AUTO VENDA:</span>
+        </div>
+        <span id="auto-sell-countdown" class="text-emerald-300 font-bold bg-slate-950 px-1.5 py-0.5 border border-slate-700">60s</span>
+      </div>
+
+      <!-- Rodapé de ações (muda conforme a tab) -->
+      <div id="inv-actions-inventory" class="shrink-0 pt-2 border-t-2 border-slate-800 flex gap-2">
+        <button id="btn-sell-all" class="pixel-btn flex-1 py-2.5 px-3 bg-amber-600 hover:bg-amber-500 text-slate-950 text-[9px] tracking-wider uppercase flex items-center justify-center gap-1.5" style="font-family:var(--font-pixel);">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><path d="M3 3 Q5 1 7 3 L8 8 L2 8 Z" fill="#78350f"/><rect x="4" y="4" width="2" height="3" fill="#facc15"/></svg>
+          <span>VENDER</span>
+        </button>
+        <button id="btn-open-sell-filter" class="pixel-btn flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-600 text-[9px] tracking-wider uppercase flex items-center justify-center gap-1.5" style="font-family:var(--font-pixel);">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><circle cx="4" cy="4" r="2.5" fill="none" stroke="#38bdf8" stroke-width="1.2"/><line x1="6" y1="6" x2="9" y2="9" stroke="#38bdf8" stroke-width="1.5"/></svg>
+          <span>FILTRO</span>
+        </button>
+      </div>
+      <div id="inv-actions-aquarium" class="shrink-0 pt-2 border-t-2 border-slate-800 hidden">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[7px] text-slate-400" style="font-family:var(--font-pixel);">Buffs aqui são <span class="text-emerald-400">1.5x</span> mais fortes!</span>
+        </div>
+        <div class="text-[7px] text-cyan-400 text-center py-1" style="font-family:var(--font-pixel);">
+          Mova peixes com buff do balde para cá ↑
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ═══════════ MODAL FILTROS DE VENDA ═══════════ -->
+  <div id="sell-filter-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border-4 border-slate-600 p-4 max-w-md w-full space-y-3 max-h-[92vh] flex flex-col" style="box-shadow:6px 6px 0 #000;">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2 shrink-0">
+        <h3 class="text-[10px] font-bold text-slate-100 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><circle cx="4" cy="4" r="2.5" fill="none" stroke="#38bdf8" stroke-width="1.2"/><line x1="6" y1="6" x2="9" y2="9" stroke="#38bdf8" stroke-width="1.5"/></svg>
+          <span>CONFIGURAR FILTROS DE VENDA</span>
+        </h3>
+        <button id="btn-close-filter-modal" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <div class="text-[7.5px] text-amber-300/90 bg-amber-950/30 border border-amber-800/60 p-1.5 shrink-0" style="font-family:var(--font-pixel);">
+        ℹ Peixes com cadeado trancado nunca serão vendidos!
+      </div>
+
+      <div class="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1">
+        <!-- CAMPO 1: FILTRO DO BOTÃO VENDER -->
+        <div class="bg-slate-950/80 border-2 border-slate-800 p-2.5 space-y-1.5">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+            <div>
+              <h4 class="text-[9px] font-bold text-amber-300 flex items-center gap-1" style="font-family:var(--font-pixel);">
+                <svg class="w-3 h-3" viewBox="0 0 10 10" style="image-rendering:pixelated;"><path d="M3 3 Q5 1 7 3 L8 8 L2 8 Z" fill="#b45309"/><rect x="4" y="4" width="2" height="3" fill="#facc15"/></svg>
+                <span>BOTÃO VENDER (MANUAL)</span>
+              </h4>
+              <p class="text-[7px] text-slate-500" style="font-family:var(--font-pixel);">Ao clicar no botão "VENDER" no rodapé</p>
+            </div>
+            <div class="flex gap-1.5">
+              <button type="button" id="btn-filter-manual-default" class="text-[7.5px] text-cyan-400 hover:underline cursor-pointer" style="font-family:var(--font-pixel);">Padrão</button>
+              <button type="button" id="btn-filter-manual-all" class="text-[7.5px] text-slate-400 hover:underline cursor-pointer" style="font-family:var(--font-pixel);">Todos</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-1 pt-0.5">
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-slate-300" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-slate-400 border border-slate-600 inline-block"></span> Comum</span>
+              <input type="checkbox" value="COMUM" class="filter-manual-cb w-3.5 h-3.5 accent-cyan-500">
+            </label>
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-cyan-300" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-cyan-400 border border-cyan-600 inline-block"></span> Incomum</span>
+              <input type="checkbox" value="INCOMUM" class="filter-manual-cb w-3.5 h-3.5 accent-cyan-500">
+            </label>
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-purple-300" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-purple-400 border border-purple-600 inline-block"></span> Raro</span>
+              <input type="checkbox" value="RARO" class="filter-manual-cb w-3.5 h-3.5 accent-cyan-500">
+            </label>
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-amber-300" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-amber-400 border border-amber-600 inline-block"></span> Épico</span>
+              <input type="checkbox" value="EPICO" class="filter-manual-cb w-3.5 h-3.5 accent-cyan-500">
+            </label>
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-red-400" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-red-500 border border-red-700 inline-block"></span> Lendário</span>
+              <input type="checkbox" value="LENDARIO" class="filter-manual-cb w-3.5 h-3.5 accent-cyan-500">
+            </label>
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-pink-400" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-pink-500 border border-pink-700 inline-block"></span> Mítico</span>
+              <input type="checkbox" value="MITICO" class="filter-manual-cb w-3.5 h-3.5 accent-cyan-500">
+            </label>
+          </div>
+        </div>
+
+        <!-- CAMPO 2: FILTRO DA VENDA AUTOMÁTICA -->
+        <div class="bg-slate-950/80 border-2 border-slate-800 p-2.5 space-y-1.5">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+            <div>
+              <h4 class="text-[9px] font-bold text-emerald-300 flex items-center gap-1" style="font-family:var(--font-pixel);">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
+                <span>VENDA AUTOMÁTICA (PEIXARIA)</span>
+              </h4>
+              <p class="text-[7px] text-slate-500" style="font-family:var(--font-pixel);">Vende a cada ciclo do upgrade</p>
+            </div>
+            <div class="flex gap-1.5">
+              <button type="button" id="btn-filter-auto-default" class="text-[7.5px] text-cyan-400 hover:underline cursor-pointer" style="font-family:var(--font-pixel);">Só Comuns</button>
+              <button type="button" id="btn-filter-auto-all" class="text-[7.5px] text-slate-400 hover:underline cursor-pointer" style="font-family:var(--font-pixel);">Todos</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-1 pt-0.5">
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-slate-300" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-slate-400 border border-slate-600 inline-block"></span> Comum</span>
+              <input type="checkbox" value="COMUM" class="filter-auto-cb w-3.5 h-3.5 accent-emerald-500">
+            </label>
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-cyan-300" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-cyan-400 border border-cyan-600 inline-block"></span> Incomum</span>
+              <input type="checkbox" value="INCOMUM" class="filter-auto-cb w-3.5 h-3.5 accent-emerald-500">
+            </label>
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-purple-300" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-purple-400 border border-purple-600 inline-block"></span> Raro</span>
+              <input type="checkbox" value="RARO" class="filter-auto-cb w-3.5 h-3.5 accent-emerald-500">
+            </label>
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-amber-300" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-amber-400 border border-amber-600 inline-block"></span> Épico</span>
+              <input type="checkbox" value="EPICO" class="filter-auto-cb w-3.5 h-3.5 accent-emerald-500">
+            </label>
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-red-400" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-red-500 border border-red-700 inline-block"></span> Lendário</span>
+              <input type="checkbox" value="LENDARIO" class="filter-auto-cb w-3.5 h-3.5 accent-emerald-500">
+            </label>
+            <label class="flex items-center justify-between p-1 bg-slate-900/60 border border-slate-800/50 cursor-pointer hover:bg-slate-800/60">
+              <span class="flex items-center gap-1 text-[8px] text-pink-400" style="font-family:var(--font-pixel);"><span class="w-2 h-2 bg-pink-500 border border-pink-700 inline-block"></span> Mítico</span>
+              <input type="checkbox" value="MITICO" class="filter-auto-cb w-3.5 h-3.5 accent-emerald-500">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-save-filter-prefs" class="pixel-btn w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-[10px] tracking-wider shrink-0 uppercase" style="font-family:var(--font-pixel);">SALVAR PREFERÊNCIAS</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ MODAL ÁLBUM / ENCICLOPÉDIA DE PEIXES ═══════════ -->
+  <div id="album-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border-4 border-cyan-600 p-4 max-w-2xl w-full flex flex-col max-h-[90vh] space-y-3" style="box-shadow:8px 8px 0 #000;">
+      <!-- Header do modal -->
+      <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex"><svg class="w-5 h-5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="2" width="4" height="6" fill="#0284c7"/><rect x="5" y="2" width="4" height="6" fill="#38bdf8"/><rect x="2" y="3" width="2" height="4" fill="#f8fafc"/><rect x="6" y="3" width="2" height="4" fill="#f8fafc"/></svg></span>
+          <div>
+            <h3 class="text-xs font-bold text-cyan-300" style="font-family:var(--font-pixel);">ENCICLOPÉDIA DE PEIXES</h3>
+            <p class="text-[8px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Descubra todas as 21 espécies de peixes!</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="bg-slate-950 border border-cyan-800 px-2 py-1 text-[9px] font-bold text-cyan-400" style="font-family:var(--font-pixel);" id="album-progress-text">0 / 21</div>
+          <button id="btn-close-album" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+        </div>
+      </div>
+
+      <!-- Barra de progresso visual -->
+      <div class="w-full bg-slate-950 border border-slate-800 h-3 shrink-0 p-0.5">
+        <div id="album-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500" style="width: 0%;"></div>
+      </div>
+
+      <!-- Grid dos peixes (scrollable) -->
+      <div id="album-grid" class="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 p-1">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MODAL OFFLINE / AFK REWARD ═══════════ -->
+  <div id="offline-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-4 border-amber-500 p-5 max-w-sm w-full space-y-4 text-center" style="box-shadow:8px 8px 0 #000;">
+      <div class="flex items-center justify-center gap-2">
+        <svg class="w-12 h-12" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="1" width="6" height="1" fill="#94a3b8"/><rect x="1" y="2" width="8" height="2" fill="#0284c7"/><rect x="2" y="4" width="6" height="5" fill="#0369a1"/></svg>
+        <svg class="w-8 h-8" viewBox="0 0 16 16" style="image-rendering:pixelated;"><rect x="2" y="2" width="4" height="1" fill="#38bdf8"/><rect x="5" y="3" width="1" height="1" fill="#38bdf8"/><rect x="4" y="4" width="1" height="1" fill="#38bdf8"/><rect x="2" y="5" width="4" height="1" fill="#38bdf8"/><rect x="8" y="5" width="5" height="1" fill="#a855f7"/><rect x="12" y="6" width="1" height="1" fill="#a855f7"/><rect x="10" y="7" width="1" height="1" fill="#a855f7"/><rect x="8" y="8" width="5" height="1" fill="#a855f7"/></svg>
+      </div>
+      <div>
+        <h3 class="text-xs font-bold text-amber-300" style="font-family:var(--font-pixel);">BEM-VINDO DE VOLTA!</h3>
+        <p id="offline-time-text" class="text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">Você esteve ausente por 2h 15m</p>
+      </div>
+
+      <div class="bg-slate-950 border-2 border-slate-800 p-3 space-y-2 text-left">
+        <div class="flex justify-between items-center text-[9px]" style="font-family:var(--font-pixel);">
+          <span class="flex items-center gap-1.5 text-slate-400">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 12 8" style="image-rendering:pixelated;"><rect x="2" y="2" width="7" height="4" fill="#38bdf8"/><polygon points="9,4 12,1 12,7" fill="#0284c7"/><rect x="1" y="3" width="2" height="2" fill="#0284c7"/><rect x="3" y="2" width="2" height="2" fill="#fff"/><rect x="4" y="3" width="1" height="1" fill="#000"/></svg>
+            <span>Capturados:</span>
+          </span>
+          <span id="offline-catches-text" class="text-cyan-300 font-bold">0</span>
+        </div>
+        <div class="flex justify-between items-center text-[9px]" style="font-family:var(--font-pixel);">
+          <span class="flex items-center gap-1.5 text-slate-400">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="1" width="6" height="8" fill="#eab308"/><rect x="1" y="2" width="8" height="6" fill="#facc15"/><rect x="3" y="3" width="4" height="4" fill="#fef08a"/><rect x="4" y="4" width="2" height="2" fill="#eab308"/></svg>
+            <span>Ouro Rendido:</span>
+          </span>
+          <span id="offline-gold-text" class="text-amber-400 font-bold">+0G</span>
+        </div>
+      </div>
+
+      <button id="btn-collect-offline" class="pixel-btn w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold tracking-wider uppercase" style="font-family:var(--font-pixel);">
+        COLETAR RECOMPENSA!
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════ MODAL PERFIL DO PESCADOR ═══════════ -->
+  <div id="profile-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border-4 border-emerald-600 p-4 max-w-xl w-full flex flex-col max-h-[92vh] space-y-3" style="box-shadow:8px 8px 0 #000;">
+      <!-- Header do modal -->
+      <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex"><svg class="w-5 h-5" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="5" fill="#fed7aa" stroke="#0f172a" stroke-width="0.8"/><rect x="2" y="2" width="8" height="2" fill="#fde047"/><rect x="1" y="6" width="10" height="5" fill="#15803d" stroke="#0f172a" stroke-width="0.8"/><rect x="4" y="3" width="1" height="1" fill="#0f172a"/><rect x="7" y="3" width="1" height="1" fill="#0f172a"/><rect x="5" y="5" width="2" height="1" fill="#c2410c"/></svg></span>
+          <div>
+            <h3 class="text-xs font-bold text-emerald-300" style="font-family:var(--font-pixel);">PERFIL DO PESCADOR</h3>
+            <p class="text-[8px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Personalize sua identidade, gênero e roupas!</p>
+          </div>
+        </div>
+        <button id="btn-close-profile" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <!-- Conteúdo: Preview + Customizações -->
+      <div class="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-3 p-1">
+        <!-- Coluna Esquerda: Preview do Pescador -->
+        <div class="md:col-span-5 bg-slate-950 border-2 border-slate-800 p-3 flex flex-col items-center justify-center text-center">
+          <div class="text-[9px] text-slate-400 mb-2 uppercase tracking-wider" style="font-family:var(--font-pixel);">Visualização</div>
+          <div class="p-2 border-2 border-slate-700 bg-slate-900 shadow-inner flex items-center justify-center w-36 h-36">
+            <canvas id="profile-preview-canvas" width="128" height="128" class="object-contain" style="image-rendering:pixelated;"></canvas>
+          </div>
+          <div id="profile-preview-name" class="mt-2 text-[11px] font-bold text-amber-300 truncate max-w-[140px]" style="font-family:var(--font-pixel);">Pescador</div>
+          <div id="profile-preview-stats" class="text-[8px] text-slate-500 mt-1" style="font-family:var(--font-pixel);">Pronto para pescar!</div>
+        </div>
+
+        <!-- Coluna Direita: Controles de Customização -->
+        <div class="md:col-span-7 space-y-3">
+          <!-- Nome -->
+          <div>
+            <label class="block text-[8px] font-bold text-slate-400 mb-1" style="font-family:var(--font-pixel);">NOME DO PESCADOR:</label>
+            <input id="profile-name-input" type="text" maxlength="16" placeholder="Digite seu nome..." class="w-full bg-slate-950 border-2 border-slate-700 text-slate-100 px-2 py-1.5 text-[9px] focus:outline-none focus:border-emerald-500" style="font-family:var(--font-pixel);">
+          </div>
+
+          <!-- Gênero -->
+          <div>
+            <label class="block text-[8px] font-bold text-slate-400 mb-1" style="font-family:var(--font-pixel);">GÊNERO / MODELO:</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" data-gender="male" class="profile-gender-btn py-1.5 px-2 text-[8px] font-bold border-2 border-slate-700 bg-slate-950 text-slate-300 flex items-center justify-center gap-1.5 hover:border-emerald-500" style="font-family:var(--font-pixel);">
+                <svg class="w-3.5 h-3.5 inline-block shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="1" width="6" height="2" fill="#854d0e"/><rect x="1" y="3" width="8" height="1" fill="#a16207"/><rect x="2" y="4" width="6" height="3" fill="#fed7aa"/><rect x="3" y="5" width="1" height="1" fill="#0f172a"/><rect x="6" y="5" width="1" height="1" fill="#0f172a"/><rect x="2" y="7" width="6" height="2" fill="#c2410c"/></svg>
+                <span>Masculino</span>
+              </button>
+              <button type="button" data-gender="female" class="profile-gender-btn py-1.5 px-2 text-[8px] font-bold border-2 border-slate-700 bg-slate-950 text-slate-300 flex items-center justify-center gap-1.5 hover:border-emerald-500" style="font-family:var(--font-pixel);">
+                <svg class="w-3.5 h-3.5 inline-block shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="1" width="6" height="2" fill="#854d0e"/><rect x="1" y="3" width="8" height="1" fill="#a16207"/><rect x="2" y="4" width="6" height="3" fill="#fed7aa"/><rect x="3" y="5" width="1" height="1" fill="#0f172a"/><rect x="6" y="5" width="1" height="1" fill="#0f172a"/><rect x="1" y="5" width="1" height="4" fill="#c2410c"/><rect x="8" y="5" width="1" height="4" fill="#c2410c"/><rect x="4" y="7" width="2" height="1" fill="#f43f5e"/></svg>
+                <span>Feminino</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Cores das Roupas (Presets) -->
+          <div>
+            <label class="block text-[8px] font-bold text-slate-400 mb-1" style="font-family:var(--font-pixel);">ROUPAS (RECOLOR):</label>
+            <div id="profile-outfits-grid" class="grid grid-cols-2 gap-1.5">
+              <!-- Botões de roupas gerados dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Cor do Cabelo -->
+          <div>
+            <label class="block text-[8px] font-bold text-slate-400 mb-1" style="font-family:var(--font-pixel);">COR DO CABELO:</label>
+            <div id="profile-hair-grid" class="flex flex-wrap gap-1.5">
+              <!-- Botões de cabelo gerados dinamicamente via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rodapé do modal -->
+      <div class="border-t-2 border-slate-800 pt-2 shrink-0">
+        <button id="btn-save-profile" class="pixel-btn w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-[10px] font-bold tracking-wider uppercase" style="font-family:var(--font-pixel);">
+          SALVAR ALTERAÇÕES
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MODAL CONQUISTAS / SALA DE TROFÉUS ═══════════ -->
+  <div id="achievements-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border-4 border-amber-500 p-4 max-w-2xl w-full flex flex-col max-h-[92vh] space-y-3" style="box-shadow:8px 8px 0 #000;">
+      <!-- Header do modal -->
+      <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex"><svg class="w-5 h-5" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="5" fill="#facc15" stroke="#ca8a04" stroke-width="0.8"/><rect x="1" y="2" width="2" height="3" fill="#f59e0b"/><rect x="9" y="2" width="2" height="3" fill="#f59e0b"/><rect x="5" y="6" width="2" height="2" fill="#ca8a04"/><rect x="3" y="8" width="6" height="2" fill="#b45309"/><rect x="4" y="2" width="4" height="2" fill="#fef08a"/></svg></span>
+          <div>
+            <h3 class="text-xs font-bold text-amber-300" style="font-family:var(--font-pixel);">SALA DE TROFÉUS & CONQUISTAS</h3>
+            <p class="text-[8px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Complete desafios para se consagrar uma lenda dos mares!</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div id="achievements-progress-text" class="bg-slate-950 border border-amber-700 px-2 py-1 text-[9px] font-bold text-amber-400" style="font-family:var(--font-pixel);">0 / 20</div>
+          <button id="btn-close-achievements" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+        </div>
+      </div>
+
+      <!-- Barra de progresso geral -->
+      <div class="w-full bg-slate-950 border border-slate-800 h-3 shrink-0 p-0.5">
+        <div id="achievements-progress-bar" class="h-full bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-300 transition-all duration-500" style="width: 0%;"></div>
+      </div>
+
+      <!-- Categorias de filtro -->
+      <div class="shrink-0 flex items-center gap-1 overflow-x-auto pb-1 border-b border-slate-800">
+        <button type="button" data-ach-tab="all" class="ach-tab-btn py-1 px-2.5 text-[8px] font-bold bg-slate-700 text-white border border-amber-400/60 flex items-center gap-1" style="font-family:var(--font-pixel);">Todos</button>
+        <button type="button" data-ach-tab="rods" class="ach-tab-btn py-1 px-2.5 text-[8px] font-bold text-slate-500 border border-transparent flex items-center gap-1 hover:text-slate-300" style="font-family:var(--font-pixel);">Varas</button>
+        <button type="button" data-ach-tab="baits" class="ach-tab-btn py-1 px-2.5 text-[8px] font-bold text-slate-500 border border-transparent flex items-center gap-1 hover:text-slate-300" style="font-family:var(--font-pixel);">Iscas</button>
+        <button type="button" data-ach-tab="upgrades" class="ach-tab-btn py-1 px-2.5 text-[8px] font-bold text-slate-500 border border-transparent flex items-center gap-1 hover:text-slate-300" style="font-family:var(--font-pixel);">Upgrades</button>
+        <button type="button" data-ach-tab="fish" class="ach-tab-btn py-1 px-2.5 text-[8px] font-bold text-slate-500 border border-transparent flex items-center gap-1 hover:text-slate-300" style="font-family:var(--font-pixel);">Peixes</button>
+      </div>
+
+      <!-- Grid de Conquistas (scrollable) -->
+      <div id="achievements-grid" class="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 p-1">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MODAL FIM DO CAPÍTULO 1 / PORTAL DIMENSIONAL ═══════════ -->
+  <div id="chapter1-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border-4 border-cyan-400 p-5 max-w-xl w-full flex flex-col max-h-[92vh] space-y-4 text-center relative overflow-hidden" style="box-shadow: 0 0 30px rgba(6,182,212,0.4), 8px 8px 0 #000;">
+      
+      <!-- Fundo decorativo estrelado com portal -->
+      <div class="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-500 via-purple-900 to-slate-950"></div>
+
+      <!-- Header do modal -->
+      <div class="relative z-10 flex items-center justify-between border-b-2 border-cyan-900 pb-2">
+        <div class="flex items-center gap-2 text-left">
+          <span class="inline-flex"><svg class="w-6 h-6" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="4" y="1" width="4" height="1" fill="#a855f7"/><rect x="2" y="2" width="8" height="1" fill="#06b6d4"/><rect x="1" y="3" width="10" height="6" fill="#8b5cf6"/><rect x="3" y="4" width="6" height="4" fill="#0891b2"/><rect x="4" y="5" width="4" height="2" fill="#67e8f9"/><rect x="5" y="5" width="2" height="2" fill="#ffffff"/><rect x="2" y="9" width="8" height="1" fill="#06b6d4"/><rect x="4" y="10" width="4" height="1" fill="#a855f7"/></svg></span>
+          <div>
+            <h3 class="text-xs font-bold text-cyan-300" style="font-family:var(--font-pixel);">CAPÍTULO 1: O DESPERTAR DO PORTAL</h3>
+            <p class="text-[8px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Chave dimensional para os confins de Neo-Píer</p>
+          </div>
+        </div>
+        <button id="btn-close-chapter1" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <!-- Animação / Visual em Pixel Art do Portal -->
+      <div class="relative z-10 flex flex-col items-center justify-center py-2">
+        <div id="chapter1-portal-visual" class="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center relative">
+          <!-- Anel de rotação suave -->
+          <div class="absolute inset-0 rounded-full border-4 border-dashed border-cyan-400/60 animate-spin" style="animation-duration: 10s;"></div>
+          <div class="absolute inset-2 rounded-full border-2 border-dashed border-purple-500/80 animate-spin" style="animation-duration: 6s; animation-direction: reverse;"></div>
+          <!-- Pixel Art Portal Center -->
+          <svg class="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-[0_0_12px_rgba(6,182,212,0.8)]" viewBox="0 0 16 16" style="image-rendering:pixelated;">
+            <rect x="5" y="1" width="6" height="1" fill="#c084fc"/>
+            <rect x="3" y="2" width="10" height="1" fill="#a855f7"/>
+            <rect x="2" y="3" width="12" height="1" fill="#06b6d4"/>
+            <rect x="1" y="4" width="14" height="8" fill="#8b5cf6"/>
+            <rect x="3" y="5" width="10" height="6" fill="#0891b2"/>
+            <rect x="5" y="6" width="6" height="4" fill="#67e8f9"/>
+            <rect x="6" y="7" width="4" height="2" fill="#ffffff"/>
+            <rect x="2" y="12" width="12" height="1" fill="#06b6d4"/>
+            <rect x="3" y="13" width="10" height="1" fill="#a855f7"/>
+            <rect x="5" y="14" width="6" height="1" fill="#c084fc"/>
+          </svg>
+        </div>
+        <div id="chapter1-status-title" class="text-sm font-bold text-cyan-300 mt-2" style="font-family:var(--font-pixel);">
+          PORTAL DIMENSIONAL INATIVO
+        </div>
+        <p id="chapter1-status-desc" class="text-[9px] text-slate-300 max-w-md mx-auto mt-1 leading-relaxed" style="font-family:var(--font-pixel);">
+          Para abrir passagem e concluir o Capítulo 1, você precisa forjar os dois itens supremos da V1: a <b>Vara da Travessia Astral</b> e a <b>Essência do Vórtice Dimensional</b>.
+        </p>
+      </div>
+
+      <!-- Requisitos do Capítulo 1 (Cards dos 2 itens) -->
+      <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+        <!-- Card 1: Vara da Travessia -->
+        <div id="req-card-rod" class="bg-slate-950 border-2 border-slate-800 p-2.5 flex items-center gap-3">
+          <div id="req-rod-icon" class="w-10 h-10 bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
+            <!-- Icone injetado via JS -->
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-1">
+              <span class="text-[8px] sm:text-[9px] font-bold text-cyan-300 leading-snug break-words" style="font-family:var(--font-pixel);">Vara da Travessia</span>
+              <span id="req-rod-status" class="text-[7px] sm:text-[8px] font-bold text-red-400 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">PENDENTE</span>
+            </div>
+            <p class="text-[7px] text-slate-400 mt-1 leading-normal" style="font-family:var(--font-pixel);">Poder: 9.0x | Sorte: +45% | Vel: +60%</p>
+            <p class="text-[8px] font-bold text-amber-400 mt-1" style="font-family:var(--font-pixel);">600.000 G (Loja de Varas)</p>
+          </div>
+        </div>
+
+        <!-- Card 2: Essência do Vórtice -->
+        <div id="req-card-bait" class="bg-slate-950 border-2 border-slate-800 p-2.5 flex items-center gap-3">
+          <div id="req-bait-icon" class="w-10 h-10 bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
+            <!-- Icone injetado via JS -->
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-1">
+              <span class="text-[8px] sm:text-[9px] font-bold text-purple-300 leading-snug break-words" style="font-family:var(--font-pixel);">Essência do Vórtice</span>
+              <span id="req-bait-status" class="text-[7px] sm:text-[8px] font-bold text-red-400 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">PENDENTE</span>
+            </div>
+            <p class="text-[7px] text-slate-400 mt-1 leading-normal" style="font-family:var(--font-pixel);">Tier: 6 | Sorte: 2.50x | Dupla: +25%</p>
+            <p class="text-[8px] font-bold text-amber-400 mt-1" style="font-family:var(--font-pixel);">250.000 G (Loja de Iscas)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumo de Estatísticas da Jornada na V1 -->
+      <div class="relative z-10 bg-slate-950/80 border border-slate-800 p-2.5 text-[8px] grid grid-cols-2 sm:grid-cols-4 gap-2 text-center" style="font-family:var(--font-pixel);">
+        <div>
+          <div class="text-slate-500">FISGADAS TOTAIS</div>
+          <div id="chapter1-stat-catches" class="text-cyan-300 font-bold text-[9px] mt-0.5">0</div>
+        </div>
+        <div>
+          <div class="text-slate-500">OURO ACUMULADO</div>
+          <div id="chapter1-stat-gold" class="text-amber-400 font-bold text-[9px] mt-0.5">0 G</div>
+        </div>
+        <div>
+          <div class="text-slate-500">ENCICLOPÉDIA</div>
+          <div id="chapter1-stat-fish" class="text-emerald-400 font-bold text-[9px] mt-0.5">0 / 21</div>
+        </div>
+        <div>
+          <div class="text-slate-500">CONQUISTAS</div>
+          <div id="chapter1-stat-ach" class="text-purple-400 font-bold text-[9px] mt-0.5">0 / 22</div>
+        </div>
+      </div>
+
+      <!-- Mensagem especial de conclusão (quando ambos itens forem obtidos) -->
+      <div id="chapter1-complete-banner" class="relative z-10 bg-gradient-to-r from-cyan-950 via-slate-900 to-purple-950 border-2 border-cyan-400 p-3 hidden text-center space-y-1">
+        <div class="text-xs font-bold text-yellow-300 flex items-center justify-center gap-1.5" style="font-family:var(--font-pixel);">
+          <span>★</span> CAPÍTULO 1 CONCLUÍDO COM SUCESSO! <span>★</span>
+        </div>
+        <p class="text-[8px] text-cyan-200 leading-relaxed" style="font-family:var(--font-pixel);">
+          Parabéns, lendário pescador! O Portal Dimensional está totalmente sincronizado e energizado.
+          <b>O Próximo Mundo será desbloqueado nas próximas atualizações</b>, logo após o polimento e refinamento completo da versão 1.0!
+        </p>
+      </div>
+
+      <!-- Botão de Ação / Fechar -->
+      <div class="relative z-10 pt-1">
+        <button id="btn-chapter1-confirm" class="pixel-btn w-full py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-slate-950 font-bold text-xs" style="font-family:var(--font-pixel);">
+          CONTINUAR PESCANDO NA V1
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
