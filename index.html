@@ -118,6 +118,21 @@
         <canvas id="water-particles-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
         <div id="catch-toast-container" class="absolute top-3 left-0 right-0 z-30 flex flex-col items-center gap-2 pointer-events-none"></div>
 
+        <!-- Banner do Eclipse Sangrento (Berserk) -->
+        <div id="blood-eclipse-banner" class="hidden absolute top-2 left-1/2 -translate-x-1/2 z-30 px-3 py-1 bg-red-950/95 border-2 border-red-600 flex items-center gap-2 rounded-sm" style="box-shadow: 0 0 20px rgba(220,38,38,0.85), 2px 2px 0 #000;">
+          <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+          <span class="text-[8.5px] font-bold text-red-200" style="font-family:var(--font-pixel);">
+            🌑 ECLIPSE SANGRENTO: <span id="blood-eclipse-timer" class="text-white font-mono text-[9.5px]">60s</span>
+          </span>
+          <span class="text-[7.5px] text-red-400 bg-red-900/60 px-1 py-0.5 border border-red-700/60" style="font-family:var(--font-pixel);">AURAS ATIVAS</span>
+        </div>
+
+        <!-- Eclipse Vermelho Estilo Berserk (Sol Negro com Coroa de Fogo Carmesim) -->
+        <div id="blood-eclipse-sky" class="berserk-eclipse-container hidden">
+          <div class="berserk-eclipse-sun"></div>
+          <div class="text-[7px] text-red-400 font-bold tracking-widest mt-1 uppercase" style="font-family:var(--font-pixel); text-shadow:0 0 6px #dc2626;">ECLIPSE</div>
+        </div>
+
         <!-- Estrelas -->
         <div class="absolute top-0 left-0 w-full h-16 pointer-events-none overflow-hidden opacity-60">
           <div class="absolute w-1 h-1 bg-white top-2 left-[10%]"></div>
@@ -1122,6 +1137,25 @@
 
       <!-- Lista de Atualizações com Scroll -->
       <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-[8.5px] text-slate-300" style="font-family:var(--font-pixel);">
+
+        <!-- Cartão Novo: Peixe da Lua Sangrenta & Eclipse Vermelho -->
+        <div class="bg-red-950/40 border-2 border-red-700/80 p-2.5 space-y-1.5" style="box-shadow: 0 0 16px rgba(220,38,38,0.35), 2px 2px 0 #000;">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-red-400 font-bold text-[9.5px]">
+              <span>🌑 PEIXE DA LUA SANGRENTA & ECLIPSE VERMELHO</span>
+            </div>
+            <span class="text-[7px] bg-red-950 border border-red-600 text-red-300 px-1 py-0.5 animate-pulse">NOVO EVENTO</span>
+          </div>
+          <p class="text-red-200 text-[8px] leading-relaxed">
+            Inspirado no lendário Eclipse de Berserk para pescadores de alto nível:
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-slate-300 text-[7.5px] leading-normal pl-1">
+            <li><b class="text-red-300">Vara Cósmica Astral (ou superior):</b> 1 a cada 10 Peixes Dourados agora surge como o lendário <b>Peixe da Lua Sangrenta</b>!</li>
+            <li><b class="text-red-300">Mar Sangrento & Eclipse (60s):</b> Ao capturá-lo, o lago se transforma em um mar carmesim sangrento, com o Sol Negro coroado em chamas do Eclipse no céu.</li>
+            <li><b class="text-red-300">Auras Místicas Especiais:</b> Todos os peixes pescados durante o minuto do Eclipse recebem a <b>Aura da Lua Sangrenta</b> (+50% Ouro, +25% Sorte) ou a <b>Aura do Eclipse</b> (+40% Vel. Pesca, +35% Pesca Dupla), com brilho e partículas únicas no Balde e no Aquário!</li>
+            <li><b class="text-red-300">Comandos Console de Teste:</b> Digite <code class="text-red-300 font-mono">eclipse</code> para ativar o evento ou <code class="text-red-300 font-mono">bloodfish</code> para spawnar o peixe.</li>
+          </ul>
+        </div>
 
         <!-- Cartão 1: Olhos de Peixe -->
         <div class="bg-slate-950/80 border-2 border-cyan-900/80 p-2.5 space-y-1.5" style="box-shadow:2px 2px 0 #000;">

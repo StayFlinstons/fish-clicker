@@ -11,6 +11,13 @@ export const RODS = [
   { id:'vara_travessia',name:'Vara da Travessia Astral',price:600000, power:9.0, luckBonus:0.45, speedBonus:0.60, icon:'rod', desc:'Artefato lendário final da V1. Chave para atravessar para o próximo mundo.', unlocked:false }
 ];
 
+export function isCosmicOrHigherRod(rodId) {
+  const cosmicTierIdx = RODS.findIndex(r => r.id === 'vara_cosmica');
+  if (cosmicTierIdx === -1) return false;
+  const currentIdx = RODS.findIndex(r => r.id === rodId);
+  return currentIdx >= cosmicTierIdx;
+}
+
 export const BAITS = [
   { id:'minhoca',            name:'Minhoca da Terra',            price:0,      tier:1, luckMultiplier:1.0,  doubleCatchBonus:0,    icon:'bait', desc:'Isca básica para peixes comuns.',      unlocked:true },
   { id:'camarao',            name:'Camarão Fresco',               price:350,    tier:2, luckMultiplier:1.10, doubleCatchBonus:0.02, icon:'bait', desc:'Aroma que atrai peixes um pouco melhores.', unlocked:false },

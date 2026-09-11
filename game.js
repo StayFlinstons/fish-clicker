@@ -1,10 +1,11 @@
 import { RARITIES, FISH_LIST, generateFishBuffs } from './fishData.js';
-import { RODS, BAITS, UPGRADES } from './itemsData.js';
+import { RODS, BAITS, UPGRADES, isCosmicOrHigherRod } from './itemsData.js';
 import { sound } from './sound.js';
 import { ACHIEVEMENTS } from './achievementsData.js';
 import {
   renderFishermanToCanvas,
   getFishDataURL,
+  getBloodMoonFishDataURL,
   getFishSilhouetteDataURL,
   PixelWaterRenderer,
   updateRodSVG,
@@ -79,6 +80,12 @@ class FishingGame {
     this.fishEyesTotal = 0;
     this.fishEyesAllocated = { gold: 0, luck: 0, speed: 0, double: 0 };
     this.lastFishEyeDate = null;
+
+    // Evento Mar Sangrento & Eclipse Vermelho (Vara Cósmica+)
+    this.bloodMoonEventActive = false;
+    this.bloodMoonEndsAt = 0;
+    this.bloodMoonInterval = null;
+    this.goldenFishCountSinceBlood = 0;
 
     // Fim do Capítulo 1 / Portal Dimensional
     this.chapter1Completed = false;
@@ -1494,6 +1501,14 @@ class FishingGame {
       out.luckBonus += (base * 0.6) * mult;
       out.doubleCatchChance += (base * 0.4) * mult;
     }
+    if (b.type === 'event_blood_moon') {
+      out.goldMultiplier += (b.value || 0.50) * mult;
+      out.luckBonus += (b.luck || 0.25) * mult;
+    }
+    if (b.type === 'event_eclipse') {
+      out.fishingSpeedBonus += (b.value || 0.40) * mult;
+      out.doubleCatchChance += (b.double || 0.35) * mult;
+    }
   }
 
   getActiveBuffs() {
@@ -1664,6 +1679,27 @@ class FishingGame {
 
     const generatedBuffs = generateFishBuffs(template.id, template.rarity);
 
+    let specialAura = null;
+    if (this.bloodMoonEventActive) {
+      if (Math.random() < 0.5) {
+        specialAura = 'lua_sangrenta';
+        generatedBuffs.push({
+          type: 'event_blood_moon',
+          value: 0.50,
+          luck: 0.25,
+          text: '+50% Ouro & +25% Sorte (Lua Sangrenta)'
+        });
+      } else {
+        specialAura = 'eclipse';
+        generatedBuffs.push({
+          type: 'event_eclipse',
+          value: 0.40,
+          double: 0.35,
+          text: '+40% Vel. Pesca & +35% Dupla (Eclipse)'
+        });
+      }
+    }
+
     return {
       uid: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       id: template.id,
@@ -1678,6 +1714,7 @@ class FishingGame {
       buff: generatedBuffs[0] || null,
       isDoubleBuff: generatedBuffs.length === 2,
       isTripleBuff: generatedBuffs.length >= 3,
+      specialAura: specialAura,
       locked: false
     };
   }
@@ -2274,15 +2311,22 @@ class FishingGame {
       const hasBuff = buffsList.length > 0;
       const isTriple = buffsList.length >= 3;
       const isDouble = buffsList.length === 2;
+      const auraClass = fish.specialAura === 'lua_sangrenta' ? 'aura-lua-sangrenta' : (fish.specialAura === 'eclipse' ? 'aura-eclipse' : '');
+      const auraBadge = fish.specialAura === 'lua_sangrenta' 
+        ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 8px rgba(239,68,68,0.7);">🩸 LUA SANGRENTA</span>'
+        : (fish.specialAura === 'eclipse'
+          ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-700 bg-black/90 text-red-400 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 10px rgba(185,28,28,0.8);">🌑 ECLIPSE</span>'
+          : '');
 
       return `
-        <div class="group p-2 border-2 bg-slate-900/90 flex items-center justify-between gap-1.5 sm:gap-2 rarity-${fish.rarity} ${isTriple ? 'border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.4)]' : (isDouble ? 'border-amber-400/80' : '')}" style="background:${r.bg};">
+        <div class="group p-2 border-2 bg-slate-900/90 flex items-center justify-between gap-1.5 sm:gap-2 rarity-${fish.rarity} ${auraClass} ${isTriple ? 'border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.4)]' : (isDouble ? 'border-amber-400/80' : '')}" style="background:${r.bg};">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <img src="${spriteURL}" class="fish-icon-canvas w-11 h-7 sm:w-12 sm:h-8 object-contain shrink-0 ${isTriple ? 'animate-pulse' : ''}" alt="${fish.name}" style="image-rendering:pixelated;">
             <div class="min-w-0 flex-1">
               <div class="flex items-baseline gap-1.5 flex-wrap">
                 <span class="text-[9px] sm:text-[10px] font-bold ${isTriple ? 'text-red-300' : 'text-slate-100'} leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
                 <span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+                ${auraBadge}
                 ${isTriple ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
               </div>
               <div class="flex items-center gap-1.5 text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">
@@ -2362,15 +2406,22 @@ class FishingGame {
       const buffsList = this.getFishBuffs(fish);
       const isTriple = buffsList.length >= 3;
       const isDouble = buffsList.length === 2;
+      const auraClass = fish.specialAura === 'lua_sangrenta' ? 'aura-lua-sangrenta' : (fish.specialAura === 'eclipse' ? 'aura-eclipse' : '');
+      const auraBadge = fish.specialAura === 'lua_sangrenta' 
+        ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 8px rgba(239,68,68,0.7);">🩸 LUA SANGRENTA</span>'
+        : (fish.specialAura === 'eclipse'
+          ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-700 bg-black/90 text-red-400 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 10px rgba(185,28,28,0.8);">🌑 ECLIPSE</span>'
+          : '');
 
       return `
-        <div class="group p-2 border-2 bg-slate-900/90 flex items-center justify-between gap-1.5 sm:gap-2 rarity-${fish.rarity} ${isTriple ? 'border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.4)]' : (isDouble ? 'border-amber-400/80' : '')}" style="background:${r.bg};">
+        <div class="group p-2 border-2 bg-slate-900/90 flex items-center justify-between gap-1.5 sm:gap-2 rarity-${fish.rarity} ${auraClass} ${isTriple ? 'border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.4)]' : (isDouble ? 'border-amber-400/80' : '')}" style="background:${r.bg};">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <img src="${spriteURL}" class="fish-icon-canvas w-11 h-7 sm:w-12 sm:h-8 object-contain shrink-0 ${isTriple ? 'animate-pulse' : ''}" alt="${fish.name}" style="image-rendering:pixelated;">
             <div class="min-w-0 flex-1">
               <div class="flex items-baseline gap-1.5 flex-wrap">
                 <span class="text-[9px] sm:text-[10px] font-bold ${isTriple ? 'text-red-300' : 'text-slate-100'} leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
                 <span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+                ${auraBadge}
                 ${isTriple ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
                 <span class="text-[7px] sm:text-[7.5px] font-bold px-1 py-0.2 border border-purple-500/80 bg-purple-950/80 text-purple-200 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">1.5x BUFF</span>
               </div>
@@ -2414,11 +2465,18 @@ class FishingGame {
     const buffsList = this.getFishBuffs(fish);
     const isTriple = buffsList.length >= 3;
     const isDouble = buffsList.length === 2;
+    const auraClass = fish.specialAura === 'lua_sangrenta' ? 'aura-lua-sangrenta' : (fish.specialAura === 'eclipse' ? 'aura-eclipse' : '');
+    const auraBadge = fish.specialAura === 'lua_sangrenta' 
+      ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel); box-shadow: 0 0 8px rgba(239,68,68,0.7);">🩸 LUA SANGRENTA</span>'
+      : (fish.specialAura === 'eclipse' 
+        ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-red-700 bg-black/90 text-red-400 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel); box-shadow: 0 0 10px rgba(185,28,28,0.8);">🌑 ECLIPSE</span>' 
+        : '');
+
     const card = document.createElement('div');
     const borderClass = isTriple 
       ? 'ring-2 ring-red-600 shadow-[0_0_16px_rgba(220,38,38,0.7)]' 
       : (isDouble ? 'ring-2 ring-amber-400' : '');
-    card.className = `catch-popup p-2.5 border-2 flex items-center gap-2 rarity-${fish.rarity} ${borderClass}`;
+    card.className = `catch-popup p-2.5 border-2 flex items-center gap-2 rarity-${fish.rarity} ${auraClass} ${borderClass}`;
     card.style.background = isTriple ? 'rgba(10,10,18,0.98)' : 'rgba(15,23,42,0.95)';
     card.style.borderColor = isTriple ? '#dc2626' : (isDouble ? '#f59e0b' : r.border);
     card.innerHTML = `
@@ -2426,6 +2484,7 @@ class FishingGame {
       <div>
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="text-[8px] font-bold px-1 py-0.5 border" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+          ${auraBadge}
           ${isTriple ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel);">🔥 BUFF TRIPLO!</span>' : (isDouble ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel);">★ BUFF DUPLO!</span>' : '')}
           <span class="text-[8px] text-slate-400" style="font-family:var(--font-pixel);">${fish.weight}kg</span>
         </div>
@@ -2488,21 +2547,41 @@ class FishingGame {
     this.goldenFishTimer = setTimeout(() => this.spawnGoldenFish(), delay);
   }
 
-  spawnGoldenFish() {
+  spawnGoldenFish(forceBloodMoon = false) {
     if (this.goldenFishActive) return;
     this.goldenFishActive = true;
 
     const lake = document.getElementById('fishing-lake-area');
     if (!lake) { this.goldenFishActive = false; this.scheduleNextGoldenFish(); return; }
 
+    const isCosmic = isCosmicOrHigherRod(this.selectedRodId);
+    let isBloodMoon = false;
+    if (isCosmic || forceBloodMoon) {
+      this.goldenFishCountSinceBlood = (this.goldenFishCountSinceBlood || 0) + 1;
+      if (forceBloodMoon || this.goldenFishCountSinceBlood >= 10 || Math.random() < 0.10) {
+        isBloodMoon = true;
+        this.goldenFishCountSinceBlood = 0;
+      }
+    }
+
     const el = document.createElement('div');
-    el.id = 'golden-fish-event';
-    el.innerHTML = `<img src="${getFishDataURL('dourado', 3)}" alt="Golden Fish" style="width:48px;height:32px;image-rendering:pixelated;filter:drop-shadow(0 0 10px gold) drop-shadow(0 0 4px #ffd700);pointer-events:none;">`;
-    el.style.cssText = `
-      position:absolute; z-index:35; cursor:pointer; user-select:none;
-      animation: goldenFishFloat 2s ease-in-out infinite, goldenFishShimmer 0.6s ease-in-out infinite alternate;
-      transition: transform 0.15s, opacity 0.3s;
-    `;
+    if (isBloodMoon) {
+      el.id = 'blood-moon-fish-event';
+      el.innerHTML = `<img src="${getBloodMoonFishDataURL(3.5)}" alt="Peixe da Lua Sangrenta" style="width:56px;height:38px;image-rendering:pixelated;filter:drop-shadow(0 0 14px #dc2626) drop-shadow(0 0 6px #7f1d1d);pointer-events:none;">`;
+      el.style.cssText = `
+        position:absolute; z-index:35; cursor:pointer; user-select:none;
+        animation: goldenFishFloat 1.8s ease-in-out infinite, goldenFishShimmer 0.5s ease-in-out infinite alternate;
+        transition: transform 0.15s, opacity 0.3s;
+      `;
+    } else {
+      el.id = 'golden-fish-event';
+      el.innerHTML = `<img src="${getFishDataURL('dourado', 3)}" alt="Golden Fish" style="width:48px;height:32px;image-rendering:pixelated;filter:drop-shadow(0 0 10px gold) drop-shadow(0 0 4px #ffd700);pointer-events:none;">`;
+      el.style.cssText = `
+        position:absolute; z-index:35; cursor:pointer; user-select:none;
+        animation: goldenFishFloat 2s ease-in-out infinite, goldenFishShimmer 0.6s ease-in-out infinite alternate;
+        transition: transform 0.15s, opacity 0.3s;
+      `;
+    }
 
     // Posição aleatória dentro do lago
     const maxX = 60, maxY = 50;
@@ -2515,7 +2594,11 @@ class FishingGame {
       el.style.opacity = '0';
       setTimeout(() => el.remove(), 300);
       this.goldenFishActive = false;
-      this.onGoldenFishClick();
+      if (isBloodMoon) {
+        this.triggerBloodMoonEclipse();
+      } else {
+        this.onGoldenFishClick();
+      }
       this.scheduleNextGoldenFish();
     };
 
@@ -2537,15 +2620,21 @@ class FishingGame {
         this.nextGoldenFishAutoCatchTime = now + (cdSec * 1000);
         setTimeout(() => {
           if (this.goldenFishActive && el.parentNode) {
-            this.showFloatingText('★ ÍMÃ DOURADO!', '#ffd700', -40);
-            this.showToast(`Ímã Dourado capturou o Peixe Dourado! (Recarga: ${cdSec}s)`, 'success');
+            if (isBloodMoon) {
+              this.showFloatingText('🩸 LUA SANGRENTA!', '#ef4444', -40);
+              this.showToast(`Ímã Dourado capturou o Peixe da Lua Sangrenta!`, 'error');
+            } else {
+              this.showFloatingText('★ ÍMÃ DOURADO!', '#ffd700', -40);
+              this.showToast(`Ímã Dourado capturou o Peixe Dourado! (Recarga: ${cdSec}s)`, 'success');
+            }
             handleCatch(true);
           }
         }, 1200);
       }
     }
 
-    // Desaparece após 12 segundos se não clicado
+    // Desaparece após 14s (se sangrento) ou 12s se não clicado
+    const despawnTime = isBloodMoon ? 14000 : 12000;
     setTimeout(() => {
       if (el.parentNode && this.goldenFishActive) {
         el.style.opacity = '0';
@@ -2553,7 +2642,7 @@ class FishingGame {
         this.goldenFishActive = false;
         this.scheduleNextGoldenFish();
       }
-    }, 12000);
+    }, despawnTime);
   }
 
   onGoldenFishClick() {
@@ -2647,6 +2736,101 @@ class FishingGame {
       overlay.style.transition = 'opacity 0.5s';
       setTimeout(() => overlay.remove(), 500);
     }, 2500);
+  }
+
+  // ── EVENTO ECLIPSE SANGRENTO (Berserk) ──
+  triggerBloodMoonEclipse() {
+    if (sound.vibrateSecret) sound.vibrateSecret();
+    else sound.vibrateGoldenFish();
+    sound.playRare();
+    this.goldenFishCatches = (this.goldenFishCatches || 0) + 1;
+    this.checkAchievements();
+
+    this.showBloodMoonEclipseModal();
+    this.startBloodMoonEvent(60000);
+  }
+
+  showBloodMoonEclipseModal() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
+      pointer-events:none; animation: goldenRewardIn 0.4s ease-out;
+    `;
+    overlay.innerHTML = `
+      <div style="
+        background:radial-gradient(circle at center, rgba(30,0,0,0.98), rgba(10,2,2,0.98));
+        border:3px solid #dc2626; padding:22px 32px; text-align:center;
+        box-shadow:0 0 50px rgba(220,38,38,0.85), inset 0 0 30px rgba(185,28,28,0.5), 4px 4px 0 #000;
+        animation: goldenRewardPulse 0.5s ease-in-out; max-width:440px;
+      ">
+        <div style="display:flex; justify-content:center; margin-bottom:10px;">
+          <img src="${getBloodMoonFishDataURL(3.5)}" alt="Peixe da Lua Sangrenta" style="width:64px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 0 16px #ef4444);">
+        </div>
+        <div style="font-family:var(--font-pixel); font-size:13px; color:#ef4444; font-weight:bold; letter-spacing:2px; text-shadow:0 0 12px #dc2626;">
+          🌑 ECLIPSE VERMELHO! 🌑
+        </div>
+        <div style="font-family:var(--font-pixel); font-size:9px; color:#fca5a5; margin-top:8px; line-height:1.6;">
+          O Mar se transformou em Sangue por <span style="color:#ffffff; font-weight:bold;">60 segundos</span>!<br>
+          Peixes capturados recebem <span style="color:#ef4444; font-weight:bold;">Aura da Lua Sangrenta</span> (+50% Ouro, +25% Sorte) ou <span style="color:#f87171; font-weight:bold;">Aura do Eclipse</span> (+40% Vel., +35% Dupla)!
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    setTimeout(() => {
+      overlay.style.transition = 'opacity 0.6s';
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 600);
+    }, 4000);
+  }
+
+  startBloodMoonEvent(durationMs = 60000) {
+    this.bloodMoonEventActive = true;
+    this.bloodMoonEndsAt = Date.now() + durationMs;
+
+    if (this.waterRenderer && typeof this.waterRenderer.setBloodMoonActive === 'function') {
+      this.waterRenderer.setBloodMoonActive(true);
+    }
+
+    const skyEl = document.getElementById('blood-eclipse-sky');
+    if (skyEl) skyEl.classList.remove('hidden');
+
+    const bannerEl = document.getElementById('blood-eclipse-banner');
+    if (bannerEl) bannerEl.classList.remove('hidden');
+
+    if (this.bloodMoonInterval) clearInterval(this.bloodMoonInterval);
+    this.bloodMoonInterval = setInterval(() => {
+      const remainingMs = Math.max(0, this.bloodMoonEndsAt - Date.now());
+      const timerSpan = document.getElementById('blood-eclipse-timer');
+      if (timerSpan) {
+        timerSpan.textContent = Math.ceil(remainingMs / 1000) + 's';
+      }
+      if (remainingMs <= 0) {
+        this.endBloodMoonEvent();
+      }
+    }, 500);
+
+    this.showToast('🌑 O Eclipse Vermelho começou! O Mar Sangrento despertou por 60s!', 'error');
+  }
+
+  endBloodMoonEvent() {
+    this.bloodMoonEventActive = false;
+    this.bloodMoonEndsAt = 0;
+    if (this.bloodMoonInterval) {
+      clearInterval(this.bloodMoonInterval);
+      this.bloodMoonInterval = null;
+    }
+
+    if (this.waterRenderer && typeof this.waterRenderer.setBloodMoonActive === 'function') {
+      this.waterRenderer.setBloodMoonActive(false);
+    }
+
+    const skyEl = document.getElementById('blood-eclipse-sky');
+    if (skyEl) skyEl.classList.add('hidden');
+
+    const bannerEl = document.getElementById('blood-eclipse-banner');
+    if (bannerEl) bannerEl.classList.add('hidden');
+
+    this.showToast('O Eclipse Vermelho se dissipou e o mar voltou ao normal.', 'info');
   }
 
   startTempBuffLoop() {
@@ -2768,6 +2952,8 @@ class FishingGame {
         this.consoleLog('gold <qtd>     - Adiciona ouro', '#ccc');
         this.consoleLog('goldset <qtd>  - Define ouro para valor exato (ex: goldset 0)', '#ccc');
         this.consoleLog('goldenfish     - Spawna peixe dourado', '#ccc');
+        this.consoleLog('bloodfish / spawnblood - Spawna o Peixe da Lua Sangrenta', '#ef4444');
+        this.consoleLog('eclipse / bloodmoon - Inicia o Eclipse Sangrento (60s)', '#f87171');
         this.consoleLog('catch [n]      - Pesca n peixes (default: 1)', '#ccc');
         this.consoleLog('catchid <id> [n] - Pesca peixe por ID numérico (1 a ' + FISH_LIST.length + ')', '#ccc');
         this.consoleLog('maxupgrades    - Maximiza upgrades', '#ccc');
@@ -2847,6 +3033,23 @@ class FishingGame {
         }
         break;
 
+      case 'bloodfish':
+      case 'spawnblood':
+        if (this.goldenFishActive) {
+          this.consoleLog('Já existe um peixe ativo na tela!', '#ff6b6b');
+        } else {
+          clearTimeout(this.goldenFishTimer);
+          this.spawnGoldenFish(true);
+          this.consoleLog('Peixe da Lua Sangrenta spawnado!', '#ef4444');
+        }
+        break;
+
+      case 'eclipse':
+      case 'bloodmoon':
+        this.startBloodMoonEvent(60000);
+        this.consoleLog('Eclipse Vermelho e Mar Sangrento iniciados por 60 segundos!', '#dc2626');
+        break;
+
       case 'catchid': {
         const query = parts[1];
         if (!query) {
@@ -2872,6 +3075,26 @@ class FishingGame {
           const weightFactor = weight / target.minWeight;
           const rawValue = Math.round(target.baseValue * Math.pow(weightFactor, 0.7));
           const generatedBuffs = generateFishBuffs(target.id, target.rarity);
+          let specialAura = null;
+          if (this.bloodMoonEventActive) {
+            if (Math.random() < 0.5) {
+              specialAura = 'lua_sangrenta';
+              generatedBuffs.push({
+                type: 'event_blood_moon',
+                value: 0.50,
+                luck: 0.25,
+                text: '+50% Ouro & +25% Sorte (Lua Sangrenta)'
+              });
+            } else {
+              specialAura = 'eclipse';
+              generatedBuffs.push({
+                type: 'event_eclipse',
+                value: 0.40,
+                double: 0.35,
+                text: '+40% Vel. Pesca & +35% Dupla (Eclipse)'
+              });
+            }
+          }
           const fish = {
             uid: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
             id: target.id,
@@ -2886,6 +3109,7 @@ class FishingGame {
             buff: generatedBuffs[0] || null,
             isDoubleBuff: generatedBuffs.length === 2,
             isTripleBuff: generatedBuffs.length >= 3 || target.rarity === 'SECRETO',
+            specialAura: specialAura,
             locked: false
           };
           this.inventory.unshift(fish);

@@ -866,6 +866,19 @@ export function getFishDataURL(fishIconId, scale = 3) {
   return c.toDataURL();
 }
 
+export function getBloodMoonFishDataURL(scale = 3) {
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const sprite = SPRITE_SHARK;
+  const colorMap = { 1: '#450a0a', 2: '#dc2626', 3: '#991b1b', 4: '#ffffff', 5: '#ef4444', 6: '#f87171' };
+  c.width = sprite[0].length * scale;
+  c.height = sprite.length * scale;
+  c.style.imageRendering = 'pixelated';
+  drawPixelGrid(ctx, sprite, colorMap, scale);
+  return c.toDataURL();
+}
+
 export function getFishSilhouetteDataURL(fishIconId, scale = 3) {
   const c = document.createElement('canvas');
   const ctx = c.getContext('2d');
@@ -934,12 +947,17 @@ export class PixelWaterRenderer {
       wobble: 0,
       bubbleTimer: 0
     };
+    this.bloodMoonActive = false;
     this._resize();
     window.addEventListener('resize', () => this._resize());
   }
 
   setDiverActive(active) {
     this.diverActive = !!active;
+  }
+
+  setBloodMoonActive(active) {
+    this.bloodMoonActive = !!active;
   }
 
   setTimeOfDay(tod) {
@@ -976,7 +994,14 @@ export class PixelWaterRenderer {
     // Paletas por horário
     let wc, lightColor, lightAlpha, waveColor1, waveColor2;
 
-    if (this.timeOfDay === 'day') {
+    if (this.bloodMoonActive) {
+      // Mar Sangrento — Vermelho carmesim profundo & atmosfera sinistra do Eclipse
+      wc = ['#450a0a','#7f1d1d','#991b1b','#b91c1c','#7f1d1d','#450a0a','#2a0808','#140303'];
+      lightColor = '#ef4444';
+      lightAlpha = 0.12;
+      waveColor1 = 'rgba(239, 68, 68, 0.8)';
+      waveColor2 = 'rgba(185, 28, 28, 0.6)';
+    } else if (this.timeOfDay === 'day') {
       // Dia claro e cristalino
       wc = ['#0284c7','#0369a1','#075985','#0c4a6e','#0f3b56','#103147','#0f283a','#0d202e'];
       lightColor = '#bae6fd';
@@ -1066,8 +1091,13 @@ export class PixelWaterRenderer {
       b.y -= b.speed; b.x += b.drift;
       if (b.y < 0) return false;
       const bx = Math.round(b.x / px) * px, by = Math.round(b.y / px) * px;
-      ctx.fillStyle = 'rgba(186,230,253,0.5)'; ctx.fillRect(bx, by, px, px);
-      ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(bx, by, 2, 2);
+      if (this.bloodMoonActive) {
+        ctx.fillStyle = 'rgba(239,68,68,0.7)'; ctx.fillRect(bx, by, px, px);
+        ctx.fillStyle = 'rgba(254,202,202,0.6)'; ctx.fillRect(bx, by, 2, 2);
+      } else {
+        ctx.fillStyle = 'rgba(186,230,253,0.5)'; ctx.fillRect(bx, by, px, px);
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(bx, by, 2, 2);
+      }
       return true;
     });
   }
