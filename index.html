@@ -29,8 +29,13 @@
         <div class="w-10 h-10 bg-slate-950 border-2 border-cyan-400 flex items-center justify-center p-0.5 overflow-hidden" style="box-shadow:2px 2px 0 #000;">
           <img src="icons/icon-192.png" alt="Fish Clicker" class="w-full h-full object-contain" style="image-rendering:pixelated;">
         </div>
-        <div>
+        <div class="flex items-center gap-2">
           <h1 class="text-sm font-bold tracking-widest text-cyan-300" style="font-family:var(--font-pixel);">FISH CLICKER</h1>
+          <button id="btn-open-patch-notes" onclick="window.game.openPatchNotesModal()" title="Notas de Atualização (Patch Notes de Hoje)" class="px-2 py-0.5 text-[7.5px] sm:text-[8px] font-bold bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-400 text-cyan-200 pixel-btn cursor-pointer transition-colors shrink-0 flex items-center gap-1" style="font-family:var(--font-pixel); box-shadow:2px 2px 0 #000;">
+            <svg class="w-3 h-3 inline-block" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="1" width="6" height="8" fill="#0284c7"/><rect x="3" y="2" width="4" height="6" fill="#f8fafc"/><rect x="4" y="3" width="2" height="1" fill="#0284c7"/><rect x="4" y="5" width="2" height="1" fill="#0284c7"/></svg>
+            <span>PATCH NOTES</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse ml-0.5"></span>
+          </button>
         </div>
       </div>
 
@@ -40,17 +45,17 @@
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 max-w-full">
-        <!-- Indicador de Horário -->
-        <button id="btn-toggle-time" title="Mudar Horário (Dia / Tarde / Noite)" class="h-9 w-9 bg-slate-900 border-2 border-slate-700 flex items-center justify-center pixel-btn text-amber-300 shrink-0">
+        <!-- Indicador de Horário (Ciclo Automático de 5 min - clique para ver tempo restante) -->
+        <button id="btn-toggle-time" onclick="window.game.showTimeOfDayStatus()" title="Horário do Jogo (Clique para consultar o tempo restante)" class="h-9 w-9 bg-slate-900 border-2 border-slate-700 flex items-center justify-center text-amber-300 shrink-0 cursor-pointer hover:border-amber-400 pixel-btn select-none" style="box-shadow:2px 2px 0 #000;">
           <svg class="w-4 h-4 inline-block" viewBox="0 0 8 8" style="image-rendering:pixelated;"><path d="M2 1 A3 3 0 0 0 6 7 A4 4 0 1 1 2 1 Z" fill="#fef08a"/></svg>
         </button>
         <!-- Botão do Álbum / Enciclopédia -->
         <button id="btn-open-album" title="Álbum de Peixes" class="h-9 px-2 sm:px-2.5 bg-slate-900 border-2 border-slate-700 flex items-center gap-1.5 text-xs pixel-btn hover:border-cyan-500 shrink-0">
           <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="2" width="4" height="6" fill="#0284c7"/><rect x="5" y="2" width="4" height="6" fill="#38bdf8"/><rect x="2" y="3" width="2" height="4" fill="#f8fafc"/><rect x="6" y="3" width="2" height="4" fill="#f8fafc"/></svg></span>
-          <span id="album-badge" class="text-[8px] font-bold text-cyan-300" style="font-family:var(--font-pixel);">0/21</span>
+          <span id="album-badge" class="text-[8px] font-bold text-cyan-300" style="font-family:var(--font-pixel);">0/27</span>
         </button>
         <!-- Botão de Perfil do Pescador -->
-        <button id="btn-open-profile" title="Perfil e Roupas do Pescador" class="h-9 px-2 sm:px-2.5 bg-slate-900 border-2 border-slate-700 flex items-center gap-1.5 text-xs pixel-btn hover:border-emerald-500 shrink-0">
+        <button id="btn-open-profile" onclick="window.game.openProfile()" title="Perfil e Roupas do Pescador" class="h-9 px-2 sm:px-2.5 bg-slate-900 border-2 border-slate-700 flex items-center gap-1.5 text-xs pixel-btn hover:border-emerald-500 shrink-0">
           <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="5" fill="#fed7aa" stroke="#0f172a" stroke-width="0.8"/><rect x="2" y="2" width="8" height="2" fill="#fde047"/><rect x="1" y="6" width="10" height="5" fill="#15803d" stroke="#0f172a" stroke-width="0.8"/><rect x="4" y="3" width="1" height="1" fill="#0f172a"/><rect x="7" y="3" width="1" height="1" fill="#0f172a"/><rect x="5" y="5" width="2" height="1" fill="#c2410c"/></svg></span>
           <span id="profile-btn-name" class="text-[8px] font-bold text-emerald-300 max-w-[60px] sm:max-w-[80px] truncate" style="font-family:var(--font-pixel);">Pescador</span>
         </button>
@@ -64,20 +69,25 @@
           <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="4" y="1" width="4" height="1" fill="#a855f7"/><rect x="2" y="2" width="8" height="1" fill="#06b6d4"/><rect x="1" y="3" width="10" height="6" fill="#8b5cf6"/><rect x="3" y="4" width="6" height="4" fill="#0891b2"/><rect x="4" y="5" width="4" height="2" fill="#67e8f9"/><rect x="5" y="5" width="2" height="2" fill="#ffffff"/><rect x="2" y="9" width="8" height="1" fill="#06b6d4"/><rect x="4" y="10" width="4" height="1" fill="#a855f7"/></svg></span>
           <span id="chapter1-badge" class="text-[8px] font-bold text-cyan-300" style="font-family:var(--font-pixel);">CAP. 1</span>
         </button>
+        <!-- Botão dos Olhos de Peixe (Meta-progressão Diária 00:00) -->
+        <button id="btn-open-fish-eyes" onclick="window.game.openFishEyesModal()" title="Olhos de Peixe (Recompensa Diária às 00:00 & Upgrades de Atributos)" class="h-9 px-2 sm:px-2.5 bg-slate-900 border-2 border-slate-700 flex items-center gap-1.5 text-xs pixel-btn hover:border-cyan-400 shrink-0">
+          <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="1" fill="#38bdf8"/><rect x="1" y="2" width="10" height="8" fill="#0284c7"/><rect x="0" y="4" width="12" height="4" fill="#0369a1"/><rect x="2" y="3" width="8" height="6" fill="#f8fafc"/><rect x="4" y="4" width="4" height="4" fill="#0f172a"/><rect x="5" y="4" width="2" height="2" fill="#38bdf8"/><rect x="6" y="5" width="1" height="1" fill="#ffffff"/><rect x="3" y="10" width="6" height="1" fill="#38bdf8"/></svg></span>
+          <span id="fish-eyes-badge" class="text-[8px] font-bold text-cyan-300" style="font-family:var(--font-pixel);">0</span>
+        </button>
         <div class="flex items-center gap-2 bg-slate-900 border-2 border-amber-600 px-2.5 sm:px-3 py-1.5 shrink-0" style="box-shadow:2px 2px 0 #000;">
           <span class="inline-flex"><svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="1" width="6" height="8" fill="#eab308"/><rect x="1" y="2" width="8" height="6" fill="#facc15"/><rect x="3" y="3" width="4" height="4" fill="#fef08a"/><rect x="4" y="4" width="2" height="2" fill="#eab308"/></svg></span>
           <div id="player-gold" class="text-xs sm:text-sm font-bold text-amber-300" style="font-family:var(--font-pixel);">0</div>
         </div>
-        <!-- Botão Instalar PWA (Mobile/Desktop) -->
-        <button id="btn-install-pwa" title="Instalar Aplicativo no Celular" class="hidden h-9 px-2 sm:px-2.5 bg-cyan-900 border-2 border-cyan-400 items-center gap-1.5 text-xs pixel-btn hover:border-cyan-300 text-cyan-200 shrink-0">
-          <svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><path d="M5 1 L5 7 M2 4 L5 7 L8 4" stroke="#38bdf8" stroke-width="1.5" fill="none"/><rect x="1" y="8" width="8" height="1.5" fill="#38bdf8"/></svg>
-          <span class="text-[8px] font-bold" style="font-family:var(--font-pixel);">INSTALAR</span>
-        </button>
-        <button id="btn-toggle-sound" title="Som" class="w-9 h-9 bg-slate-900 border-2 border-slate-700 flex items-center justify-center pixel-btn shrink-0">
-          <svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="3" width="3" height="4" fill="#94a3b8"/><path d="M4 3 L7 1 L7 9 L4 7 Z" fill="#cbd5e1"/><rect x="8" y="3" width="1" height="4" fill="#38bdf8"/></svg>
-        </button>
-        <button id="btn-reset-game" onclick="window.game.resetProgress()" title="Resetar Todo o Progresso" class="w-9 h-9 bg-slate-900 border-2 border-slate-700 flex items-center justify-center pixel-btn hover:border-red-600 shrink-0">
-          <svg class="w-4 h-4" viewBox="0 0 10 10" style="image-rendering:pixelated;"><path d="M2 4 A 3 3 0 1 1 5 8" fill="none" stroke="#f87171" stroke-width="1.5"/><polygon points="2,1 2,5 6,5" fill="#f87171"/></svg>
+        <!-- Botão de Configurações (Engrenagem) -->
+        <button id="btn-open-settings" onclick="window.game.openSettings()" title="Configurações (Som, Efeitos Visuais, Console, Reset)" class="w-9 h-9 bg-slate-900 border-2 border-slate-700 flex items-center justify-center pixel-btn hover:border-cyan-400 shrink-0">
+          <svg class="w-4 h-4 text-slate-300 hover:text-cyan-300" viewBox="0 0 12 12" style="image-rendering:pixelated;">
+            <rect x="5" y="0" width="2" height="12" fill="#94a3b8"/>
+            <rect x="0" y="5" width="12" height="2" fill="#94a3b8"/>
+            <rect x="2" y="2" width="8" height="8" fill="#94a3b8"/>
+            <rect x="3" y="1" width="6" height="10" fill="#cbd5e1"/>
+            <rect x="1" y="3" width="10" height="6" fill="#cbd5e1"/>
+            <rect x="4" y="4" width="4" height="4" fill="#0f172a"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -223,11 +233,22 @@
       <div id="inventory-fish-list" class="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5"></div>
       <div id="aquarium-fish-list" class="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5 hidden"></div>
 
+      <!-- Barra do Mergulhador Amigo -->
+      <div id="auto-fish-bar" class="hidden shrink-0 py-1 px-2 mb-1 bg-slate-900/90 border border-slate-800 flex items-center justify-between text-[8px]" style="font-family:var(--font-pixel);">
+        <div class="flex items-center gap-1.5 text-slate-400">
+          <span id="auto-fish-status-dot" class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+          <span>MERGULHADOR:</span>
+          <button id="btn-toggle-auto-fish" onclick="window.game.toggleAutoFisher(event)" title="Ligar / Desligar Mergulhador Amigo" class="px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-emerald-600 text-slate-950 border-emerald-400" style="font-family:var(--font-pixel);">ON</button>
+        </div>
+        <span id="auto-fish-countdown" class="text-cyan-300 font-bold bg-slate-950 px-1.5 py-0.5 border border-slate-700">--</span>
+      </div>
+
       <!-- Barra do Contador da Venda Automática -->
       <div id="auto-sell-bar" class="hidden shrink-0 py-1 px-2 mb-1 bg-slate-900/90 border border-slate-800 flex items-center justify-between text-[8px]" style="font-family:var(--font-pixel);">
         <div class="flex items-center gap-1.5 text-slate-400">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="auto-sell-status-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           <span>AUTO VENDA:</span>
+          <button id="btn-toggle-auto-sell" onclick="window.game.toggleAutoSeller(event)" title="Ligar / Desligar Peixaria Automática" class="px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-emerald-600 text-slate-950 border-emerald-400" style="font-family:var(--font-pixel);">ON</button>
         </div>
         <span id="auto-sell-countdown" class="text-emerald-300 font-bold bg-slate-950 px-1.5 py-0.5 border border-slate-700">60s</span>
       </div>
@@ -366,31 +387,174 @@
   </div>
 
   <!-- ═══════════ MODAL ÁLBUM / ENCICLOPÉDIA DE PEIXES ═══════════ -->
-  <div id="album-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 hidden">
-    <div class="bg-slate-900 border-4 border-cyan-600 p-4 max-w-2xl w-full flex flex-col max-h-[90vh] space-y-3" style="box-shadow:8px 8px 0 #000;">
+  <div id="album-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 hidden">
+    <div class="bg-slate-900 border-4 border-cyan-600 p-3 sm:p-5 max-w-5xl w-full flex flex-col max-h-[92vh] space-y-3" style="box-shadow:8px 8px 0 #000;">
       <!-- Header do modal -->
-      <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2 shrink-0">
-        <div class="flex items-center gap-2">
+      <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2.5 shrink-0">
+        <div class="flex items-center gap-2 sm:gap-2.5">
           <span class="inline-flex"><svg class="w-5 h-5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="2" width="4" height="6" fill="#0284c7"/><rect x="5" y="2" width="4" height="6" fill="#38bdf8"/><rect x="2" y="3" width="2" height="4" fill="#f8fafc"/><rect x="6" y="3" width="2" height="4" fill="#f8fafc"/></svg></span>
           <div>
-            <h3 class="text-xs font-bold text-cyan-300" style="font-family:var(--font-pixel);">ENCICLOPÉDIA DE PEIXES</h3>
-            <p class="text-[8px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Descubra todas as 21 espécies de peixes!</p>
+            <h3 class="text-xs sm:text-sm font-bold text-cyan-300" style="font-family:var(--font-pixel);">ENCICLOPÉDIA DE PEIXES</h3>
+            <p class="text-[8px] sm:text-[9px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Catálogo de espécies e guia completo de buffs</p>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <div class="bg-slate-950 border border-cyan-800 px-2 py-1 text-[9px] font-bold text-cyan-400" style="font-family:var(--font-pixel);" id="album-progress-text">0 / 21</div>
-          <button id="btn-close-album" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <div class="bg-slate-950 border border-cyan-800 px-2 py-1 text-[8px] sm:text-[9px] font-bold text-cyan-400" style="font-family:var(--font-pixel);" id="album-progress-text">0 / 27</div>
+          <button id="btn-close-album" onclick="window.game.closeAlbum()" class="text-slate-400 hover:text-white text-lg font-bold px-1.5 py-0.5 hover:bg-slate-800 rounded transition-colors" title="Fechar Enciclopédia">✕</button>
         </div>
       </div>
 
-      <!-- Barra de progresso visual -->
-      <div class="w-full bg-slate-950 border border-slate-800 h-3 shrink-0 p-0.5">
-        <div id="album-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500" style="width: 0%;"></div>
+      <!-- Abas da Enciclopédia (Peixes / Guia de Buffs) -->
+      <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 border-2 border-slate-800 shrink-0">
+        <button id="tab-album-fish" onclick="window.game.switchAlbumTab('fish')" class="py-1.5 px-2 sm:px-3 text-[9px] sm:text-[10px] font-bold bg-cyan-900/60 text-cyan-300 border border-cyan-500/80 flex items-center justify-center gap-1.5 pixel-btn" style="font-family:var(--font-pixel);box-shadow:1px 1px 0 #000;">
+          <span>🐟</span> <span>Catálogo de Peixes</span>
+        </button>
+        <button id="tab-album-buffs" onclick="window.game.switchAlbumTab('buffs')" class="py-1.5 px-2 sm:px-3 text-[9px] sm:text-[10px] font-bold bg-slate-900 text-slate-400 border border-slate-800 flex items-center justify-center gap-1.5 pixel-btn hover:text-slate-200" style="font-family:var(--font-pixel);">
+          <span>★</span> <span>Como Funcionam os Buffs</span>
+        </button>
       </div>
 
-      <!-- Grid dos peixes (scrollable) -->
-      <div id="album-grid" class="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 p-1">
-        <!-- Renderizado dinamicamente via JS -->
+      <!-- ABA 1: CATÁLOGO DE PEIXES -->
+      <div id="album-view-fish" class="flex-1 min-h-0 flex flex-col space-y-2.5">
+        <!-- Barra de progresso visual -->
+        <div class="w-full bg-slate-950 border border-slate-800 h-3 shrink-0 p-0.5">
+          <div id="album-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500" style="width: 0%;"></div>
+        </div>
+
+        <!-- Grid dos peixes (scrollable) -->
+        <div id="album-grid" class="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 p-1 pr-2">
+          <!-- Renderizado dinamicamente via JS -->
+        </div>
+      </div>
+
+      <!-- ABA 2: GUIA EXPLICATIVO DE BUFFS -->
+      <div id="album-view-buffs" class="flex-1 min-h-0 overflow-y-auto space-y-3 p-1 pr-1.5 hidden">
+        <!-- Card 1: Como Funciona -->
+        <div class="p-3 bg-slate-950/80 border-2 border-purple-900/80 pixel-border-thin space-y-1.5">
+          <div class="flex items-center gap-2">
+            <span class="text-purple-400 text-sm">★</span>
+            <h4 class="text-[10px] sm:text-[11px] font-bold text-purple-300" style="font-family:var(--font-pixel);">O QUE SÃO OS BUFFS?</h4>
+          </div>
+          <p class="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed" style="font-family:var(--font-pixel);">
+            Nem todo peixe serve apenas para ser vendido no mercado! Determinados peixes podem vir com <strong class="text-purple-300">atributos mágicos permanentes</strong> que aumentam seus ganhos de ouro, velocidade de puxada, sorte e pesca dupla enquanto estiverem guardados no seu <strong class="text-cyan-300">Aquário</strong>.
+          </p>
+        </div>
+
+        <!-- Card 2: Aquário Bônus 1.5x -->
+        <div class="p-3 bg-cyan-950/40 border-2 border-cyan-800/80 pixel-border-thin space-y-1.5">
+          <div class="flex items-center gap-2">
+            <span class="text-cyan-400 text-sm">🏺</span>
+            <h4 class="text-[10px] sm:text-[11px] font-bold text-cyan-300" style="font-family:var(--font-pixel);">PODER DO AQUÁRIO: BÔNUS DE 1.5x</h4>
+          </div>
+          <p class="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed" style="font-family:var(--font-pixel);">
+            Ao mover um peixe com buff do seu Balde para o <strong class="text-cyan-300">Aquário</strong>, a força de todos os seus efeitos aumenta automaticamente em <strong class="text-emerald-400">+50% (multiplicador 1.5x)</strong>! Você pode expandir a capacidade do seu aquário na aba de Upgrades.
+          </p>
+        </div>
+
+        <!-- Card 3: Buff Duplo -->
+        <div class="p-3 bg-amber-950/30 border-2 border-amber-600/80 pixel-border-thin space-y-1.5">
+          <div class="flex items-center gap-2">
+            <span class="text-amber-400 text-sm animate-pulse">★</span>
+            <h4 class="text-[10px] sm:text-[11px] font-bold text-amber-300" style="font-family:var(--font-pixel);">★ BUFF DUPLO (RARÍSSIMO)</h4>
+          </div>
+          <p class="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed" style="font-family:var(--font-pixel);">
+            Ao pescar peixes de raridades superiores, existe uma chance de fisgar um espécime especial com a insígnia dourada <strong class="text-amber-300 border border-amber-500 px-1 py-0.5 bg-amber-950/60">★ DUPLO</strong>. Ele carrega <strong class="text-amber-200">dois buffs simultâneos</strong> em uma única criatura, ocupando apenas 1 vaga no Aquário e acumulando os dois bônus!
+          </p>
+        </div>
+
+        <!-- Card: Maestria Mítica (O Buff Supremo) -->
+        <div class="p-3 bg-gradient-to-r from-pink-950/60 via-purple-950/60 to-slate-950 border-2 border-pink-500/80 pixel-border-thin space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="text-pink-400 text-sm animate-pulse">👑</span>
+            <h4 class="text-[10px] sm:text-[11px] font-bold text-pink-300" style="font-family:var(--font-pixel);">COMO FUNCIONA A MAESTRIA MÍTICA?</h4>
+          </div>
+          <p class="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed" style="font-family:var(--font-pixel);">
+            A <strong class="text-pink-300">Maestria Mítica</strong> é o efeito mais poderoso e cobiçado do jogo, exclusivo de criaturas <strong class="text-pink-400">Míticas</strong> e <strong class="text-red-400">Secretas</strong>. Ela funciona como um <strong class="text-amber-300">super-buff 3 em 1</strong> que aprimora simultaneamente três pilares do seu progresso:
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-[8px] sm:text-[8.5px]" style="font-family:var(--font-pixel);">
+            <div class="bg-slate-900/90 border border-pink-900/60 p-2 text-center">
+              <span class="text-amber-400 block font-bold text-[9px]">🪙 +100% do Valor</span>
+              <span class="text-slate-400">em Multiplicador de Ouro</span>
+            </div>
+            <div class="bg-slate-900/90 border border-pink-900/60 p-2 text-center">
+              <span class="text-purple-400 block font-bold text-[9px]">🍀 +60% do Valor</span>
+              <span class="text-slate-400">em Bônus de Sorte</span>
+            </div>
+            <div class="bg-slate-900/90 border border-pink-900/60 p-2 text-center">
+              <span class="text-emerald-400 block font-bold text-[9px]">🎣 +40% do Valor</span>
+              <span class="text-slate-400">em Pesca Dupla</span>
+            </div>
+          </div>
+          <p class="text-[7.5px] sm:text-[8px] text-pink-200/90 leading-normal italic bg-pink-950/40 p-1.5 border border-pink-900/40" style="font-family:var(--font-pixel);">
+            ★ <strong>Exemplo Real:</strong> Um peixe com <strong>+30% Maestria Mítica</strong> concede automaticamente <strong>+30% Ouro</strong>, <strong>+18% Sorte</strong> e <strong>+12% Pesca Dupla</strong>! E se for colocado no <strong>Aquário</strong>, esses valores sobem para incríveis <strong>+45% Ouro, +27% Sorte e +18% Dupla</strong>!
+          </p>
+        </div>
+
+        <!-- Card 4: Tabela de Probabilidades por Raridade -->
+        <div class="p-3 bg-slate-950/90 border-2 border-slate-800 pixel-border-thin space-y-2">
+          <h4 class="text-[10px] sm:text-[11px] font-bold text-slate-200" style="font-family:var(--font-pixel);">CHANCES DE BUFF POR RARIDADE</h4>
+          <div class="space-y-1.5 text-[8px] sm:text-[9px]" style="font-family:var(--font-pixel);">
+            <div class="p-1.5 bg-slate-900 border border-slate-700 flex items-center justify-between">
+              <span class="text-slate-400 font-bold">Comum</span>
+              <span class="text-slate-300">5% chance de vir com buff leve</span>
+            </div>
+            <div class="p-1.5 bg-cyan-950/40 border border-cyan-800 flex items-center justify-between">
+              <span class="text-cyan-400 font-bold">Incomum</span>
+              <span class="text-slate-300">25% chance de buff · <strong class="text-amber-400">3% Buff Duplo</strong></span>
+            </div>
+            <div class="p-1.5 bg-purple-950/40 border border-purple-800 flex items-center justify-between">
+              <span class="text-purple-400 font-bold">Raro</span>
+              <span class="text-slate-300"><strong class="text-emerald-400">100% garantido</strong> · <strong class="text-amber-400">8% Buff Duplo</strong></span>
+            </div>
+            <div class="p-1.5 bg-amber-950/40 border border-amber-800 flex items-center justify-between">
+              <span class="text-amber-400 font-bold">Épico</span>
+              <span class="text-slate-300"><strong class="text-emerald-400">100% garantido</strong> · <strong class="text-amber-400">15% Buff Duplo</strong></span>
+            </div>
+            <div class="p-1.5 bg-red-950/40 border border-red-800 flex items-center justify-between">
+              <span class="text-red-400 font-bold">Lendário</span>
+              <span class="text-slate-300"><strong class="text-emerald-400">100% garantido</strong> · <strong class="text-amber-400">25% Buff Duplo</strong></span>
+            </div>
+            <div class="p-1.5 bg-pink-950/40 border border-pink-700 flex items-center justify-between">
+              <span class="text-pink-400 font-bold">Mítico</span>
+              <span class="text-pink-300 font-bold">100% garantido SEMPRE com 2 super buffs (Maestria Mítica)!</span>
+            </div>
+            <div class="p-1.5 bg-rose-950/50 border border-red-600 flex items-center justify-between">
+              <span class="text-red-400 font-bold">Secreto</span>
+              <span class="text-red-300 font-bold">100% garantido SEMPRE com 3 buffs colossais (Buff Triplo)!</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: Tipos de Buffs -->
+        <div class="p-3 bg-slate-950/90 border-2 border-slate-800 pixel-border-thin space-y-2">
+          <h4 class="text-[10px] sm:text-[11px] font-bold text-slate-200" style="font-family:var(--font-pixel);">EFEITOS DOS ATRIBUTOS</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[8px] sm:text-[9px]" style="font-family:var(--font-pixel);">
+            <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
+              <div class="text-amber-400 font-bold">🪙 Mais Ouro (+% Ouro)</div>
+              <p class="text-slate-400">Aumenta o valor de venda de todos os peixes que você vende.</p>
+            </div>
+            <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
+              <div class="text-purple-400 font-bold">🍀 Sorte (+% Sorte)</div>
+              <p class="text-slate-400">Aumenta a chance de fisgar espécies raras, épicas e lendárias.</p>
+            </div>
+            <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
+              <div class="text-cyan-400 font-bold">⚡ Vel. Pesca (+% Vel. Pesca)</div>
+              <p class="text-slate-400">Reduz o tempo de puxada da linha ao pescar manualmente.</p>
+            </div>
+            <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
+              <div class="text-emerald-400 font-bold">🎣 Pesca Dupla (+% Pesca Dupla)</div>
+              <p class="text-slate-400">Chance de capturar dois peixes de uma só vez na mesma puxada.</p>
+            </div>
+            <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
+              <div class="text-blue-400 font-bold">🤿 Vel. Auto (+% Vel. Auto)</div>
+              <p class="text-slate-400">Faz o seu Mergulhador Amigo pescar com maior frequência.</p>
+            </div>
+            <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
+              <div class="text-pink-400 font-bold">🌌 Tudo (+% Tudo / Mítico)</div>
+              <p class="text-slate-400">Bônus celestial que melhora ouro, sorte e velocidade juntos.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -664,6 +828,390 @@
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ═══════════ MODAL DE CONFIGURAÇÕES ═══════════ -->
+  <div id="settings-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border-4 border-slate-600 p-4 max-w-md w-full space-y-3 max-h-[92vh] flex flex-col" style="box-shadow:6px 6px 0 #000;">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2 shrink-0">
+        <h3 class="text-[11px] font-bold text-slate-100 flex items-center gap-2" style="font-family:var(--font-pixel);">
+          <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 12 12" style="image-rendering:pixelated;">
+            <rect x="5" y="0" width="2" height="12" fill="#94a3b8"/>
+            <rect x="0" y="5" width="12" height="2" fill="#94a3b8"/>
+            <rect x="2" y="2" width="8" height="8" fill="#94a3b8"/>
+            <rect x="3" y="1" width="6" height="10" fill="#cbd5e1"/>
+            <rect x="1" y="3" width="10" height="6" fill="#cbd5e1"/>
+            <rect x="4" y="4" width="4" height="4" fill="#0f172a"/>
+          </svg>
+          <span>CONFIGURAÇÕES DO JOGO</span>
+        </h3>
+        <button onclick="window.game.closeSettings()" class="text-slate-400 hover:text-white text-lg leading-none cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1">
+        <!-- SEÇÃO: ÁUDIO -->
+        <div class="bg-slate-950/80 border-2 border-slate-800 p-2.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-[9.5px] font-bold text-cyan-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+                <span class="inline-flex"><svg class="w-3.5 h-3.5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="3" width="3" height="4" fill="#94a3b8"/><path d="M4 3 L7 1 L7 9 L4 7 Z" fill="#cbd5e1"/><rect x="8" y="3" width="1" height="4" fill="#38bdf8"/></svg></span>
+                <span>EFEITOS SONOROS (SFX)</span>
+              </h4>
+              <p class="text-[7.5px] text-slate-500 mt-0.5" style="font-family:var(--font-pixel);">Sons de puxada, fanfarras, moedas e cliques</p>
+            </div>
+            <button id="btn-setting-sound" onclick="window.game.toggleSetting('sound')" class="px-2.5 py-1 text-[8.5px] font-bold border transition-colors cursor-pointer shrink-0" style="font-family:var(--font-pixel);">
+              ON
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO: GRÁFICOS E EFEITOS VISUAIS -->
+        <div class="bg-slate-950/80 border-2 border-slate-800 p-2.5 space-y-2.5">
+          <h4 class="text-[9.5px] font-bold text-amber-300 flex items-center gap-1.5 border-b border-slate-800/80 pb-1" style="font-family:var(--font-pixel);">
+            <span class="inline-flex"><svg class="w-3.5 h-3.5" viewBox="0 0 8 8" style="image-rendering:pixelated;"><rect x="3" y="1" width="2" height="6" fill="#fde047"/><rect x="1" y="3" width="6" height="2" fill="#fde047"/><rect x="3" y="3" width="2" height="2" fill="#ffffff"/></svg></span>
+            <span>EFEITOS VISUAIS & GRÁFICOS</span>
+          </h4>
+
+          <!-- Config 1: Auras e Brilhos de Raridade -->
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div class="text-[8.5px] font-bold text-slate-200" style="font-family:var(--font-pixel);">Auras & Brilhos de Raridade</div>
+              <p class="text-[7px] text-slate-500" style="font-family:var(--font-pixel);">Bordas luminosas e sombras coloridas nos peixes raros</p>
+            </div>
+            <button id="btn-setting-fishGlow" onclick="window.game.toggleSetting('fishGlow')" class="px-2.5 py-1 text-[8.5px] font-bold border transition-colors cursor-pointer shrink-0" style="font-family:var(--font-pixel);">
+              ON
+            </button>
+          </div>
+
+          <!-- Config 2: Animações Pulsantes -->
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div class="text-[8.5px] font-bold text-slate-200" style="font-family:var(--font-pixel);">Animações Pulsantes</div>
+              <p class="text-[7px] text-slate-500" style="font-family:var(--font-pixel);">Pulso e respiração nos sprites e badges</p>
+            </div>
+            <button id="btn-setting-fishAnimations" onclick="window.game.toggleSetting('fishAnimations')" class="px-2.5 py-1 text-[8.5px] font-bold border transition-colors cursor-pointer shrink-0" style="font-family:var(--font-pixel);">
+              ON
+            </button>
+          </div>
+
+          <!-- Config 3: Partículas de Água -->
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div class="text-[8.5px] font-bold text-slate-200" style="font-family:var(--font-pixel);">Partículas de Água no Lago</div>
+              <p class="text-[7px] text-slate-500" style="font-family:var(--font-pixel);">Ondulações e partículas no lago (desative para +FPS)</p>
+            </div>
+            <button id="btn-setting-waterParticles" onclick="window.game.toggleSetting('waterParticles')" class="px-2.5 py-1 text-[8.5px] font-bold border transition-colors cursor-pointer shrink-0" style="font-family:var(--font-pixel);">
+              ON
+            </button>
+          </div>
+
+          <!-- Config 4: Scanlines Retrô -->
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div class="text-[8.5px] font-bold text-slate-200" style="font-family:var(--font-pixel);">Linhas CRT Retrô (Scanlines)</div>
+              <p class="text-[7px] text-slate-500" style="font-family:var(--font-pixel);">Linhas horizontais de monitor antigo sobre o lago</p>
+            </div>
+            <button id="btn-setting-scanlines" onclick="window.game.toggleSetting('scanlines')" class="px-2.5 py-1 text-[8.5px] font-bold border transition-colors cursor-pointer shrink-0" style="font-family:var(--font-pixel);">
+              ON
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO: FERRAMENTAS DO JOGO -->
+        <div class="bg-slate-950/80 border-2 border-slate-800 p-2.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-[9.5px] font-bold text-emerald-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+                <span class="inline-flex"><svg class="w-3.5 h-3.5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="1" width="8" height="6" fill="#0f172a" stroke="#22c55e" stroke-width="1"/><rect x="3" y="8" width="4" height="1" fill="#475569"/><rect x="3" y="3" width="2" height="1" fill="#22c55e"/></svg></span>
+                <span>CONSOLE DE DESENVOLVEDOR</span>
+              </h4>
+              <p class="text-[7px] text-slate-500 mt-0.5" style="font-family:var(--font-pixel);">Comandos e testes (Atalho: tecla ` ou ~)</p>
+            </div>
+            <button onclick="window.game.openConsoleFromSettings()" class="pixel-btn px-2.5 py-1 text-[8.5px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-600 shrink-0" style="font-family:var(--font-pixel);">
+              ABRIR
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO: ZONA DE PERIGO (RESET) -->
+        <div class="bg-red-950/30 border-2 border-red-900/60 p-2.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-[9.5px] font-bold text-red-400 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+                <span class="inline-flex"><svg class="w-3.5 h-3.5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><path d="M2 4 A 3 3 0 1 1 5 8" fill="none" stroke="#f87171" stroke-width="1.5"/><polygon points="2,1 2,5 6,5" fill="#f87171"/></svg></span>
+                <span>ZONA DE PERIGO</span>
+              </h4>
+              <p class="text-[7px] text-red-300/70 mt-0.5" style="font-family:var(--font-pixel);">Apaga todo o progresso e reinicia do zero</p>
+            </div>
+            <button onclick="window.game.resetProgress()" class="pixel-btn px-2.5 py-1 text-[8.5px] font-bold bg-red-950 hover:bg-red-900 text-red-300 border border-red-600 shrink-0" style="font-family:var(--font-pixel);">
+              RESETAR
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rodapé do Modal -->
+      <div class="pt-2 border-t border-slate-800 flex justify-end shrink-0">
+        <button onclick="window.game.closeSettings()" class="pixel-btn px-4 py-1.5 bg-slate-800 text-slate-300 border-slate-600 text-[9px] hover:bg-slate-700" style="font-family:var(--font-pixel);">
+          FECHAR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MODAL DOS OLHOS DE PEIXE (META-PROGRESSÃO 00:00) ═══════════ -->
+  <div id="fish-eyes-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border-4 border-cyan-400 p-4 max-w-lg w-full space-y-3 max-h-[92vh] flex flex-col" style="box-shadow:6px 6px 0 #000;">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b-2 border-cyan-900/80 pb-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex"><svg class="w-5 h-5" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="1" fill="#38bdf8"/><rect x="1" y="2" width="10" height="8" fill="#0284c7"/><rect x="0" y="4" width="12" height="4" fill="#0369a1"/><rect x="2" y="3" width="8" height="6" fill="#f8fafc"/><rect x="4" y="4" width="4" height="4" fill="#0f172a"/><rect x="5" y="4" width="2" height="2" fill="#38bdf8"/><rect x="6" y="5" width="1" height="1" fill="#ffffff"/><rect x="3" y="10" width="6" height="1" fill="#38bdf8"/></svg></span>
+          <div>
+            <h3 class="text-xs font-bold text-cyan-300" style="font-family:var(--font-pixel);">SANTUÁRIO DOS OLHOS DE PEIXE</h3>
+            <p class="text-[7.5px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Meta-progressão diária inspirada nos Torrões de Açúcar</p>
+          </div>
+        </div>
+        <button onclick="window.game.closeFishEyesModal()" class="text-slate-400 hover:text-white text-lg leading-none cursor-pointer">✕</button>
+      </div>
+
+      <!-- Resumo de Olhos & Próxima Virada -->
+      <div class="bg-slate-950/90 border-2 border-cyan-900/60 p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 bg-cyan-950/60 border-2 border-cyan-400 flex items-center justify-center shrink-0" style="box-shadow:2px 2px 0 #000;">
+            <svg class="w-6 h-6 animate-pulse" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="1" fill="#38bdf8"/><rect x="1" y="2" width="10" height="8" fill="#0284c7"/><rect x="0" y="4" width="12" height="4" fill="#0369a1"/><rect x="2" y="3" width="8" height="6" fill="#f8fafc"/><rect x="4" y="4" width="4" height="4" fill="#0f172a"/><rect x="5" y="4" width="2" height="2" fill="#38bdf8"/><rect x="6" y="5" width="1" height="1" fill="#ffffff"/><rect x="3" y="10" width="6" height="1" fill="#38bdf8"/></svg>
+          </div>
+          <div>
+            <div class="text-[11px] font-bold text-cyan-200 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+              <span id="fe-available-count" class="text-amber-300 text-sm">0</span>
+              <span>OLHO(S) DISPONÍVEL(IS)</span>
+            </div>
+            <p class="text-[7.5px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Escolha abaixo onde alocar cada olho</p>
+          </div>
+        </div>
+
+        <div class="text-right sm:text-right bg-slate-900/80 px-2.5 py-1.5 border border-slate-800 shrink-0">
+          <div class="text-[7px] text-slate-400 uppercase" style="font-family:var(--font-pixel);">Próximo Olho em:</div>
+          <div id="fe-next-timer" class="text-xs font-bold text-amber-400 mt-0.5" style="font-family:var(--font-pixel);">--:--:--</div>
+          <div class="text-[6.5px] text-slate-500 mt-0.5" style="font-family:var(--font-pixel);">(Sempre às 00:00)</div>
+        </div>
+      </div>
+
+      <!-- Explicação -->
+      <div class="bg-cyan-950/20 border border-cyan-800/40 p-2 text-[7.5px] text-cyan-300/90 leading-relaxed shrink-0" style="font-family:var(--font-pixel);">
+        ★ <b>Como funciona:</b> A cada dia real após a meia-noite (00:00), você ganha <b>1 Olho de Peixe</b>. Escolha qual buff quer melhorar! Cada olho investido concede <b>+1% de bônus permanente</b> e <b>expande o teto (cap)</b> daquele atributo além dos 200%!
+      </div>
+
+      <!-- Grid de 4 Atributos Escolhíveis -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto flex-1 min-h-0 pr-1">
+        <!-- Atributo 1: Ouro -->
+        <div class="bg-slate-950 border-2 border-amber-900/50 p-2.5 flex flex-col justify-between space-y-2">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-bold text-amber-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+                <span>🪙</span> MULTIPLICADOR DE OURO
+              </span>
+              <span id="fe-lvl-gold" class="text-[8px] font-bold text-amber-400 bg-amber-950/60 px-1.5 py-0.5 border border-amber-800/60" style="font-family:var(--font-pixel);">0 Olhos</span>
+            </div>
+            <div class="text-[7.5px] text-slate-300 mt-1.5 space-y-0.5" style="font-family:var(--font-pixel);">
+              <div>Bônus Atual: <b id="fe-bonus-gold" class="text-amber-300">+0%</b></div>
+              <div>Cap Máximo: <b id="fe-cap-gold" class="text-amber-300">200%</b> <span class="text-[6.5px] text-slate-500">(Base: 200%)</span></div>
+            </div>
+          </div>
+          <button id="btn-fe-invest-gold" onclick="window.game.allocateFishEye('gold')" class="pixel-btn w-full py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-[8px] flex items-center justify-center gap-1 cursor-pointer transition-colors" style="font-family:var(--font-pixel);">
+            <span>+1</span> ESCOLHER OURO
+          </button>
+        </div>
+
+        <!-- Atributo 2: Sorte -->
+        <div class="bg-slate-950 border-2 border-emerald-900/50 p-2.5 flex flex-col justify-between space-y-2">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-bold text-emerald-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+                <span>🍀</span> BÔNUS DE SORTE
+              </span>
+              <span id="fe-lvl-luck" class="text-[8px] font-bold text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 border border-emerald-800/60" style="font-family:var(--font-pixel);">0 Olhos</span>
+            </div>
+            <div class="text-[7.5px] text-slate-300 mt-1.5 space-y-0.5" style="font-family:var(--font-pixel);">
+              <div>Bônus Atual: <b id="fe-bonus-luck" class="text-emerald-300">+0%</b></div>
+              <div>Cap Máximo: <b id="fe-cap-luck" class="text-emerald-300">200%</b> <span class="text-[6.5px] text-slate-500">(Base: 200%)</span></div>
+            </div>
+          </div>
+          <button id="btn-fe-invest-luck" onclick="window.game.allocateFishEye('luck')" class="pixel-btn w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-[8px] flex items-center justify-center gap-1 cursor-pointer transition-colors" style="font-family:var(--font-pixel);">
+            <span>+1</span> ESCOLHER SORTE
+          </button>
+        </div>
+
+        <!-- Atributo 3: Velocidade -->
+        <div class="bg-slate-950 border-2 border-cyan-900/50 p-2.5 flex flex-col justify-between space-y-2">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-bold text-cyan-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+                <span>⚡</span> VELOCIDADE DE PESCA
+              </span>
+              <span id="fe-lvl-speed" class="text-[8px] font-bold text-cyan-400 bg-cyan-950/60 px-1.5 py-0.5 border border-cyan-800/60" style="font-family:var(--font-pixel);">0 Olhos</span>
+            </div>
+            <div class="text-[7.5px] text-slate-300 mt-1.5 space-y-0.5" style="font-family:var(--font-pixel);">
+              <div>Bônus Atual: <b id="fe-bonus-speed" class="text-cyan-300">+0%</b></div>
+              <div>Cap Máximo: <b id="fe-cap-speed" class="text-cyan-300">60%</b> <span class="text-[6.5px] text-slate-500">(Base: 60%)</span></div>
+            </div>
+          </div>
+          <button id="btn-fe-invest-speed" onclick="window.game.allocateFishEye('speed')" class="pixel-btn w-full py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-[8px] flex items-center justify-center gap-1 cursor-pointer transition-colors" style="font-family:var(--font-pixel);">
+            <span>+1</span> ESCOLHER VELOCIDADE
+          </button>
+        </div>
+
+        <!-- Atributo 4: Pesca Dupla -->
+        <div class="bg-slate-950 border-2 border-purple-900/50 p-2.5 flex flex-col justify-between space-y-2">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-bold text-purple-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+                <span>🎣</span> CHANCE DE PESCA DUPLA
+              </span>
+              <span id="fe-lvl-double" class="text-[8px] font-bold text-purple-400 bg-purple-950/60 px-1.5 py-0.5 border border-purple-800/60" style="font-family:var(--font-pixel);">0 Olhos</span>
+            </div>
+            <div class="text-[7.5px] text-slate-300 mt-1.5 space-y-0.5" style="font-family:var(--font-pixel);">
+              <div>Bônus Atual: <b id="fe-bonus-double" class="text-purple-300">+0%</b></div>
+              <div>Cap Máximo: <b id="fe-cap-double" class="text-purple-300">60%</b> <span class="text-[6.5px] text-slate-500">(Base: 60%)</span></div>
+            </div>
+          </div>
+          <button id="btn-fe-invest-double" onclick="window.game.allocateFishEye('double')" class="pixel-btn w-full py-1.5 bg-purple-600 hover:bg-purple-500 text-slate-950 font-bold text-[8px] flex items-center justify-center gap-1 cursor-pointer transition-colors" style="font-family:var(--font-pixel);">
+            <span>+1</span> ESCOLHER DUPLA
+          </button>
+        </div>
+      </div>
+
+      <!-- Rodapé do Modal -->
+      <div class="pt-2 border-t border-slate-800 flex items-center justify-between shrink-0">
+        <button onclick="window.game.resetFishEyes()" title="Devolve todos os Olhos investidos para o saldo disponível" class="pixel-btn px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-600/50 text-[8px]" style="font-family:var(--font-pixel);">
+          ↺ REDISTRIBUIR OLHOS
+        </button>
+        <button onclick="window.game.closeFishEyesModal()" class="pixel-btn px-4 py-1.5 bg-slate-800 text-slate-300 border-slate-600 text-[9px] hover:bg-slate-700" style="font-family:var(--font-pixel);">
+          FECHAR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MODAL DE PATCH NOTES (NOTAS DE ATUALIZAÇÃO) ═══════════ -->
+  <div id="patch-notes-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border-4 border-cyan-400 p-4 max-w-lg w-full space-y-3 max-h-[92vh] flex flex-col" style="box-shadow:6px 6px 0 #000;">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b-2 border-cyan-900/80 pb-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex">
+            <svg class="w-5 h-5 text-cyan-400" viewBox="0 0 12 12" style="image-rendering:pixelated;">
+              <rect x="2" y="1" width="8" height="10" fill="#0284c7"/>
+              <rect x="3" y="2" width="6" height="8" fill="#f8fafc"/>
+              <rect x="4" y="3" width="4" height="1" fill="#0284c7"/>
+              <rect x="4" y="5" width="4" height="1" fill="#0284c7"/>
+              <rect x="4" y="7" width="2" height="1" fill="#0284c7"/>
+            </svg>
+          </span>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h3 class="text-xs font-bold text-cyan-300" style="font-family:var(--font-pixel);">NOTAS DE ATUALIZAÇÃO</h3>
+              <span class="px-1.5 py-0.2 bg-amber-500/20 border border-amber-400/60 text-amber-300 text-[7px] font-bold" style="font-family:var(--font-pixel);">HOJE</span>
+            </div>
+            <p class="text-[7.5px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Confira todas as novidades, melhorias e balanceamentos recentes</p>
+          </div>
+        </div>
+        <button onclick="window.game.closePatchNotesModal()" class="text-slate-400 hover:text-white text-lg leading-none cursor-pointer">✕</button>
+      </div>
+
+      <!-- Lista de Atualizações com Scroll -->
+      <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-[8.5px] text-slate-300" style="font-family:var(--font-pixel);">
+
+        <!-- Cartão 1: Olhos de Peixe -->
+        <div class="bg-slate-950/80 border-2 border-cyan-900/80 p-2.5 space-y-1.5" style="box-shadow:2px 2px 0 #000;">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-amber-300 font-bold text-[9.5px]">
+              <span>👁️ SANTUÁRIO DOS OLHOS DE PEIXE</span>
+            </div>
+            <span class="text-[7px] bg-cyan-950 border border-cyan-600/60 text-cyan-300 px-1 py-0.5">META-PROGRESSÃO</span>
+          </div>
+          <p class="text-slate-300 text-[8px] leading-relaxed">
+            Inspirado nos <i>Torrões de Açúcar</i> do Cookie Clicker:
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-slate-400 text-[7.5px] leading-normal pl-1">
+            <li><b class="text-amber-300">Recompensa Diária às 00:00:</b> Ganhe 1 Olho de Peixe a cada dia real que passa (com acúmulo de dias offline).</li>
+            <li><b class="text-amber-300">Escolha Manual de Atributos:</b> Você escolhe onde colocar cada olho: Ouro (+1%), Sorte (+1%), Velocidade (+1%) ou Pesca Dupla (+1%).</li>
+            <li><b class="text-amber-300">Cap Base em 200%:</b> Ouro e Sorte agora começam com cap de 200% e expandem dinamicamente (+1% de cap por olho investido).</li>
+            <li><b class="text-amber-300">Redistribuição Gratuita:</b> Botão (↺) para devolver e realocar os olhos livremente a qualquer momento.</li>
+          </ul>
+        </div>
+
+        <!-- Cartão 2: Mergulhador Amigo -->
+        <div class="bg-slate-950/80 border-2 border-emerald-900/80 p-2.5 space-y-1.5" style="box-shadow:2px 2px 0 #000;">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-emerald-300 font-bold text-[9.5px]">
+              <span>🤿 MERGULHADOR AMIGO</span>
+            </div>
+            <span class="text-[7px] bg-emerald-950 border border-emerald-600/60 text-emerald-300 px-1 py-0.5">NOVO VISUAL</span>
+          </div>
+          <p class="text-slate-300 text-[8px] leading-relaxed">
+            O antigo Ajudante Robô agora é o carismático <b>Mergulhador Amigo</b>:
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-slate-400 text-[7.5px] leading-normal pl-1">
+            <li><b class="text-emerald-300">Companheiro no Lago:</b> Quando o mergulhador estiver ativado (ON), ele aparece nadando no fundo do lago em tempo real, batendo seus pés de pato!</li>
+            <li><b class="text-emerald-300">Efeitos Aquáticos:</b> Solta pequenas bolhas de ar periódicas de oxigênio que flutuam até a superfície.</li>
+            <li><b class="text-emerald-300">Novo Ícone:</b> Equipamento de mergulho retrô pixel art na loja de melhorias.</li>
+          </ul>
+        </div>
+
+        <!-- Cartão 3: Ciclo de Horário de 5 Minutos -->
+        <div class="bg-slate-950/80 border-2 border-amber-900/80 p-2.5 space-y-1.5" style="box-shadow:2px 2px 0 #000;">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-amber-300 font-bold text-[9.5px]">
+              <span>🕒 CICLO DO DIA (5 MINUTOS)</span>
+            </div>
+            <span class="text-[7px] bg-amber-950 border border-amber-600/60 text-amber-300 px-1 py-0.5">ATMOSFERA</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-400 text-[7.5px] leading-normal pl-1">
+            <li><b class="text-amber-300">Ciclo Natural Persistente:</b> Rotação contínua entre Dia ☀️, Pôr do Sol 🌅 e Noite 🌙 que agora salva e continua exatamente de onde parou ao dar F5.</li>
+            <li><b class="text-amber-300">Consulta de Tempo Restante:</b> Clique no ícone de horário no topo para consultar o horário atual e quantos minutos/segundos faltam para a próxima virada.</li>
+            <li><b class="text-amber-300">Comandos em Inglês:</b> Para testes de dev no console: <code class="text-cyan-300 font-mono">skiptime</code>, <code class="text-cyan-300 font-mono">skip [phase]</code>, <code class="text-cyan-300 font-mono">midnight</code>, <code class="text-cyan-300 font-mono">fisheye</code>.</li>
+          </ul>
+        </div>
+
+        <!-- Cartão 4: Aquário & Peixe Secreto -->
+        <div class="bg-slate-950/80 border-2 border-purple-900/80 p-2.5 space-y-1.5" style="box-shadow:2px 2px 0 #000;">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-purple-300 font-bold text-[9.5px]">
+              <span>🐠 AQUÁRIO, AURAS & PEIXE SECRETO</span>
+            </div>
+            <span class="text-[7px] bg-purple-950 border border-purple-600/60 text-purple-300 px-1 py-0.5">VISUAL & QOL</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-400 text-[7.5px] leading-normal pl-1">
+            <li><b class="text-purple-300">Auras Vivas no Aquário:</b> Os peixes guardados no aquário agora recebem as mesmas auras luminosas e efeitos pulsantes dos peixes do balde.</li>
+            <li><b class="text-purple-300">Ordenação por Raridade Corrigida:</b> O peixe SECRETO agora fica no topo absoluto (1º lugar) ao ordenar por raridade.</li>
+            <li><b class="text-purple-300">Maestria Cósmica (% Cósmica):</b> O Peixe Secreto conta com bônus cósmico simultâneo de Ouro (+100%), Sorte (+60%) e Pesca Dupla (+40%), turbinado em 1.5x no Aquário!</li>
+          </ul>
+        </div>
+
+        <!-- Cartão 5: Configurações Unificadas -->
+        <div class="bg-slate-950/80 border-2 border-slate-700 p-2.5 space-y-1.5" style="box-shadow:2px 2px 0 #000;">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-slate-200 font-bold text-[9.5px]">
+              <span>⚙️ CONFIGURAÇÕES UNIFICADAS</span>
+            </div>
+            <span class="text-[7px] bg-slate-800 border border-slate-600 text-slate-300 px-1 py-0.5">AJUSTES</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-400 text-[7.5px] leading-normal pl-1">
+            <li><b class="text-slate-200">Botão Único de Engrenagem:</b> Substituiu os ícones soltos de som, reset e console por um modal centralizado e elegante.</li>
+            <li><b class="text-slate-200">Opções Visuais:</b> Agora é possível desativar/ativar os efeitos visuais e auras dos peixes caso prefira um visual mais discreto.</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Rodapé do Modal -->
+      <div class="pt-2 border-t border-slate-800 flex justify-end shrink-0">
+        <button onclick="window.game.closePatchNotesModal()" class="pixel-btn px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-[9px]" style="font-family:var(--font-pixel);">
+          ENTENDIDO
+        </button>
+      </div>
     </div>
   </div>
 

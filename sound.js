@@ -101,14 +101,22 @@ class SoundManager {
       osc2.start(now + 0.1);
       osc2.stop(now + 0.3);
     } else {
-      // Fanfarra épica / lendária com acordes
-      const notes = rarity === 'MITICO' ? [523.25, 659.25, 783.99, 1046.50, 1318.51] : [440, 554.37, 659.25, 880];
+      // Fanfarra épica / lendária / mítica / secreta com acordes
+      let notes = [440, 554.37, 659.25, 880];
+      let oscType = 'triangle';
+      if (rarity === 'SECRETO') {
+        notes = [220, 329.63, 440, 554.37, 659.25, 880, 1108.73, 1318.51];
+        oscType = 'sawtooth';
+      } else if (rarity === 'MITICO') {
+        notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+        oscType = 'sawtooth';
+      }
       notes.forEach((freq, idx) => {
         const osc = this.ctx.createOscillator();
         const g = this.ctx.createGain();
         const startTime = now + (idx * 0.08);
 
-        osc.type = rarity === 'MITICO' ? 'sawtooth' : 'triangle';
+        osc.type = oscType;
         osc.frequency.setValueAtTime(freq, startTime);
 
         g.gain.setValueAtTime(0, startTime);
@@ -218,6 +226,9 @@ class SoundManager {
 
   vibrateCatch(rarity = 'COMUM') {
     switch(rarity) {
+      case 'SECRETO':
+        this.vibrate([80, 40, 100, 40, 140, 40, 220]);
+        break;
       case 'MITICO':
         this.vibrate([60, 40, 80, 40, 150]);
         break;

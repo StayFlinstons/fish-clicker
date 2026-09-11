@@ -52,13 +52,33 @@ class FishingGame {
     this.autoSellTimer = null;
     this.nextAutoSellTime = 0;
     this.nextGoldenFishAutoCatchTime = 0;
+    this.autoFisherEnabled = true;
+    this.autoSellerEnabled = true;
+
+    // Configurações do Jogo (Áudio, Visual, etc.)
+    this.settings = {
+      sound: true,
+      fishGlow: true,
+      fishAnimations: true,
+      waterParticles: true,
+      scanlines: true
+    };
 
     // Álbum de Peixes (Enciclopédia)
     this.discoveredFish = {}; // { [id]: { maxWeight, count } }
 
     // Ciclo Dia / Pôr do Sol / Noite
-    this.timeOfDay = 'night'; // 'day' | 'sunset' | 'night'
+    this.timeOfDay = 'day'; // 'day' | 'sunset' | 'night'
+    this.timeOffsetMs = 0;
+    this.savedPhaseMsRemaining = null;
+    this.timeSavedAt = null;
     this.lastActiveTime = Date.now();
+
+    // Meta-progressão: Olhos de Peixe (Inspirado no Cookie Clicker - 00:00)
+    this.fishEyesCount = 0;
+    this.fishEyesTotal = 0;
+    this.fishEyesAllocated = { gold: 0, luck: 0, speed: 0, double: 0 };
+    this.lastFishEyeDate = null;
 
     // Fim do Capítulo 1 / Portal Dimensional
     this.chapter1Completed = false;
@@ -87,12 +107,13 @@ class FishingGame {
 
   init() {
     this.loadGame();
+    this.applySettings();
+    this.initPixelArt();
     this.initTimeOfDay();
     this.setupEventListeners();
     this.renderAll();
     this.startAutoFisher();
     this.startAutoSeller();
-    this.initPixelArt();
     this.initGoldenFish();
     this.initConsole();
     this.startTempBuffLoop();
@@ -101,6 +122,9 @@ class FishingGame {
     this.updateAchievementsBadge();
     this.checkChapter1Completion(false);
     this.updateChapter1Badge();
+    this.checkMidnightFishEye(false);
+    this.startMidnightTimerLoop();
+    this.renderFishEyesBadge();
     this.initPWA();
     setInterval(() => this.saveGame(), 5000);
     window.addEventListener('beforeunload', () => this.saveGame());
@@ -160,7 +184,9 @@ class FishingGame {
     const waterCanvas = document.getElementById('water-particles-canvas');
     if (waterCanvas) {
       this.waterRenderer = new PixelWaterRenderer(waterCanvas);
+      this.waterRenderer.setTimeOfDay(this.timeOfDay);
       ['lambari','carpa','truta','robalo'].forEach(f => this.waterRenderer.addSwimmingFish(f));
+      this.updateDiverVisual();
       const animLoop = () => {
         this.waterRenderer.update();
         requestAnimationFrame(animLoop);
@@ -201,26 +227,177 @@ class FishingGame {
   }
 
   // ═══════════════════════════════════════════
-  // CICLO DIA / TARDE / NOITE
+  // CICLO DIA / TARDE / NOITE (AUTOMÁTICO 5 MIN)
   // ═══════════════════════════════════════════
-  initTimeOfDay() {
-    // Se não tiver salvo, define com base na hora local do jogador
-    const hour = new Date().getHours();
-    if (!this.timeOfDay) {
-      if (hour >= 6 && hour < 17) this.timeOfDay = 'day';
-      else if (hour >= 17 && hour < 20) this.timeOfDay = 'sunset';
-      else this.timeOfDay = 'night';
-    }
-    this.applyTimeOfDay();
+  getRawMsRemaining() {
+    const PHASE_DURATION_MS = 5 * 60 * 1000;
+    const virtualNow = Date.now() + (this.timeOffsetMs || 0);
+    return PHASE_DURATION_MS - (virtualNow % PHASE_DURATION_MS);
   }
 
-  toggleTimeOfDay() {
-    const cycle = { day: 'sunset', sunset: 'night', night: 'day' };
-    this.timeOfDay = cycle[this.timeOfDay] || 'day';
-    sound.playClick();
+  getCycleTimeOfDay() {
+    // Cada fase dura exatamente 5 minutos (300.000 ms)
+    // Sincronizado globalmente via timestamp com suporte a offset de pulo: 0 = day, 1 = sunset, 2 = night
+    const PHASE_DURATION_MS = 5 * 60 * 1000;
+    const phases = ['day', 'sunset', 'night'];
+    const virtualNow = Date.now() + (this.timeOffsetMs || 0);
+    const phaseIndex = Math.floor(virtualNow / PHASE_DURATION_MS) % phases.length;
+    return phases[phaseIndex];
+  }
+
+  getTimeRemainingInPhase() {
+    const msRemaining = this.getRawMsRemaining();
+    const min = Math.floor(msRemaining / 60000);
+    const sec = Math.floor((msRemaining % 60000) / 1000);
+    return {
+      min,
+      sec,
+      text: `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+    };
+  }
+
+  skipTimeOfDay() {
+    const PHASE_DURATION_MS = 5 * 60 * 1000;
+    const msRemaining = this.getRawMsRemaining();
+    // Adiciona o tempo restante da fase atual + 50ms para avançar para o início da próxima
+    this.timeOffsetMs = (this.timeOffsetMs || 0) + msRemaining + 50;
+    const newPhase = this.getCycleTimeOfDay();
+    this.timeOfDay = newPhase;
     this.applyTimeOfDay();
+    if (typeof sound !== 'undefined') {
+      sound.playUpgrade?.() || sound.playClick?.();
+    }
+    const msgs = {
+      day: 'Horário pulado para: DIA ☀️ (05:00)',
+      sunset: 'Horário pulado para: PÔR DO SOL 🌅 (05:00)',
+      night: 'Horário pulado para: NOITE 🌙 (05:00)'
+    };
+    this.showToast(msgs[newPhase] || `Horário pulado para: ${newPhase.toUpperCase()}`, 'info');
+    this.saveGame();
+    return newPhase;
+  }
+
+  showTimeOfDayStatus() {
+    const rem = this.getTimeRemainingInPhase();
+    const names = { day: 'DIA ☀️', sunset: 'PÔR DO SOL 🌅', night: 'NOITE 🌙' };
+    const nextNames = { day: 'Pôr do Sol 🌅', sunset: 'Noite 🌙', night: 'Dia ☀️' };
+    const currName = names[this.timeOfDay] || (this.timeOfDay || 'DIA').toUpperCase();
+    const nextName = nextNames[this.timeOfDay] || 'Próximo';
+    sound.playClick?.();
+    this.showToast(`Horário atual: ${currName} | Muda para ${nextName} em ${rem.text} (aguarde os 5m)`, 'info');
+  }
+
+  updateDiverVisual() {
+    const isDiverActive = (this.upgradeLevels?.auto_pescador || 0) > 0 && !!this.autoFisherEnabled;
+    this.waterRenderer?.setDiverActive(isDiverActive);
+  }
+
+  setTimeOfDay(targetPhase) {
+    const phases = ['day', 'sunset', 'night'];
+    const p = (targetPhase || '').toLowerCase();
+    if (!phases.includes(p)) return false;
+    const PHASE_DURATION_MS = 5 * 60 * 1000;
+    const currPhase = this.getCycleTimeOfDay();
+    const currIdx = phases.indexOf(currPhase);
+    const targetIdx = phases.indexOf(p);
+    const neededSteps = (targetIdx - currIdx + phases.length) % phases.length;
+
+    const msRemaining = this.getRawMsRemaining();
+    if (neededSteps === 0) {
+      // Reinicia os 5 minutos da fase atual
+      const virtualNow = Date.now() + (this.timeOffsetMs || 0);
+      const elapsed = virtualNow % PHASE_DURATION_MS;
+      this.timeOffsetMs = (this.timeOffsetMs || 0) - elapsed;
+    } else {
+      this.timeOffsetMs = (this.timeOffsetMs || 0) + msRemaining + (neededSteps - 1) * PHASE_DURATION_MS + 50;
+    }
+
+    this.timeOfDay = p;
+    this.applyTimeOfDay();
+    if (typeof sound !== 'undefined') {
+      sound.playUpgrade?.() || sound.playClick?.();
+    }
+    const msgs = {
+      day: 'Horário definido para: DIA ☀️ (05:00)',
+      sunset: 'Horário definido para: PÔR DO SOL 🌅 (05:00)',
+      night: 'Horário definido para: NOITE 🌙 (05:00)'
+    };
+    this.showToast(msgs[p] || `Horário: ${p.toUpperCase()}`, 'info');
+    this.saveGame();
+    return true;
+  }
+
+  initTimeOfDay() {
+    const phases = ['day', 'sunset', 'night'];
+    const PHASE_DURATION_MS = 5 * 60 * 1000;
+    const cycleLen = phases.length * PHASE_DURATION_MS;
+
+    // Se temos um horário salvo válido, garantimos que ao dar F5 voltamos exatamente para ele!
+    if (this.timeOfDay && phases.includes(this.timeOfDay)) {
+      const targetIndex = phases.indexOf(this.timeOfDay);
+      let rem = this.savedPhaseMsRemaining;
+
+      if (typeof rem !== 'number' || isNaN(rem) || rem <= 0) {
+        rem = PHASE_DURATION_MS;
+      } else if (this.timeSavedAt) {
+        const elapsed = Date.now() - this.timeSavedAt;
+        if (elapsed > 0) {
+          if (rem - elapsed > 1000) {
+            rem = rem - elapsed;
+          } else {
+            rem = PHASE_DURATION_MS;
+          }
+        }
+      }
+
+      const now = Date.now();
+      const currentCycleBase = Math.floor(now / cycleLen) * cycleLen;
+      let targetVirtualNow = currentCycleBase + targetIndex * PHASE_DURATION_MS + (PHASE_DURATION_MS - rem);
+      while (targetVirtualNow < now) {
+        targetVirtualNow += cycleLen;
+      }
+      this.timeOffsetMs = targetVirtualNow - now;
+    } else {
+      this.timeOfDay = this.getCycleTimeOfDay();
+    }
+
+    this.applyTimeOfDay();
+    this.startTimeCycleLoop();
+  }
+
+  startTimeCycleLoop() {
+    if (this._timeCycleTimer) clearInterval(this._timeCycleTimer);
+
+    // Checa a cada segundo se o horário deve virar
+    this._timeCycleTimer = setInterval(() => {
+      const newTime = this.getCycleTimeOfDay();
+      const remaining = this.getTimeRemainingInPhase();
+      this.updateTimeIndicatorTooltip(remaining);
+
+      if (newTime !== this.timeOfDay) {
+        this.timeOfDay = newTime;
+        this.applyTimeOfDay();
+        this.saveGame();
+        const msgs = {
+          day: 'O sol nasceu! Agora é DIA ☀️',
+          sunset: 'O entardecer chegou! Agora é PÔR DO SOL 🌅',
+          night: 'A noite caiu! Agora é NOITE 🌙'
+        };
+        this.showToast(msgs[newTime] || `Horário: ${newTime.toUpperCase()}`, 'info');
+      }
+    }, 1000);
+
+    this.updateTimeIndicatorTooltip(this.getTimeRemainingInPhase());
+  }
+
+  updateTimeIndicatorTooltip(remaining) {
+    const btn = document.getElementById('btn-toggle-time');
+    if (!btn) return;
     const names = { day: 'DIA', sunset: 'PÔR DO SOL', night: 'NOITE' };
-    this.showToast(`Horário: ${names[this.timeOfDay]}`, 'info');
+    const nextNames = { day: 'Pôr do Sol', sunset: 'Noite', night: 'Dia' };
+    const currName = names[this.timeOfDay] || this.timeOfDay;
+    const nextName = nextNames[this.timeOfDay] || 'Próximo';
+    btn.title = `Horário do Jogo: ${currName} (Muda para ${nextName} em ${remaining.text} - ciclo de 5m)`;
   }
 
   applyTimeOfDay() {
@@ -228,7 +405,11 @@ class FishingGame {
     const lakeArea = document.getElementById('fishing-lake-area');
 
     if (btn) {
-      btn.innerHTML = PIXEL_ICONS[this.timeOfDay] || PIXEL_ICONS.moon;
+      const icon = this.timeOfDay === 'day' ? (PIXEL_ICONS.day || PIXEL_ICONS.sun) :
+                   this.timeOfDay === 'sunset' ? PIXEL_ICONS.sunset :
+                   (PIXEL_ICONS.night || PIXEL_ICONS.moon);
+      btn.innerHTML = icon;
+      this.updateTimeIndicatorTooltip(this.getTimeRemainingInPhase());
     }
 
     if (this.waterRenderer) {
@@ -238,7 +419,8 @@ class FishingGame {
     if (lakeArea) {
       lakeArea.classList.remove('from-[#0a1628]', 'via-[#0c2040]', 'to-[#0e3a5f]',
                                'from-[#38bdf8]', 'via-[#0284c7]', 'to-[#0369a1]',
-                               'from-[#ea580c]', 'via-[#9333ea]', 'to-[#1e1b4b]');
+                               'from-[#ea580c]', 'via-[#9333ea]', 'to-[#1e1b4b]',
+                               'bg-gradient-to-b');
       if (this.timeOfDay === 'day') {
         lakeArea.style.background = 'linear-gradient(to bottom, #7dd3fc, #38bdf8 35%, #0284c7 65%, #0369a1)';
       } else if (this.timeOfDay === 'sunset') {
@@ -254,7 +436,7 @@ class FishingGame {
   // ═══════════════════════════════════════════
   checkOfflineProgress() {
     const autoLevel = this.upgradeLevels.auto_pescador || 0;
-    if (autoLevel <= 0) return; // Precisa do ajudante automático
+    if (autoLevel <= 0 || !this.autoFisherEnabled) return; // Precisa do ajudante automático ligado
 
     const now = Date.now();
     const diffMs = now - (this.lastActiveTime || now);
@@ -452,6 +634,298 @@ class FishingGame {
     sound.playUpgrade();
     this.showToast('Perfil atualizado com sucesso!', 'success');
     this.closeProfile();
+  }
+
+  // ═══════════════════════════════════════════
+  // SISTEMA DE OLHOS DE PEIXE (META-PROGRESSÃO 00:00)
+  // ═══════════════════════════════════════════
+  getLocalDateKey(d = new Date()) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  getTimeUntilMidnight() {
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+    const msRemaining = Math.max(0, midnight.getTime() - now.getTime());
+    const h = Math.floor(msRemaining / (1000 * 60 * 60));
+    const m = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((msRemaining % (1000 * 60)) / 1000);
+    return {
+      msRemaining,
+      h, m, s,
+      text: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    };
+  }
+
+  checkMidnightFishEye(notify = true) {
+    const todayKey = this.getLocalDateKey();
+    if (!this.lastFishEyeDate) {
+      this.lastFishEyeDate = todayKey;
+      this.fishEyesCount = (this.fishEyesCount || 0) + 1;
+      this.fishEyesTotal = (this.fishEyesTotal || 0) + 1;
+      this.saveGame();
+      this.renderFishEyesBadge();
+      if (notify) {
+        sound.playCatch?.('MITICO') || sound.playUpgrade?.();
+        this.showToast('👁️ Você recebeu seu 1º Olho de Peixe de boas-vindas!', 'success');
+      }
+      return;
+    }
+
+    if (this.lastFishEyeDate !== todayKey) {
+      const last = new Date(this.lastFishEyeDate + 'T00:00:00');
+      const curr = new Date(todayKey + 'T00:00:00');
+      const diffMs = curr.getTime() - last.getTime();
+      const daysPassed = Math.max(1, Math.floor(diffMs / (24 * 60 * 60 * 1000)));
+
+      this.lastFishEyeDate = todayKey;
+      this.fishEyesCount = (this.fishEyesCount || 0) + daysPassed;
+      this.fishEyesTotal = (this.fishEyesTotal || 0) + daysPassed;
+      this.saveGame();
+      this.renderFishEyesBadge();
+      this.renderFishEyesModal();
+
+      sound.playCatch?.('MITICO') || sound.playUpgrade?.();
+      const msg = daysPassed === 1
+        ? '👁️ A meia-noite chegou! Você ganhou 1 Olho de Peixe!'
+        : `👁️ Você esteve ausente por ${daysPassed} dias e recebeu ${daysPassed} Olhos de Peixe!`;
+      this.showToast(msg, 'success');
+    }
+  }
+
+  startMidnightTimerLoop() {
+    if (this._midnightTimer) clearInterval(this._midnightTimer);
+    this._midnightTimer = setInterval(() => {
+      const remaining = this.getTimeUntilMidnight();
+      const timerEl = document.getElementById('fe-next-timer');
+      if (timerEl) timerEl.textContent = remaining.text;
+
+      const todayKey = this.getLocalDateKey();
+      if (this.lastFishEyeDate && this.lastFishEyeDate !== todayKey) {
+        this.checkMidnightFishEye(true);
+      }
+    }, 1000);
+  }
+
+  openFishEyesModal() {
+    sound.playClick();
+    this.checkMidnightFishEye(false);
+    this.renderFishEyesBadge();
+    this.renderFishEyesModal();
+    const modal = document.getElementById('fish-eyes-modal');
+    modal?.classList.remove('hidden');
+  }
+
+  closeFishEyesModal() {
+    sound.playClick();
+    const modal = document.getElementById('fish-eyes-modal');
+    modal?.classList.add('hidden');
+  }
+
+  openPatchNotesModal() {
+    sound.playClick?.();
+    const modal = document.getElementById('patch-notes-modal');
+    modal?.classList.remove('hidden');
+  }
+
+  closePatchNotesModal() {
+    sound.playClick?.();
+    const modal = document.getElementById('patch-notes-modal');
+    modal?.classList.add('hidden');
+  }
+
+  renderFishEyesBadge() {
+    const badge = document.getElementById('fish-eyes-badge');
+    if (badge) {
+      const count = this.fishEyesCount || 0;
+      badge.textContent = `${count}`;
+      if (count > 0) {
+        badge.className = 'text-[8px] font-bold text-amber-300 animate-pulse';
+      } else {
+        badge.className = 'text-[8px] font-bold text-cyan-300';
+      }
+    }
+  }
+
+  renderFishEyesModal() {
+    const availEl = document.getElementById('fe-available-count');
+    if (availEl) availEl.textContent = this.fishEyesCount || 0;
+
+    const alloc = this.fishEyesAllocated || { gold: 0, luck: 0, speed: 0, double: 0 };
+
+    // Ouro: Base cap 200% (2.0) + 1% por olho
+    const goldLvl = alloc.gold || 0;
+    const goldBonus = goldLvl * 1;
+    const goldCap = 200 + goldBonus;
+    const lvlGold = document.getElementById('fe-lvl-gold');
+    if (lvlGold) lvlGold.textContent = `${goldLvl} Olho(s)`;
+    const bonusGold = document.getElementById('fe-bonus-gold');
+    if (bonusGold) bonusGold.textContent = `+${goldBonus}%`;
+    const capGold = document.getElementById('fe-cap-gold');
+    if (capGold) capGold.textContent = `${goldCap}%`;
+
+    // Sorte: Base cap 200% (2.0) + 1% por olho
+    const luckLvl = alloc.luck || 0;
+    const luckBonus = luckLvl * 1;
+    const luckCap = 200 + luckBonus;
+    const lvlLuck = document.getElementById('fe-lvl-luck');
+    if (lvlLuck) lvlLuck.textContent = `${luckLvl} Olho(s)`;
+    const bonusLuck = document.getElementById('fe-bonus-luck');
+    if (bonusLuck) bonusLuck.textContent = `+${luckBonus}%`;
+    const capLuck = document.getElementById('fe-cap-luck');
+    if (capLuck) capLuck.textContent = `${luckCap}%`;
+
+    // Velocidade: Base cap 60% + 1% por olho
+    const speedLvl = alloc.speed || 0;
+    const speedBonus = speedLvl * 1;
+    const speedCap = Math.min(85, 60 + speedBonus);
+    const lvlSpeed = document.getElementById('fe-lvl-speed');
+    if (lvlSpeed) lvlSpeed.textContent = `${speedLvl} Olho(s)`;
+    const bonusSpeed = document.getElementById('fe-bonus-speed');
+    if (bonusSpeed) bonusSpeed.textContent = `+${speedBonus}%`;
+    const capSpeed = document.getElementById('fe-cap-speed');
+    if (capSpeed) capSpeed.textContent = `${speedCap}%`;
+
+    // Dupla: Base cap 60% + 1% por olho
+    const doubleLvl = alloc.double || 0;
+    const doubleBonus = doubleLvl * 1;
+    const doubleCap = Math.min(90, 60 + doubleBonus);
+    const lvlDouble = document.getElementById('fe-lvl-double');
+    if (lvlDouble) lvlDouble.textContent = `${doubleLvl} Olho(s)`;
+    const bonusDouble = document.getElementById('fe-bonus-double');
+    if (bonusDouble) bonusDouble.textContent = `+${doubleBonus}%`;
+    const capDouble = document.getElementById('fe-cap-double');
+    if (capDouble) capDouble.textContent = `${doubleCap}%`;
+
+    const timerEl = document.getElementById('fe-next-timer');
+    if (timerEl) timerEl.textContent = this.getTimeUntilMidnight().text;
+  }
+
+  allocateFishEye(attr) {
+    if (!['gold', 'luck', 'speed', 'double'].includes(attr)) return;
+    if ((this.fishEyesCount || 0) <= 0) {
+      sound.playClick?.();
+      this.showToast('Você não possui Olhos de Peixe disponíveis! Aguarde as 00:00.', 'warning');
+      return;
+    }
+
+    this.fishEyesCount--;
+    if (!this.fishEyesAllocated) this.fishEyesAllocated = { gold: 0, luck: 0, speed: 0, double: 0 };
+    this.fishEyesAllocated[attr] = (this.fishEyesAllocated[attr] || 0) + 1;
+
+    sound.playUpgrade?.() || sound.playClick?.();
+    const names = {
+      gold: 'Multiplicador de Ouro (+1% & +1% Cap)',
+      luck: 'Bônus de Sorte (+1% & +1% Cap)',
+      speed: 'Velocidade de Pesca (+1% & +1% Cap)',
+      double: 'Pesca Dupla (+1% & +1% Cap)'
+    };
+    this.showToast(`👁️ +1 Olho investido em ${names[attr]}!`, 'success');
+    this.renderFishEyesBadge();
+    this.renderFishEyesModal();
+    this.renderBuffs();
+    this.renderStats();
+    this.saveGame();
+  }
+
+  resetFishEyes() {
+    const alloc = this.fishEyesAllocated || { gold: 0, luck: 0, speed: 0, double: 0 };
+    const totalAllocated = (alloc.gold || 0) + (alloc.luck || 0) + (alloc.speed || 0) + (alloc.double || 0);
+    if (totalAllocated <= 0) {
+      this.showToast('Nenhum Olho de Peixe foi investido ainda.', 'info');
+      return;
+    }
+
+    this.fishEyesCount = (this.fishEyesCount || 0) + totalAllocated;
+    this.fishEyesAllocated = { gold: 0, luck: 0, speed: 0, double: 0 };
+
+    sound.playClick?.();
+    this.showToast(`↺ ${totalAllocated} Olho(s) de Peixe devolvido(s) para o saldo! Escolha novamente onde alocar.`, 'info');
+    this.renderFishEyesBadge();
+    this.renderFishEyesModal();
+    this.renderBuffs();
+    this.renderStats();
+    this.saveGame();
+  }
+
+  // ═══════════════════════════════════════════
+  // CONFIGURAÇÕES DO JOGO (MODAL)
+  // ═══════════════════════════════════════════
+  openSettings() {
+    sound.playClick();
+    this.renderSettingsModal();
+    const m = document.getElementById('settings-modal');
+    if (m) {
+      m.classList.remove('hidden');
+    }
+  }
+
+  closeSettings() {
+    sound.playClick();
+    const m = document.getElementById('settings-modal');
+    if (m) {
+      m.classList.add('hidden');
+    }
+  }
+
+  toggleSetting(key) {
+    if (this.settings[key] === undefined) return;
+    this.settings[key] = !this.settings[key];
+    sound.playClick();
+    this.applySettings();
+    this.saveGame();
+  }
+
+  applySettings() {
+    // Áudio
+    sound.muted = !this.settings.sound;
+
+    // Auras & Brilhos dos Peixes
+    document.body.classList.toggle('disable-fish-glow', !this.settings.fishGlow);
+
+    // Animações & Pulsação
+    document.body.classList.toggle('disable-fish-animations', !this.settings.fishAnimations);
+
+    // Partículas de Água
+    const waterCanvas = document.getElementById('water-particles-canvas');
+    if (waterCanvas) {
+      waterCanvas.style.display = this.settings.waterParticles ? 'block' : 'none';
+    }
+
+    // Scanlines
+    const lakeArea = document.getElementById('fishing-lake-area');
+    if (lakeArea) {
+      lakeArea.classList.toggle('scanlines', Boolean(this.settings.scanlines));
+    }
+
+    this.renderSettingsModal();
+  }
+
+  renderSettingsModal() {
+    const updateBtn = (id, active) => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.textContent = active ? '● ON' : '○ OFF';
+      btn.className = `px-2.5 py-1 text-[8.5px] font-bold border transition-colors cursor-pointer shrink-0 ${
+        active 
+          ? 'bg-emerald-600 hover:bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]' 
+          : 'bg-red-950/80 hover:bg-red-900 text-red-300 border-red-700'
+      }`;
+    };
+
+    updateBtn('btn-setting-sound', this.settings.sound);
+    updateBtn('btn-setting-fishGlow', this.settings.fishGlow);
+    updateBtn('btn-setting-fishAnimations', this.settings.fishAnimations);
+    updateBtn('btn-setting-waterParticles', this.settings.waterParticles);
+    updateBtn('btn-setting-scanlines', this.settings.scanlines);
+  }
+
+  openConsoleFromSettings() {
+    this.closeSettings();
+    setTimeout(() => this.toggleConsole(true), 120);
   }
 
   // ═══════════════════════════════════════════
@@ -728,6 +1202,7 @@ class FishingGame {
   // ═══════════════════════════════════════════
   openAlbum() {
     sound.playClick();
+    this.switchAlbumTab('fish');
     this.renderAlbum();
     const modal = document.getElementById('album-modal');
     modal?.classList.remove('hidden');
@@ -740,16 +1215,65 @@ class FishingGame {
   }
 
   updateAlbumBadge() {
-    const discoveredCount = Object.keys(this.discoveredFish).length;
-    const total = FISH_LIST.length;
+    const normalFish = FISH_LIST.filter(f => !f.secret);
+    const secretFish = FISH_LIST.filter(f => f.secret);
+    const discoveredNormal = normalFish.filter(f => this.discoveredFish[f.id]).length;
+    const discoveredSecret = secretFish.filter(f => this.discoveredFish[f.id]).length;
+
+    const baseTotal = normalFish.length; // 27
+    const totalDiscovered = discoveredNormal + discoveredSecret;
     const badge = document.getElementById('album-badge');
     const progText = document.getElementById('album-progress-text');
     const progBar = document.getElementById('album-progress-bar');
 
-    const str = `${discoveredCount}/${total}`;
-    if (badge) badge.textContent = str;
-    if (progText) progText.textContent = `${str} (${Math.round((discoveredCount/total)*100)}%)`;
-    if (progBar) progBar.style.width = `${(discoveredCount/total)*100}%`;
+    if (discoveredSecret > 0) {
+      if (badge) {
+        badge.textContent = `${totalDiscovered}/${baseTotal}+`;
+        badge.className = 'text-[8px] font-bold text-red-400 animate-pulse';
+      }
+      if (progText) {
+        progText.innerHTML = `<span class="text-red-400 font-bold">🌌 ${totalDiscovered}/${baseTotal} (+${discoveredSecret} SECRETO)</span>`;
+      }
+      if (progBar) {
+        progBar.style.width = '100%';
+        progBar.className = 'h-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-400 transition-all duration-500';
+      }
+    } else {
+      const str = `${discoveredNormal}/${baseTotal}`;
+      if (badge) {
+        badge.textContent = str;
+        badge.className = 'text-[8px] font-bold text-cyan-300';
+      }
+      if (progText) progText.textContent = `${str} (${Math.round((discoveredNormal/baseTotal)*100)}%)`;
+      if (progBar) {
+        progBar.style.width = `${(discoveredNormal/baseTotal)*100}%`;
+        progBar.className = 'h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500';
+      }
+    }
+  }
+
+  switchAlbumTab(tab) {
+    const tabFish = document.getElementById('tab-album-fish');
+    const tabBuffs = document.getElementById('tab-album-buffs');
+    const viewFish = document.getElementById('album-view-fish');
+    const viewBuffs = document.getElementById('album-view-buffs');
+
+    if (tab === 'buffs') {
+      tabFish?.classList.remove('bg-cyan-900/60', 'text-cyan-300', 'border-cyan-500/80');
+      tabFish?.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-800');
+      tabBuffs?.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-800');
+      tabBuffs?.classList.add('bg-purple-900/60', 'text-purple-300', 'border-purple-500/80');
+      viewFish?.classList.add('hidden');
+      viewBuffs?.classList.remove('hidden');
+    } else {
+      tabBuffs?.classList.remove('bg-purple-900/60', 'text-purple-300', 'border-purple-500/80');
+      tabBuffs?.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-800');
+      tabFish?.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-800');
+      tabFish?.classList.add('bg-cyan-900/60', 'text-cyan-300', 'border-cyan-500/80');
+      viewBuffs?.classList.add('hidden');
+      viewFish?.classList.remove('hidden');
+    }
+    sound.playClick();
   }
 
   renderAlbum() {
@@ -758,30 +1282,60 @@ class FishingGame {
 
     this.updateAlbumBadge();
 
-    grid.innerHTML = FISH_LIST.map(fish => {
+    // Peixes da raridade secreta não aparecem na enciclopédia até serem capturados!
+    const visibleList = FISH_LIST.filter(fish => !fish.secret || this.discoveredFish[fish.id]);
+
+    grid.innerHTML = visibleList.map(fish => {
       const isDiscovered = !!this.discoveredFish[fish.id];
       const data = this.discoveredFish[fish.id];
       const r = RARITIES[fish.rarity] || RARITIES.COMUM;
       const spriteURL = isDiscovered ? this.getFishSpriteURL(fish.icon) : this.getFishSilhouetteURL(fish.icon);
 
+      let timeBadge = '';
+      if (fish.timeExclusive === 'day') {
+        timeBadge = '<span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-amber-300 border-amber-500/80 bg-amber-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">☀️ DIA</span>';
+      } else if (fish.timeExclusive === 'sunset') {
+        timeBadge = '<span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-orange-300 border-orange-500/80 bg-orange-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">🌅 PÔR DO SOL</span>';
+      } else if (fish.timeExclusive === 'night') {
+        timeBadge = '<span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-indigo-300 border-indigo-500/80 bg-indigo-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">🌙 NOITE</span>';
+      }
+
+      const isSecretCard = fish.secret && isDiscovered;
+
       return `
-        <div class="p-2.5 border-2 ${isDiscovered ? 'bg-slate-900/90' : 'bg-slate-950/70 border-slate-800 opacity-60'} flex items-center gap-2.5 pixel-border-thin" style="${isDiscovered ? `border-color:${r.border}; background:${r.bg};` : ''}">
-          <div class="w-12 h-9 shrink-0 flex items-center justify-center bg-slate-950/50 border border-slate-800 p-1">
-            <img src="${spriteURL}" class="w-10 h-7 object-contain ${isDiscovered ? '' : 'brightness-0 contrast-200'}" alt="${fish.name}" style="image-rendering:pixelated;">
+        <div class="p-2.5 sm:p-3 border-2 ${isDiscovered ? 'bg-slate-900/90' : 'bg-slate-950/70 border-slate-800 opacity-60'} flex items-start gap-3 pixel-border-thin min-w-0 ${isSecretCard ? 'shadow-[0_0_16px_rgba(220,38,38,0.45)]' : ''}" style="${isDiscovered ? `border-color:${r.border}; background:${r.bg};` : ''}">
+          <div class="w-14 h-12 shrink-0 flex items-center justify-center ${isSecretCard ? 'bg-black border-2 border-red-600/90 shadow-[0_0_12px_rgba(239,68,68,0.5)]' : 'bg-slate-950/70 border border-slate-800'} p-1 mt-0.5">
+            <img src="${spriteURL}" class="w-12 h-8 object-contain ${isDiscovered ? '' : 'brightness-0 contrast-200'} ${isSecretCard ? 'animate-pulse' : ''}" alt="${fish.name}" style="image-rendering:pixelated;">
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[9px] font-bold ${isDiscovered ? 'text-slate-100' : 'text-slate-500'}" style="font-family:var(--font-pixel);">${isDiscovered ? fish.name : '???'}</span>
-              <span class="text-[7px] font-bold px-1 py-0.5 border" style="font-family:var(--font-pixel);color:${isDiscovered ? r.color : '#64748b'};border-color:${isDiscovered ? r.border : '#334155'};background:rgba(0,0,0,0.5);">${r.label}</span>
+              <span class="text-[10px] sm:text-[11px] font-bold ${isDiscovered ? (isSecretCard ? 'text-red-300' : 'text-slate-100') : 'text-slate-500'} leading-tight break-words" style="font-family:var(--font-pixel);"><span class="text-slate-400 font-normal">#${fish.numId || '?'}</span> ${isDiscovered ? fish.name : '???'}</span>
+              ${isSecretCard ? `
+                <span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-red-300 border-red-500/80 bg-red-950/90 shrink-0 whitespace-nowrap shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" style="font-family:var(--font-pixel);">🌌 SECRETO</span>
+              ` : `
+                <span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${isDiscovered ? r.color : '#64748b'};border-color:${isDiscovered ? r.border : '#334155'};background:rgba(0,0,0,0.5);">${r.label}</span>
+                ${timeBadge}
+              `}
             </div>
             ${isDiscovered ? `
-              <div class="flex items-center gap-2 text-[8px] text-slate-300 mt-1" style="font-family:var(--font-pixel);">
-                <span class="inline-flex items-center gap-1"><span class="text-amber-400">★</span> Recorde: <strong class="text-amber-300">${data.maxWeight}kg</strong></span>
-                <span class="inline-flex items-center gap-1"><span class="text-cyan-400">#</span> Pescados: <strong>${data.count}</strong></span>
+              <div class="flex items-center justify-between text-[8px] sm:text-[8.5px] text-slate-300 mt-2 bg-slate-950/70 px-2 py-1 border border-slate-800/80" style="font-family:var(--font-pixel);">
+                <div title="Maior peso capturado: ${data.maxWeight}kg">
+                  <span class="text-amber-400">★ Recorde:</span> <strong class="text-amber-300">${data.maxWeight}kg</strong>
+                </div>
+                <div title="Total pescado: ${data.count}">
+                  <span class="text-cyan-400"># Pescados:</span> <strong class="text-cyan-300">${data.count}</strong>
+                </div>
               </div>
-              ${fish.buff ? `<div class="text-[7px] text-purple-300 mt-0.5" style="font-family:var(--font-pixel);">★ ${fish.buff.text}</div>` : ''}
+              ${fish.buff ? `
+                <div class="text-[8px] sm:text-[8.5px] ${isSecretCard ? 'text-red-300 bg-red-950/70 border-red-700/80' : 'text-purple-300 bg-purple-950/60 border-purple-800/60'} mt-1.5 px-2 py-1 border leading-relaxed break-words" style="font-family:var(--font-pixel);">
+                  ★ ${fish.buff.text}
+                </div>
+              ` : ''}
+              ${fish.desc ? `
+                <p class="text-[8px] sm:text-[8.5px] text-slate-400 mt-1.5 leading-relaxed italic" style="font-family:var(--font-pixel);">${fish.desc}</p>
+              ` : ''}
             ` : `
-              <p class="text-[8px] text-slate-600 mt-1 italic" style="font-family:var(--font-pixel);">Ainda não descoberto</p>
+              <p class="text-[8px] text-slate-600 mt-2 font-mono" style="font-family:var(--font-pixel);">Espécie não descoberta</p>
             `}
           </div>
         </div>
@@ -830,6 +1384,16 @@ class FishingGame {
         goldenFishCatches: this.goldenFishCatches,
         chapter1Completed: this.chapter1Completed,
         timeOfDay: this.timeOfDay,
+        timeOffsetMs: this.timeOffsetMs || 0,
+        phaseMsRemaining: this.getRawMsRemaining(),
+        timeSavedAt: Date.now(),
+        fishEyesCount: this.fishEyesCount || 0,
+        fishEyesTotal: this.fishEyesTotal || 0,
+        fishEyesAllocated: this.fishEyesAllocated || { gold: 0, luck: 0, speed: 0, double: 0 },
+        lastFishEyeDate: this.lastFishEyeDate || null,
+        autoFisherEnabled: this.autoFisherEnabled,
+        autoSellerEnabled: this.autoSellerEnabled,
+        settings: this.settings,
         lastActiveTime: Date.now()
       }));
     } catch(e) { console.warn('Erro ao salvar:', e); }
@@ -861,7 +1425,21 @@ class FishingGame {
         this.unlockedAchievements = Array.isArray(d.unlockedAchievements) ? d.unlockedAchievements : [];
         this.goldenFishCatches = d.goldenFishCatches || 0;
         this.chapter1Completed = Boolean(d.chapter1Completed);
-        this.timeOfDay = d.timeOfDay || 'night';
+        this.timeOfDay = d.timeOfDay || 'day';
+        this.timeOffsetMs = d.timeOffsetMs || 0;
+        this.savedPhaseMsRemaining = typeof d.phaseMsRemaining === 'number' ? d.phaseMsRemaining : null;
+        this.timeSavedAt = typeof d.timeSavedAt === 'number' ? d.timeSavedAt : null;
+        this.fishEyesCount = typeof d.fishEyesCount === 'number' ? d.fishEyesCount : 0;
+        this.fishEyesTotal = typeof d.fishEyesTotal === 'number' ? d.fishEyesTotal : 0;
+        this.fishEyesAllocated = d.fishEyesAllocated && typeof d.fishEyesAllocated === 'object'
+          ? { gold: d.fishEyesAllocated.gold || 0, luck: d.fishEyesAllocated.luck || 0, speed: d.fishEyesAllocated.speed || 0, double: d.fishEyesAllocated.double || 0 }
+          : { gold: 0, luck: 0, speed: 0, double: 0 };
+        this.lastFishEyeDate = d.lastFishEyeDate || null;
+        this.autoFisherEnabled = d.autoFisherEnabled !== undefined ? Boolean(d.autoFisherEnabled) : true;
+        this.autoSellerEnabled = d.autoSellerEnabled !== undefined ? Boolean(d.autoSellerEnabled) : true;
+        if (d.settings) {
+          this.settings = { ...this.settings, ...d.settings };
+        }
         this.lastActiveTime = d.lastActiveTime || Date.now();
       }
     } catch(e) { console.error('Erro ao carregar:', e); }
@@ -954,11 +1532,24 @@ class FishingGame {
       if (b.type === 'double_mania')  out.doubleCatchChance += b.multiplier;
     });
 
+    // Meta-progressão: Olhos de Peixe (+1% por olho no atributo escolhido)
+    const fe = this.fishEyesAllocated || { gold: 0, luck: 0, speed: 0, double: 0 };
+    out.goldMultiplier += (fe.gold || 0) * 0.01;
+    out.luckBonus += (fe.luck || 0) * 0.01;
+    out.fishingSpeedBonus += (fe.speed || 0) * 0.01;
+    out.doubleCatchChance += (fe.double || 0) * 0.01;
+
+    // Caps dinâmicos: Ouro e Sorte começam com base cap de 200% (2.0) e expandem com os olhos
+    const goldCap = 2.00 + (fe.gold || 0) * 0.01;
+    const luckCap = 2.00 + (fe.luck || 0) * 0.01;
+    const speedCap = Math.min(0.85, 0.60 + (fe.speed || 0) * 0.01);
+    const doubleCap = Math.min(0.90, 0.60 + (fe.double || 0) * 0.01);
+
     return {
-      goldMultiplier: Math.min(out.goldMultiplier, 3.0),
-      luckBonus: Math.min(out.luckBonus, 2.5),
-      fishingSpeedBonus: Math.min(out.fishingSpeedBonus, 0.60),
-      doubleCatchChance: Math.min(out.doubleCatchChance, 0.60),
+      goldMultiplier: Math.min(out.goldMultiplier, goldCap),
+      luckBonus: Math.min(out.luckBonus, luckCap),
+      fishingSpeedBonus: Math.min(out.fishingSpeedBonus, speedCap),
+      doubleCatchChance: Math.min(out.doubleCatchChance, doubleCap),
       autoFishSpeedBonus: Math.min(out.autoFishSpeedBonus, 0.50)
     };
   }
@@ -1018,12 +1609,16 @@ class FishingGame {
     if (isNew) {
       this.discoveredFish[fish.id] = { maxWeight: fish.weight, count: 1 };
       // Recompensa em ouro pela primeira descoberta de espécie
-      const bonusMap = { COMUM: 50, INCOMUM: 120, RARO: 300, EPICO: 800, LENDARIO: 2500, MITICO: 10000 };
+      const bonusMap = { COMUM: 50, INCOMUM: 120, RARO: 300, EPICO: 800, LENDARIO: 2500, MITICO: 10000, SECRETO: 25000 };
       const bonus = bonusMap[fish.rarity] || 50;
       this.gold += bonus;
       this.totalGoldEarned += bonus;
       this.showFloatingText(`+${bonus}G NOVO!`, '#38bdf8', -50);
-      this.showToast(`✨ NOVA ESPÉCIE: ${fish.name}! (+${bonus}G)`, 'success');
+      if (fish.rarity === 'SECRETO') {
+        this.showToast(`🌌 ANOMALIA SECRETA DESCOBERTA: ${fish.name}! (+${bonus.toLocaleString('pt-BR')}G)`, 'error');
+      } else {
+        this.showToast(`✨ NOVA ESPÉCIE: ${fish.name}! (+${bonus}G)`, 'success');
+      }
       this.updateAlbumBadge();
     } else {
       this.discoveredFish[fish.id].count = (this.discoveredFish[fish.id].count || 0) + 1;
@@ -1038,6 +1633,7 @@ class FishingGame {
     const luck = 1 + buffs.luckBonus;
     // Sorte aplica-se mais fraco em raridades altas para dificultar
     const chances = {
+      SECRETO:  (RARITIES.SECRETO?.chance || 0.015) * (1 + (luck - 1) * 0.3),
       MITICO:   RARITIES.MITICO.chance   * (1 + (luck - 1) * 0.4),
       LENDARIO: RARITIES.LENDARIO.chance  * (1 + (luck - 1) * 0.5),
       EPICO:    RARITIES.EPICO.chance     * (1 + (luck - 1) * 0.6),
@@ -1054,8 +1650,13 @@ class FishingGame {
       rand -= weight;
     }
 
-    const pool = FISH_LIST.filter(f => f.rarity === selectedRarity);
-    const template = pool[Math.floor(Math.random() * pool.length)] || FISH_LIST[0];
+    const pool = FISH_LIST.filter(f => {
+      if (f.rarity !== selectedRarity) return false;
+      // Peixes exclusivos de horário só podem ser pescados em seu período do dia
+      if (f.timeExclusive && f.timeExclusive !== this.timeOfDay) return false;
+      return true;
+    });
+    const template = pool[Math.floor(Math.random() * pool.length)] || FISH_LIST.find(f => f.rarity === selectedRarity) || FISH_LIST[0];
 
     const weight = +(template.minWeight + Math.random() * (template.maxWeight - template.minWeight)).toFixed(2);
     const weightFactor = weight / template.minWeight;
@@ -1066,6 +1667,7 @@ class FishingGame {
     return {
       uid: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       id: template.id,
+      numId: template.numId,
       name: template.name,
       rarity: template.rarity,
       icon: template.icon,
@@ -1074,7 +1676,8 @@ class FishingGame {
       desc: template.desc,
       buffs: generatedBuffs,
       buff: generatedBuffs[0] || null,
-      isDoubleBuff: generatedBuffs.length >= 2,
+      isDoubleBuff: generatedBuffs.length === 2,
+      isTripleBuff: generatedBuffs.length >= 3,
       locked: false
     };
   }
@@ -1228,6 +1831,12 @@ class FishingGame {
     this.gold -= price;
     this.upgradeLevels[upgradeId] = lvl + 1;
 
+    if (upgradeId === 'auto_pescador') {
+      this.lastAutoFishTime = Date.now();
+      document.getElementById('auto-fish-bar')?.classList.remove('hidden');
+      this.updateDiverVisual();
+    }
+
     if (upgradeId === 'auto_vendedor') {
       const newIntervalMs = u.getValue(lvl + 1) * 1000;
       this.nextAutoSellTime = Date.now() + newIntervalMs;
@@ -1243,14 +1852,52 @@ class FishingGame {
   // ── AUTO FISH ──
   startAutoFisher() {
     if (this.autoFishTimer) clearInterval(this.autoFishTimer);
+    this.updateDiverVisual();
     this.autoFishTimer = setInterval(() => {
       const lvl = this.upgradeLevels.auto_pescador || 0;
-      if (lvl <= 0) return;
+      const bar = document.getElementById('auto-fish-bar');
+      const dot = document.getElementById('auto-fish-status-dot');
+      const btn = document.getElementById('btn-toggle-auto-fish');
+      const cd = document.getElementById('auto-fish-countdown');
+
+      if (lvl <= 0) {
+        if (bar && !bar.classList.contains('hidden')) bar.classList.add('hidden');
+        return;
+      }
+      if (bar && bar.classList.contains('hidden')) bar.classList.remove('hidden');
+
+      if (!this.autoFisherEnabled) {
+        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-red-500';
+        if (btn) {
+          btn.textContent = 'OFF';
+          btn.className = 'px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-red-950/90 text-red-300 border-red-700 hover:bg-red-900';
+        }
+        if (cd) {
+          cd.textContent = 'PAUSADO';
+          cd.className = 'text-red-400 font-bold bg-slate-950 px-1.5 py-0.5 border border-red-900/60';
+        }
+        return;
+      }
+
+      if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse';
+      if (btn) {
+        btn.textContent = 'ON';
+        btn.className = 'px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-emerald-600 text-slate-950 border-emerald-400 hover:bg-emerald-500';
+      }
+
       const u = UPGRADES.find(u => u.id === 'auto_pescador');
       const buffs = this.getActiveBuffs();
       const baseMs = u.getValue(lvl) * 1000;
       const finalMs = baseMs * (1 - buffs.autoFishSpeedBonus);
       const now = Date.now();
+      const elapsed = now - (this.lastAutoFishTime || 0);
+      const remainingSec = Math.max(0, (finalMs - elapsed) / 1000).toFixed(1);
+
+      if (cd) {
+        cd.textContent = remainingSec + 's';
+        cd.className = 'text-cyan-300 font-bold bg-slate-950 px-1.5 py-0.5 border border-slate-700';
+      }
+
       if (now - this.lastAutoFishTime >= finalMs) {
         this.lastAutoFishTime = now;
         if (this.inventory.length < this.getMaxInventory()) this.fish(true);
@@ -1265,6 +1912,8 @@ class FishingGame {
       const lvl = this.upgradeLevels.auto_vendedor || 0;
       const bar = document.getElementById('auto-sell-bar');
       const countdownEl = document.getElementById('auto-sell-countdown');
+      const dot = document.getElementById('auto-sell-status-dot');
+      const btn = document.getElementById('btn-toggle-auto-sell');
 
       if (lvl <= 0) {
         if (bar && !bar.classList.contains('hidden')) bar.classList.add('hidden');
@@ -1273,6 +1922,28 @@ class FishingGame {
 
       if (bar && bar.classList.contains('hidden')) {
         bar.classList.remove('hidden');
+      }
+
+      if (!this.autoSellerEnabled) {
+        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-red-500';
+        if (btn) {
+          btn.textContent = 'OFF';
+          btn.className = 'px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-red-950/90 text-red-300 border-red-700 hover:bg-red-900';
+        }
+        if (countdownEl) {
+          countdownEl.textContent = 'PAUSADO';
+          countdownEl.className = 'text-red-400 font-bold bg-slate-950 px-1.5 py-0.5 border border-red-900/60';
+        }
+        return;
+      }
+
+      if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+      if (btn) {
+        btn.textContent = 'ON';
+        btn.className = 'px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-emerald-600 text-slate-950 border-emerald-400 hover:bg-emerald-500';
+      }
+      if (countdownEl) {
+        countdownEl.className = 'text-emerald-300 font-bold bg-slate-950 px-1.5 py-0.5 border border-slate-700';
       }
 
       const u = UPGRADES.find(up => up.id === 'auto_vendedor');
@@ -1322,6 +1993,40 @@ class FishingGame {
         }
       }
     }, 250);
+  }
+
+  toggleAutoFisher(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const lvl = this.upgradeLevels.auto_pescador || 0;
+    if (lvl <= 0) {
+      this.showToast('Você ainda não contratou o Mergulhador Amigo!', 'warning');
+      return;
+    }
+    this.autoFisherEnabled = !this.autoFisherEnabled;
+    sound.playClick();
+    this.showToast(`Mergulhador Amigo: ${this.autoFisherEnabled ? 'LIGADO' : 'DESLIGADO'}`, this.autoFisherEnabled ? 'success' : 'warning');
+    this.updateDiverVisual();
+    this.renderUpgrades();
+    this.saveGame();
+  }
+
+  toggleAutoSeller(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const lvl = this.upgradeLevels.auto_vendedor || 0;
+    if (lvl <= 0) {
+      this.showToast('Você ainda não possui a Peixaria Automática!', 'warning');
+      return;
+    }
+    this.autoSellerEnabled = !this.autoSellerEnabled;
+    sound.playClick();
+    this.showToast(`Peixaria Automática: ${this.autoSellerEnabled ? 'LIGADA' : 'DESLIGADA'}`, this.autoSellerEnabled ? 'success' : 'warning');
+    if (this.autoSellerEnabled) {
+      const u = UPGRADES.find(up => up.id === 'auto_vendedor');
+      const intervalMs = (u ? u.getValue(lvl) : 60) * 1000;
+      this.nextAutoSellTime = Date.now() + intervalMs;
+    }
+    this.renderUpgrades();
+    this.saveGame();
   }
 
   // ── AQUÁRIO ──
@@ -1484,6 +2189,22 @@ class FishingGame {
         const price = Math.round(u.basePrice * Math.pow(u.priceMultiplier, lvl));
         const afford = this.gold >= price;
         const iconURL = getUpgradeIconDataURL(u.id, 2);
+
+        let toggleHtml = '';
+        if (u.id === 'auto_pescador' && lvl > 0) {
+          const isOn = this.autoFisherEnabled;
+          toggleHtml = `
+            <button onclick="window.game.toggleAutoFisher(event)" title="Ligar / Desligar Mergulhador Amigo" class="px-1.5 py-0.5 text-[7.5px] font-bold border transition-colors cursor-pointer shrink-0 ${isOn ? 'bg-emerald-600 hover:bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-red-950/80 hover:bg-red-900 text-red-300 border-red-700'}" style="font-family:var(--font-pixel);">
+              ${isOn ? '● ON' : '○ OFF'}
+            </button>`;
+        } else if (u.id === 'auto_vendedor' && lvl > 0) {
+          const isOn = this.autoSellerEnabled;
+          toggleHtml = `
+            <button onclick="window.game.toggleAutoSeller(event)" title="Ligar / Desligar Peixaria Automática" class="px-1.5 py-0.5 text-[7.5px] font-bold border transition-colors cursor-pointer shrink-0 ${isOn ? 'bg-emerald-600 hover:bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-red-950/80 hover:bg-red-900 text-red-300 border-red-700'}" style="font-family:var(--font-pixel);">
+              ${isOn ? '● ON' : '○ OFF'}
+            </button>`;
+        }
+
         return `
           <div class="p-2.5 border-2 border-slate-800 bg-slate-900/80 pixel-border-thin">
             <div class="flex items-start gap-2">
@@ -1492,7 +2213,10 @@ class FishingGame {
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-1.5">
-                  <h4 class="text-[9px] sm:text-[10px] md:text-[11px] font-bold text-slate-200 leading-snug break-words" style="font-family:var(--font-pixel);">${u.name}</h4>
+                  <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+                    <h4 class="text-[9px] sm:text-[10px] md:text-[11px] font-bold text-slate-200 leading-snug break-words" style="font-family:var(--font-pixel);">${u.name}</h4>
+                    ${toggleHtml}
+                  </div>
                   <span class="text-[8px] text-cyan-400 bg-cyan-950/60 px-1 py-0.5 border border-cyan-800 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">LV.${lvl}/${u.maxLevel}</span>
                 </div>
                 <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${u.desc}</p>
@@ -1529,7 +2253,7 @@ class FishingGame {
     const buffs = this.getActiveBuffs();
 
     // Ordenação configurável
-    const rarityRank = { MITICO: 6, LENDARIO: 5, EPICO: 4, RARO: 3, INCOMUM: 2, COMUM: 1 };
+    const rarityRank = { SECRETO: 7, MITICO: 6, LENDARIO: 5, EPICO: 4, RARO: 3, INCOMUM: 2, COMUM: 1 };
     let sortedFish = [...this.inventory];
 
     if (this.invSortMode === 'raridade_desc') {
@@ -1548,17 +2272,18 @@ class FishingGame {
       const spriteURL = this.getFishSpriteURL(fish.icon);
       const buffsList = this.getFishBuffs(fish);
       const hasBuff = buffsList.length > 0;
-      const isDouble = buffsList.length >= 2;
+      const isTriple = buffsList.length >= 3;
+      const isDouble = buffsList.length === 2;
 
       return `
-        <div class="group p-2 border-2 bg-slate-900/90 flex items-center justify-between gap-1.5 sm:gap-2 rarity-${fish.rarity} ${isDouble ? 'border-amber-400/80' : ''}" style="background:${r.bg};">
+        <div class="group p-2 border-2 bg-slate-900/90 flex items-center justify-between gap-1.5 sm:gap-2 rarity-${fish.rarity} ${isTriple ? 'border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.4)]' : (isDouble ? 'border-amber-400/80' : '')}" style="background:${r.bg};">
           <div class="flex items-center gap-2 min-w-0 flex-1">
-            <img src="${spriteURL}" class="fish-icon-canvas w-11 h-7 sm:w-12 sm:h-8 object-contain shrink-0" alt="${fish.name}" style="image-rendering:pixelated;">
+            <img src="${spriteURL}" class="fish-icon-canvas w-11 h-7 sm:w-12 sm:h-8 object-contain shrink-0 ${isTriple ? 'animate-pulse' : ''}" alt="${fish.name}" style="image-rendering:pixelated;">
             <div class="min-w-0 flex-1">
               <div class="flex items-baseline gap-1.5 flex-wrap">
-                <span class="text-[9px] sm:text-[10px] font-bold text-slate-100 leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
+                <span class="text-[9px] sm:text-[10px] font-bold ${isTriple ? 'text-red-300' : 'text-slate-100'} leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
                 <span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
-                ${isDouble ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : ''}
+                ${isTriple ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
               </div>
               <div class="flex items-center gap-1.5 text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">
                 <span>${fish.weight}kg</span>
@@ -1566,7 +2291,7 @@ class FishingGame {
               </div>
               ${hasBuff ? `
                 <div class="flex flex-col gap-0.5 mt-1">
-                  ${buffsList.map(b => `<span class="text-[8px] text-purple-300 leading-snug break-words" style="font-family:var(--font-pixel);">★ ${b.text}</span>`).join('')}
+                  ${buffsList.map(b => `<span class="text-[8px] ${isTriple ? 'text-red-300' : 'text-purple-300'} leading-snug break-words" style="font-family:var(--font-pixel);">★ ${b.text}</span>`).join('')}
                 </div>
               ` : ''}
             </div>
@@ -1603,7 +2328,7 @@ class FishingGame {
     }
 
     const filter = this.aquariumFilterMode;
-    const rarityRank = { MITICO: 6, LENDARIO: 5, EPICO: 4, RARO: 3, INCOMUM: 2, COMUM: 1 };
+    const rarityRank = { SECRETO: 7, MITICO: 6, LENDARIO: 5, EPICO: 4, RARO: 3, INCOMUM: 2, COMUM: 1 };
     let displayFish = [...this.aquarium];
 
     if (filter === 'double_buffs') {
@@ -1635,20 +2360,25 @@ class FishingGame {
       const r = RARITIES[fish.rarity] || RARITIES.COMUM;
       const spriteURL = this.getFishSpriteURL(fish.icon);
       const buffsList = this.getFishBuffs(fish);
-      const isDouble = buffsList.length >= 2;
+      const isTriple = buffsList.length >= 3;
+      const isDouble = buffsList.length === 2;
 
       return `
-        <div class="group p-2 border-2 bg-purple-950/30 flex items-center justify-between gap-1.5 sm:gap-2 ${isDouble ? 'border-amber-400/80' : ''}" style="border-color:${isDouble ? '#f59e0b' : r.border};">
+        <div class="group p-2 border-2 bg-slate-900/90 flex items-center justify-between gap-1.5 sm:gap-2 rarity-${fish.rarity} ${isTriple ? 'border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.4)]' : (isDouble ? 'border-amber-400/80' : '')}" style="background:${r.bg};">
           <div class="flex items-center gap-2 min-w-0 flex-1">
-            <img src="${spriteURL}" class="fish-icon-canvas w-11 h-7 sm:w-12 sm:h-8 object-contain shrink-0" alt="${fish.name}" style="image-rendering:pixelated;">
+            <img src="${spriteURL}" class="fish-icon-canvas w-11 h-7 sm:w-12 sm:h-8 object-contain shrink-0 ${isTriple ? 'animate-pulse' : ''}" alt="${fish.name}" style="image-rendering:pixelated;">
             <div class="min-w-0 flex-1">
               <div class="flex items-baseline gap-1.5 flex-wrap">
-                <span class="text-[9px] sm:text-[10px] font-bold text-slate-100 leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
+                <span class="text-[9px] sm:text-[10px] font-bold ${isTriple ? 'text-red-300' : 'text-slate-100'} leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
                 <span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
-                ${isDouble ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : ''}
+                ${isTriple ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
+                <span class="text-[7px] sm:text-[7.5px] font-bold px-1 py-0.2 border border-purple-500/80 bg-purple-950/80 text-purple-200 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">1.5x BUFF</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">
+                <span>${fish.weight}kg</span>
               </div>
               <div class="flex flex-col gap-0.5 mt-1">
-                ${buffsList.map(b => `<span class="text-[8px] text-emerald-300 leading-snug break-words" style="font-family:var(--font-pixel);">★ ${b.text} <span class="text-emerald-400 font-bold">(1.5x)</span></span>`).join('')}
+                ${buffsList.map(b => `<span class="text-[8px] ${isTriple ? 'text-red-300' : 'text-emerald-300'} leading-snug break-words" style="font-family:var(--font-pixel);">★ ${b.text} <span class="${isTriple ? 'text-red-400' : 'text-emerald-400'} font-bold">(1.5x)</span></span>`).join('')}
               </div>
             </div>
           </div>
@@ -1682,24 +2412,28 @@ class FishingGame {
     const r = RARITIES[fish.rarity] || RARITIES.COMUM;
     const spriteURL = this.getFishSpriteURL(fish.icon);
     const buffsList = this.getFishBuffs(fish);
-    const isDouble = buffsList.length >= 2;
+    const isTriple = buffsList.length >= 3;
+    const isDouble = buffsList.length === 2;
     const card = document.createElement('div');
-    card.className = `catch-popup p-2.5 border-2 flex items-center gap-2 rarity-${fish.rarity} ${isDouble ? 'ring-2 ring-amber-400' : ''}`;
-    card.style.background = 'rgba(15,23,42,0.95)';
-    card.style.borderColor = isDouble ? '#f59e0b' : r.border;
+    const borderClass = isTriple 
+      ? 'ring-2 ring-red-600 shadow-[0_0_16px_rgba(220,38,38,0.7)]' 
+      : (isDouble ? 'ring-2 ring-amber-400' : '');
+    card.className = `catch-popup p-2.5 border-2 flex items-center gap-2 rarity-${fish.rarity} ${borderClass}`;
+    card.style.background = isTriple ? 'rgba(10,10,18,0.98)' : 'rgba(15,23,42,0.95)';
+    card.style.borderColor = isTriple ? '#dc2626' : (isDouble ? '#f59e0b' : r.border);
     card.innerHTML = `
-      <img src="${spriteURL}" class="fish-icon-canvas w-12 h-8 shrink-0" style="image-rendering:pixelated;">
+      <img src="${spriteURL}" class="fish-icon-canvas w-12 h-8 shrink-0 ${isTriple ? 'animate-pulse' : ''}" style="image-rendering:pixelated;">
       <div>
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="text-[8px] font-bold px-1 py-0.5 border" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
-          ${isDouble ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel);">★ BUFF DUPLO!</span>' : ''}
+          ${isTriple ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel);">🔥 BUFF TRIPLO!</span>' : (isDouble ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel);">★ BUFF DUPLO!</span>' : '')}
           <span class="text-[8px] text-slate-400" style="font-family:var(--font-pixel);">${fish.weight}kg</span>
         </div>
-        <h3 class="text-[11px] font-bold text-slate-100 mt-0.5" style="font-family:var(--font-pixel);">${fish.name}</h3>
-        ${buffsList.map(b => `<p class="text-[8px] text-purple-300" style="font-family:var(--font-pixel);">★ ${b.text}</p>`).join('')}
+        <h3 class="text-[11px] font-bold ${isTriple ? 'text-red-300' : 'text-slate-100'} mt-0.5" style="font-family:var(--font-pixel);">${fish.name}</h3>
+        ${buffsList.map(b => `<p class="text-[8px] ${isTriple ? 'text-red-300' : 'text-purple-300'}" style="font-family:var(--font-pixel);">★ ${b.text}</p>`).join('')}
       </div>`;
     c.appendChild(card);
-    setTimeout(() => card.remove(), 2200);
+    setTimeout(() => card.remove(), isTriple ? 3000 : 2200);
   }
 
   showFloatingText(text, color = '#38bdf8', offY = 0) {
@@ -1965,15 +2699,6 @@ class FishingGame {
     `;
     document.body.appendChild(div);
 
-    // Botão toggle no header
-    const btn = document.createElement('button');
-    btn.id = 'btn-console';
-    btn.title = 'Console';
-    btn.className = 'w-9 h-9 bg-slate-900 border-2 border-slate-700 flex items-center justify-center pixel-btn hover:border-green-600';
-    btn.innerHTML = PIXEL_ICONS.console;
-    btn.addEventListener('click', () => this.toggleConsole());
-    document.getElementById('btn-reset-game')?.after(btn);
-
     // Input handler
     const inputEl = document.getElementById('console-input');
     inputEl?.addEventListener('keydown', (e) => {
@@ -2044,10 +2769,15 @@ class FishingGame {
         this.consoleLog('goldset <qtd>  - Define ouro para valor exato (ex: goldset 0)', '#ccc');
         this.consoleLog('goldenfish     - Spawna peixe dourado', '#ccc');
         this.consoleLog('catch [n]      - Pesca n peixes (default: 1)', '#ccc');
+        this.consoleLog('catchid <id> [n] - Pesca peixe por ID numérico (1 a ' + FISH_LIST.length + ')', '#ccc');
         this.consoleLog('maxupgrades    - Maximiza upgrades', '#ccc');
         this.consoleLog('unlockall      - Desbloqueia varas e iscas', '#ccc');
         this.consoleLog('clearinv       - Limpa inventário', '#ccc');
         this.consoleLog('buff <tipo> [s] - Buff temporário (gold/luck/speed/double)', '#ccc');
+        this.consoleLog('skiptime / skip [phase] - Pula horário do dia (day/sunset/night)', '#ccc');
+        this.consoleLog('time / tod [phase|skip] - Consulta ou define horário do dia', '#ccc');
+        this.consoleLog('fisheye [n]    - Adiciona n Olhos de Peixe (default: 1)', '#ccc');
+        this.consoleLog('midnight       - Simula virada das 00:00 para coletar Olho', '#ccc');
         this.consoleLog('reset          - Reseta progresso', '#ccc');
         this.consoleLog('clear          - Limpa console', '#ccc');
         break;
@@ -2070,6 +2800,43 @@ class FishingGame {
         break;
       }
 
+      case 'skiptime':
+      case 'skipday':
+      case 'skip':
+      case 'nexttime': {
+        const validPhases = ['day', 'sunset', 'night'];
+        const target = arg && validPhases.includes(arg.toLowerCase()) ? arg.toLowerCase() : null;
+        const names = { day: 'DAY ☀️', sunset: 'SUNSET 🌅', night: 'NIGHT 🌙' };
+
+        if (target) {
+          this.setTimeOfDay(target);
+          this.consoleLog(`Horário alterado para: ${names[this.timeOfDay]} (05:00 restantes)`, '#38bdf8');
+        } else {
+          const newPhase = this.skipTimeOfDay();
+          this.consoleLog(`Horário pulado para: ${names[newPhase] || newPhase.toUpperCase()} (05:00 restantes)`, '#38bdf8');
+        }
+        break;
+      }
+
+      case 'time':
+      case 'tod': {
+        const validPhases = ['day', 'sunset', 'night'];
+        const names = { day: 'DAY ☀️', sunset: 'SUNSET 🌅', night: 'NIGHT 🌙' };
+
+        if (arg === 'skip' || arg === 'next') {
+          const newPhase = this.skipTimeOfDay();
+          this.consoleLog(`Horário pulado para: ${names[newPhase] || newPhase.toUpperCase()} (05:00 restantes)`, '#38bdf8');
+        } else if (arg && validPhases.includes(arg.toLowerCase())) {
+          this.setTimeOfDay(arg.toLowerCase());
+          this.consoleLog(`Horário alterado para: ${names[this.timeOfDay]} (05:00 restantes)`, '#38bdf8');
+        } else {
+          const remaining = this.getTimeRemainingInPhase();
+          this.consoleLog(`Horário atual: ${names[this.timeOfDay] || this.timeOfDay.toUpperCase()} (próxima mudança em ${remaining.text})`, '#38bdf8');
+          this.consoleLog(`Uso: 'skiptime' | 'time <day|sunset|night>' | 'tod skip'`, '#888');
+        }
+        break;
+      }
+
       case 'goldenfish':
         if (this.goldenFishActive) {
           this.consoleLog('Já existe um peixe dourado ativo!', '#ff6b6b');
@@ -2079,6 +2846,59 @@ class FishingGame {
           this.consoleLog('Peixe dourado spawnado!', '#ffd700');
         }
         break;
+
+      case 'catchid': {
+        const query = parts[1];
+        if (!query) {
+          this.consoleLog('Uso: catchid <id_ou_nome> [quantidade]', '#ff6b6b');
+          this.consoleLog(`IDs válidos: 1 a ${FISH_LIST.length}. Ex: catchid 28 (Lampreia) ou catchid 1 5`, '#888');
+          break;
+        }
+        const num = parseInt(query);
+        const target = FISH_LIST.find(f => (!isNaN(num) && f.numId === num) || f.id.toLowerCase() === query.toLowerCase());
+        if (!target) {
+          this.consoleLog(`Peixe com ID "${query}" não encontrado! IDs válidos: 1 a ${FISH_LIST.length}.`, '#ff6b6b');
+          break;
+        }
+        const count = Math.min(Math.max(1, parseInt(parts[2]) || 1), 20);
+        const freeSlots = this.getMaxInventory() - this.inventory.length;
+        if (freeSlots <= 0) {
+          this.consoleLog('Seu balde está cheio! Venda peixes antes.', '#ff6b6b');
+          break;
+        }
+        const toCatch = Math.min(count, freeSlots);
+        for (let i = 0; i < toCatch; i++) {
+          const weight = +(target.minWeight + Math.random() * (target.maxWeight - target.minWeight)).toFixed(2);
+          const weightFactor = weight / target.minWeight;
+          const rawValue = Math.round(target.baseValue * Math.pow(weightFactor, 0.7));
+          const generatedBuffs = generateFishBuffs(target.id, target.rarity);
+          const fish = {
+            uid: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            id: target.id,
+            numId: target.numId,
+            name: target.name,
+            rarity: target.rarity,
+            icon: target.icon,
+            weight,
+            baseValue: rawValue,
+            desc: target.desc,
+            buffs: generatedBuffs,
+            buff: generatedBuffs[0] || null,
+            isDoubleBuff: generatedBuffs.length === 2,
+            isTripleBuff: generatedBuffs.length >= 3 || target.rarity === 'SECRETO',
+            locked: false
+          };
+          this.inventory.unshift(fish);
+          this.totalCatches++;
+          sound.playCatch(fish.rarity);
+          sound.vibrateCatch(fish.rarity);
+          this.showCatchNotification(fish);
+          this.recordDiscovery(fish);
+        }
+        this.renderAll();
+        this.consoleLog(`[#${target.numId}] ${target.name} pescado com sucesso (${toCatch}x)!`, '#38bdf8');
+        break;
+      }
 
       case 'catch': {
         const n = Math.min(parseInt(arg) || 1, 50);
@@ -2122,6 +2942,27 @@ class FishingGame {
         this.tempBuffs.push({ type: bt, multiplier: 2.0, endsAt: Date.now() + dur, label: (arg || 'gold').toUpperCase() });
         this.consoleLog('Buff ' + (arg || 'gold') + ' ativado por ' + (dur / 1000) + 's!', '#ffd700');
         this.renderBuffs();
+        break;
+      }
+
+      case 'fisheye':
+      case 'giveeye': {
+        const count = Math.max(1, parseInt(arg) || 1);
+        this.fishEyesCount = (this.fishEyesCount || 0) + count;
+        this.fishEyesTotal = (this.fishEyesTotal || 0) + count;
+        this.consoleLog(`+${count} Olho(s) de Peixe adicionado(s)! Total disponível: ${this.fishEyesCount}`, '#38bdf8');
+        this.renderFishEyesBadge();
+        this.renderFishEyesModal();
+        this.saveGame();
+        break;
+      }
+
+      case 'midnight': {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        this.lastFishEyeDate = this.getLocalDateKey(d);
+        this.consoleLog('Simulando virada de meia-noite (00:00)...', '#ffd700');
+        this.checkMidnightFishEye(true);
         break;
       }
 
@@ -2237,10 +3078,8 @@ class FishingGame {
       sound.playClick();
     });
 
-    document.getElementById('btn-toggle-sound')?.addEventListener('click', (e) => {
-      const muted = sound.toggleMute();
-      e.currentTarget.innerHTML = muted ? PIXEL_ICONS.soundOff : PIXEL_ICONS.soundOn;
-    });
+    // Configurações
+    document.getElementById('btn-open-settings')?.addEventListener('click', () => this.openSettings());
 
     // Perfil do Pescador
     document.getElementById('btn-open-profile')?.addEventListener('click', () => this.openProfile());
@@ -2275,12 +3114,12 @@ class FishingGame {
 
     document.getElementById('btn-open-album')?.addEventListener('click', () => this.openAlbum());
     document.getElementById('btn-close-album')?.addEventListener('click', () => this.closeAlbum());
-    document.getElementById('btn-toggle-time')?.addEventListener('click', () => this.toggleTimeOfDay());
-
-    document.getElementById('btn-reset-game')?.addEventListener('click', () => this.resetProgress());
+    document.getElementById('btn-open-fish-eyes')?.addEventListener('click', () => this.openFishEyesModal());
+    document.getElementById('btn-open-patch-notes')?.addEventListener('click', () => this.openPatchNotesModal());
+    document.getElementById('btn-toggle-time')?.addEventListener('click', () => this.showTimeOfDayStatus());
 
     // Fechar modais ao clicar fora (backdrop click) e via tecla Escape
-    const allModals = ['sell-filter-modal', 'album-modal', 'offline-modal', 'profile-modal', 'achievements-modal', 'chapter1-modal'];
+    const allModals = ['sell-filter-modal', 'album-modal', 'offline-modal', 'profile-modal', 'achievements-modal', 'chapter1-modal', 'settings-modal', 'fish-eyes-modal', 'patch-notes-modal'];
     allModals.forEach(id => {
       const m = document.getElementById(id);
       if (m) {

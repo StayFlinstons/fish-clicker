@@ -34,13 +34,13 @@ export const UPGRADES = [
   },
   {
     id: 'auto_pescador',
-    name: 'Ajudante Automático',
+    name: 'Mergulhador Amigo',
     basePrice: 400,
     priceMultiplier: 1.70,
     level: 0,
     maxLevel: 12,
     icon: 'auto_pescador',
-    desc: 'Pesca sozinho a cada poucos segundos.',
+    desc: 'Mergulha e pesca peixes sozinho a cada poucos segundos.',
     getValue: (lvl) => lvl > 0 ? Math.max(2.0, 8.0 - (lvl * 0.5)) : 0 // 7.5s → 2.0s
   },
   {

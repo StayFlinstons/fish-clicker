@@ -25,7 +25,15 @@ const PALETTES = {
   dragao:    { body:'#d32f2f', belly:'#ef9a9a', eye:'#ffeb3b', fin:'#b71c1c', outline:'#8b0000' },
   celacanto: { body:'#1a237e', belly:'#7986cb', eye:'#ffd600', fin:'#0d47a1', outline:'#0a1647' },
   leviata:   { body:'#0d47a1', belly:'#42a5f5', eye:'#76ff03', fin:'#0b3d91', outline:'#072660' },
-  serpente:  { body:'#ff6f00', belly:'#ffe082', eye:'#e040fb', fin:'#e65100', outline:'#bf360c' }
+  serpente:  { body:'#ff6f00', belly:'#ffe082', eye:'#e040fb', fin:'#e65100', outline:'#bf360c' },
+  // Exclusivos de horário
+  peixe_sol:      { body:'#facc15', belly:'#fef9c3', eye:'#ea580c', fin:'#eab308', outline:'#a16207' },
+  prisma_solar:   { body:'#f59e0b', belly:'#fffbeb', eye:'#06b6d4', fin:'#fbbf24', outline:'#b45309' },
+  crepusculo:     { body:'#c026d3', belly:'#fbcfe8', eye:'#fde047', fin:'#9333ea', outline:'#581c87' },
+  fenix_ocaso:    { body:'#ea580c', belly:'#fdf2f8', eye:'#38bdf8', fin:'#db2777', outline:'#831843' },
+  tubarao_lunar:  { body:'#94a3b8', belly:'#f1f5f9', eye:'#38bdf8', fin:'#64748b', outline:'#334155' },
+  kraken_estelar: { body:'#312e81', belly:'#c7d2fe', eye:'#c084fc', fin:'#4338ca', outline:'#1e1b4b' },
+  lampreia_negra: { body:'#09090b', belly:'#18181b', eye:'#ff1a1a', fin:'#7f1d1d', outline:'#450a0a' }
 };
 
 // ═══════════════════════════════════════════════
@@ -158,6 +166,20 @@ const SPRITE_SERPENT = [
   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 ];
 
+// Lampreia Negra do Vazio (Corpo serpentino com aura vermelha e dentes abissais)
+const SPRITE_LAMPREY = [
+  [0,0,6,0,0,0,6,0,0,0,0,6,0,0,0,0], // Feixes de aura carmesim
+  [0,6,1,1,1,1,1,1,1,1,1,1,6,0,0,0], // Dorso sombrio
+  [6,1,2,2,2,2,2,2,2,2,2,2,1,6,0,0], // Corpo negro obsidian
+  [1,6,2,4,2,2,2,2,2,2,2,2,2,1,1,6], // Olho rubro penetrante (4)
+  [1,6,6,2,2,2,2,2,2,2,2,2,2,2,1,1], // Focinho sugador circular com dentes (6)
+  [1,6,3,3,3,3,3,3,3,2,2,2,2,2,1,1], // Ventre abissal
+  [6,1,3,3,3,3,3,3,2,2,2,2,2,1,1,0], // Corpo alongado
+  [0,6,1,1,1,3,3,2,2,2,2,2,1,1,6,0], // Cauda ondulante
+  [0,0,6,0,1,1,5,5,5,1,1,1,6,0,0,0], // Barbatana caudal com aura
+  [0,0,0,6,0,0,6,0,0,6,0,0,0,0,0,0], // Partículas inferiores de energia
+];
+
 // Mapeamento de cada espécie para sua silhueta anatômica
 const FISH_ANATOMY = {
   lambari:   SPRITE_CLASSIC,
@@ -178,9 +200,16 @@ const FISH_ANATOMY = {
   tubarao:   SPRITE_SHARK,
   arraia:    SPRITE_RAY,
   dragao:    SPRITE_SERPENT,
-  celacanto: SPRITE_ANCIENT,
-  leviata:   SPRITE_SERPENT,
-  serpente:  SPRITE_SERPENT,
+  celacanto:      SPRITE_ANCIENT,
+  leviata:        SPRITE_SERPENT,
+  serpente:       SPRITE_SERPENT,
+  peixe_sol:      SPRITE_CLASSIC,
+  prisma_solar:   SPRITE_SERPENT,
+  crepusculo:     SPRITE_RAY,
+  fenix_ocaso:    SPRITE_SERPENT,
+  tubarao_lunar:  SPRITE_SHARK,
+  kraken_estelar: SPRITE_SERPENT,
+  lampreia_negra: SPRITE_LAMPREY,
 };
 
 
@@ -546,20 +575,20 @@ const UPGRADE_SPRITES = {
   auto_pescador: [
     [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
     [0,0,0,0,0,1,2,2,2,2,1,0,0,0,0,0],
-    [0,0,0,0,1,2,3,3,3,3,2,1,0,0,0,0],
-    [0,0,0,0,1,2,4,2,2,4,2,1,0,0,0,0], // Olhos do robô/autômato
-    [0,0,0,0,1,2,2,2,2,2,2,1,0,0,0,0],
-    [0,0,0,0,1,2,2,5,5,2,2,1,0,0,0,0], // Boca metálica
-    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,1,1,2,2,2,2,2,2,1,1,0,0,0], // Corpo do ajudante
-    [0,0,1,2,2,2,2,2,2,2,2,2,2,1,0,0],
-    [0,1,2,2,1,2,2,2,2,2,2,1,2,2,1,0], // Braços mecânicos
-    [0,1,2,1,0,1,2,2,2,2,1,0,1,2,1,0],
+    [0,0,0,0,1,4,4,4,4,4,4,1,4,0,0,0],
+    [0,0,0,0,1,3,6,3,3,6,3,1,4,0,0,0],
+    [0,0,0,0,1,3,3,7,7,3,3,1,4,0,0,0],
+    [0,0,0,0,1,4,4,4,4,4,4,1,1,0,0,0],
+    [0,0,0,0,0,1,2,2,2,2,1,0,0,0,0,0],
+    [0,0,0,1,1,2,2,2,2,2,2,1,1,0,0,0],
+    [0,0,1,5,5,1,2,2,2,2,1,5,5,1,0,0],
+    [0,1,2,5,5,1,2,2,2,2,1,5,5,2,1,0],
+    [0,1,2,1,1,1,2,2,2,2,1,1,1,2,1,0],
     [0,0,1,0,0,1,2,2,2,2,1,0,0,1,0,0],
-    [0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0],
+    [0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],
     [0,0,0,0,1,2,1,0,0,1,2,1,0,0,0,0],
-    [0,0,0,0,1,1,1,0,0,1,1,1,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,1,4,4,1,0,0,1,4,4,1,0,0,0],
+    [0,0,0,1,1,1,1,0,0,1,1,1,1,0,0,0],
   ],
   boia_sorte: [
     [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
@@ -782,7 +811,7 @@ export function getUpgradeIconDataURL(upgradeId, scale = 2.5) {
   let pal = { 1: '#0f172a', 2: '#78350f', 3: '#94a3b8', 4: '#38bdf8', 5: '#f97316', 6: '#000', 7: '#16a34a' };
 
   if (upgradeId === 'auto_pescador') {
-    pal = { 1: '#0f172a', 2: '#475569', 3: '#64748b', 4: '#38bdf8', 5: '#e2e8f0' };
+    pal = { 1: '#0f172a', 2: '#0284c7', 3: '#38bdf8', 4: '#facc15', 5: '#f97316', 6: '#ffffff', 7: '#fed7aa' };
   } else if (upgradeId === 'boia_sorte') {
     pal = { 1: '#0f172a', 2: '#94a3b8', 3: '#ef4444', 4: '#f8fafc' };
   } else if (upgradeId === 'rede_dupla') {
@@ -809,9 +838,12 @@ export function renderFishToCanvas(canvas, fishIconId, scale = 4) {
   let specialColor = '#ffffff';
   if (fishIconId === 'bagre') specialColor = pal.fin;
   else if (fishIconId === 'baiacu') specialColor = '#e0f2fe';
-  else if (fishIconId === 'arraia') specialColor = pal.outline;
-  else if (fishIconId === 'dragao' || fishIconId === 'leviata' || fishIconId === 'serpente') specialColor = '#fef08a';
+  else if (['dragao', 'leviata', 'serpente', 'prisma_solar', 'fenix_ocaso', 'kraken_estelar'].includes(fishIconId)) specialColor = '#fef08a';
+  else if (fishIconId === 'crepusculo') specialColor = pal.outline;
+  else if (fishIconId === 'tubarao_lunar') specialColor = '#f8fafc';
+  else if (fishIconId === 'peixe_sol') specialColor = '#fef08a';
   else if (fishIconId === 'pirarucu') specialColor = '#ef4444'; // escamas vermelhas lendárias do pirarucu
+  else if (fishIconId === 'lampreia_negra') specialColor = '#ef4444'; // aura carmesim abissal pulsante
 
   const colorMap = {
     1: pal.outline,
@@ -892,8 +924,22 @@ export class PixelWaterRenderer {
     this.fishSprites = [];
     this.bubbles = [];
     this.timeOfDay = 'night'; // 'day' | 'sunset' | 'night'
+    this.diverActive = false;
+    this.diver = {
+      x: -80,
+      y: 120,
+      speed: 0.6,
+      dir: 1,
+      size: 2.5,
+      wobble: 0,
+      bubbleTimer: 0
+    };
     this._resize();
     window.addEventListener('resize', () => this._resize());
+  }
+
+  setDiverActive(active) {
+    this.diverActive = !!active;
   }
 
   setTimeOfDay(tod) {
@@ -987,6 +1033,31 @@ export class PixelWaterRenderer {
       this._drawMinifish(f, Math.sin(f.wobble) * 2);
     });
 
+    // Mergulhador Amigo nadando na tela (quando ativado)
+    if (this.diverActive) {
+      const d = this.diver;
+      d.x += d.speed * d.dir;
+      d.wobble += 0.04;
+      d.bubbleTimer++;
+
+      // Respiração: solta bolhas periódicas da máscara/regulador
+      if (d.bubbleTimer >= 36) {
+        d.bubbleTimer = 0;
+        const bx = d.x + 14 * d.size;
+        const by = d.y + Math.sin(d.wobble) * 3 + 2 * d.size;
+        this.bubbles.push({ x: bx, y: by, speed: 0.7 + Math.random() * 0.4, drift: (Math.random() - 0.5) * 0.4 });
+        this.bubbles.push({ x: bx + 3, y: by + 2, speed: 0.9 + Math.random() * 0.4, drift: (Math.random() - 0.5) * 0.4 });
+      }
+
+      // Loop ao cruzar a tela
+      if (d.x > W + 80) {
+        d.x = -80;
+        d.y = 70 + Math.random() * Math.max(50, H - 200);
+      }
+
+      this._drawDiver(d, Math.sin(d.wobble) * 3);
+    }
+
     // Bolhas
     if (Math.random() < 0.04) {
       this.bubbles.push({ x: 40 + Math.random() * (W - 80), y: H, speed: 0.5 + Math.random() * 0.8, drift: (Math.random() - 0.5) * 0.3 });
@@ -999,6 +1070,51 @@ export class PixelWaterRenderer {
       ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(bx, by, 2, 2);
       return true;
     });
+  }
+
+  _drawDiver(d, wy) {
+    const { ctx } = this;
+    const s = d.size || 2.5;
+    const kick = Math.sin(d.wobble * 3.5) > 0 ? 1 : 0;
+
+    // Matriz horizontal 18x8 (cabeça à direita, pés de pato à esquerda)
+    const m = [
+      [0,0,0,0,0,0,1,3,3,3,3,1,0,0,0,0,0,0],
+      [0,0,0,0,0,1,3,7,3,3,3,1,1,1,0,0,0,0],
+      [0,0,0,1,2,2,2,2,2,2,2,2,1,6,6,1,0,0],
+      [5,5,1,2,2,2,2,2,2,2,2,2,1,4,4,7,1,0],
+      [5,5,5,1,2,2,2,2,2,2,2,2,1,4,4,4,1,0],
+      [0,1,5,5,1,2,2,2,2,2,2,2,1,6,1,1,0,0],
+      [0,0,1,1,0,1,2,2,2,2,2,1,1,0,0,0,0,0],
+      [0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0]
+    ];
+
+    const cm = {
+      1: '#0f172a',
+      2: '#0284c7', // roupa de mergulho azul
+      3: '#ea580c', // cilindro de oxigênio
+      4: '#38bdf8', // visor da máscara
+      5: '#facc15', // nadadeiras amarelas
+      6: '#fed7aa', // pele / rosto
+      7: '#ffffff'  // reflexo de luz
+    };
+
+    const posX = Math.round(d.x);
+    const posY = Math.round(d.y + wy);
+
+    for (let y = 0; y < m.length; y++) {
+      for (let x = 0; x < m[y].length; x++) {
+        const val = m[y][x];
+        if (!val) continue;
+        let actualY = y;
+        // Pés de pato batendo com o nado
+        if (x <= 3) {
+          actualY = y + (kick ? 1 : -1);
+        }
+        ctx.fillStyle = cm[val] || '#fff';
+        ctx.fillRect(posX + x * s, posY + actualY * s, s, s);
+      }
+    }
   }
 
   _drawMinifish(f, wy) {
@@ -1023,6 +1139,7 @@ export const PIXEL_ICONS = {
   tools: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="2" width="2" height="2" fill="#94a3b8"/><rect x="4" y="4" width="2" height="2" fill="#64748b"/><rect x="6" y="6" width="2" height="2" fill="#b45309"/><rect x="7" y="7" width="2" height="2" fill="#78350f"/></svg>`,
   soundOn: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="3" width="3" height="4" fill="#94a3b8"/><path d="M4 3 L7 1 L7 9 L4 7 Z" fill="#cbd5e1"/><rect x="8" y="3" width="1" height="4" fill="#38bdf8"/></svg>`,
   soundOff: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="3" width="3" height="4" fill="#64748b"/><path d="M4 3 L7 1 L7 9 L4 7 Z" fill="#64748b"/><rect x="8" y="2" width="1" height="6" fill="#ef4444"/></svg>`,
+  gear: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="5" y="0" width="2" height="12" fill="#94a3b8"/><rect x="0" y="5" width="12" height="2" fill="#94a3b8"/><rect x="2" y="2" width="8" height="8" fill="#94a3b8"/><rect x="3" y="1" width="6" height="10" fill="#cbd5e1"/><rect x="1" y="3" width="10" height="6" fill="#cbd5e1"/><rect x="4" y="4" width="4" height="4" fill="#0f172a"/></svg>`,
   reset: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><path d="M2 4 A 3 3 0 1 1 5 8" fill="none" stroke="#f87171" stroke-width="1.5"/><polygon points="2,1 2,5 6,5" fill="#f87171"/></svg>`,
   console: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="1" width="8" height="6" fill="#0f172a" stroke="#22c55e" stroke-width="1"/><rect x="3" y="8" width="4" height="1" fill="#475569"/><rect x="3" y="3" width="2" height="1" fill="#22c55e"/></svg>`,
   book: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="2" width="4" height="6" fill="#0284c7"/><rect x="5" y="2" width="4" height="6" fill="#38bdf8"/><rect x="2" y="3" width="2" height="4" fill="#f8fafc"/><rect x="6" y="3" width="2" height="4" fill="#f8fafc"/></svg>`,
@@ -1033,8 +1150,10 @@ export const PIXEL_ICONS = {
   lockClosed: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 8 8" style="image-rendering:pixelated;"><rect x="2" y="1" width="4" height="3" fill="none" stroke="#f59e0b" stroke-width="1"/><rect x="1" y="3" width="6" height="4" fill="#d97706"/></svg>`,
   lockOpen: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 8 8" style="image-rendering:pixelated;"><path d="M2 3 L2 1 L5 1 L5 3" fill="none" stroke="#64748b" stroke-width="1"/><rect x="1" y="3" width="6" height="4" fill="#475569"/></svg>`,
   sun: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 8 8" style="image-rendering:pixelated;"><rect x="2" y="2" width="4" height="4" fill="#facc15"/><rect x="3" y="0" width="2" height="1" fill="#f59e0b"/><rect x="3" y="7" width="2" height="1" fill="#f59e0b"/><rect x="0" y="3" width="1" height="2" fill="#f59e0b"/><rect x="7" y="3" width="1" height="2" fill="#f59e0b"/></svg>`,
+  day: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 8 8" style="image-rendering:pixelated;"><rect x="2" y="2" width="4" height="4" fill="#facc15"/><rect x="3" y="0" width="2" height="1" fill="#f59e0b"/><rect x="3" y="7" width="2" height="1" fill="#f59e0b"/><rect x="0" y="3" width="1" height="2" fill="#f59e0b"/><rect x="7" y="3" width="1" height="2" fill="#f59e0b"/></svg>`,
   sunset: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 8 8" style="image-rendering:pixelated;"><rect x="1" y="2" width="6" height="3" fill="#fb923c"/><line x1="0" y1="5" x2="8" y2="5" stroke="#7e22ce" stroke-width="1"/><line x1="0" y1="6" x2="8" y2="6" stroke="#4c1d95" stroke-width="1"/></svg>`,
   moon: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 8 8" style="image-rendering:pixelated;"><path d="M2 1 A3 3 0 0 0 6 7 A4 4 0 1 1 2 1 Z" fill="#fef08a"/></svg>`,
+  night: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 8 8" style="image-rendering:pixelated;"><path d="M2 1 A3 3 0 0 0 6 7 A4 4 0 1 1 2 1 Z" fill="#fef08a"/></svg>`,
   fish: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 8" style="image-rendering:pixelated;"><rect x="2" y="2" width="7" height="4" fill="#38bdf8"/><polygon points="9,4 12,1 12,7" fill="#0284c7"/><rect x="1" y="3" width="2" height="2" fill="#0284c7"/><rect x="3" y="2" width="2" height="2" fill="#fff"/><rect x="4" y="3" width="1" height="1" fill="#000"/></svg>`,
   sleep: `<svg class="w-8 h-8 inline-block align-middle shrink-0" viewBox="0 0 16 16" style="image-rendering:pixelated;"><rect x="2" y="2" width="4" height="1" fill="#38bdf8"/><rect x="5" y="3" width="1" height="1" fill="#38bdf8"/><rect x="4" y="4" width="1" height="1" fill="#38bdf8"/><rect x="2" y="5" width="4" height="1" fill="#38bdf8"/><rect x="8" y="5" width="5" height="1" fill="#a855f7"/><rect x="12" y="6" width="1" height="1" fill="#a855f7"/><rect x="10" y="7" width="1" height="1" fill="#a855f7"/><rect x="8" y="8" width="5" height="1" fill="#a855f7"/></svg>`,
   sparkle: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 8 8" style="image-rendering:pixelated;"><rect x="3" y="1" width="2" height="6" fill="#fde047"/><rect x="1" y="3" width="6" height="2" fill="#fde047"/><rect x="3" y="3" width="2" height="2" fill="#ffffff"/></svg>`,
@@ -1042,7 +1161,8 @@ export const PIXEL_ICONS = {
   trophy: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="5" fill="#facc15" stroke="#ca8a04" stroke-width="0.8"/><rect x="1" y="2" width="2" height="3" fill="#f59e0b"/><rect x="9" y="2" width="2" height="3" fill="#f59e0b"/><rect x="5" y="6" width="2" height="2" fill="#ca8a04"/><rect x="3" y="8" width="6" height="2" fill="#b45309"/><rect x="4" y="2" width="4" height="2" fill="#fef08a"/></svg>`,
   lockedTrophy: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="5" fill="#334155" stroke="#1e293b" stroke-width="0.8"/><rect x="1" y="2" width="2" height="3" fill="#1e293b"/><rect x="9" y="2" width="2" height="3" fill="#1e293b"/><rect x="5" y="6" width="2" height="2" fill="#1e293b"/><rect x="3" y="8" width="6" height="2" fill="#0f172a"/><rect x="4" y="2" width="4" height="2" fill="#475569"/></svg>`,
   bait: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="2" width="6" height="2" fill="#cd853f"/><rect x="4" y="4" width="4" height="2" fill="#8b4513"/><rect x="2" y="6" width="4" height="2" fill="#cd853f"/></svg>`,
-  portal: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="4" y="1" width="4" height="1" fill="#a855f7"/><rect x="2" y="2" width="8" height="1" fill="#06b6d4"/><rect x="1" y="3" width="10" height="6" fill="#8b5cf6"/><rect x="3" y="4" width="6" height="4" fill="#0891b2"/><rect x="4" y="5" width="4" height="2" fill="#67e8f9"/><rect x="5" y="5" width="2" height="2" fill="#ffffff"/><rect x="2" y="9" width="8" height="1" fill="#06b6d4"/><rect x="4" y="10" width="4" height="1" fill="#a855f7"/></svg>`
+  portal: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="4" y="1" width="4" height="1" fill="#a855f7"/><rect x="2" y="2" width="8" height="1" fill="#06b6d4"/><rect x="1" y="3" width="10" height="6" fill="#8b5cf6"/><rect x="3" y="4" width="6" height="4" fill="#0891b2"/><rect x="4" y="5" width="4" height="2" fill="#67e8f9"/><rect x="5" y="5" width="2" height="2" fill="#ffffff"/><rect x="2" y="9" width="8" height="1" fill="#06b6d4"/><rect x="4" y="10" width="4" height="1" fill="#a855f7"/></svg>`,
+  fishEye: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="1" fill="#38bdf8"/><rect x="1" y="2" width="10" height="8" fill="#0284c7"/><rect x="0" y="4" width="12" height="4" fill="#0369a1"/><rect x="2" y="3" width="8" height="6" fill="#f8fafc"/><rect x="4" y="4" width="4" height="4" fill="#0f172a"/><rect x="5" y="4" width="2" height="2" fill="#38bdf8"/><rect x="6" y="5" width="1" height="1" fill="#ffffff"/><rect x="3" y="10" width="6" height="1" fill="#38bdf8"/></svg>`
 };
 
 // ═══════════════════════════════════════════════
