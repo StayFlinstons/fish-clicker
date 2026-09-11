@@ -2740,9 +2740,12 @@ class FishingGame {
 
   // ── EVENTO ECLIPSE SANGRENTO (Berserk) ──
   triggerBloodMoonEclipse() {
-    if (sound.vibrateSecret) sound.vibrateSecret();
-    else sound.vibrateGoldenFish();
-    sound.playRare();
+    try {
+      sound.playCatch('SECRETO');
+      sound.vibrateCatch('SECRETO');
+    } catch (e) {
+      console.warn('Erro ao tocar efeito sonoro:', e);
+    }
     this.goldenFishCatches = (this.goldenFishCatches || 0) + 1;
     this.checkAchievements();
 
@@ -2792,10 +2795,16 @@ class FishingGame {
     }
 
     const skyEl = document.getElementById('blood-eclipse-sky');
-    if (skyEl) skyEl.classList.remove('hidden');
+    if (skyEl) {
+      skyEl.classList.remove('hidden');
+      skyEl.style.display = 'flex';
+    }
 
     const bannerEl = document.getElementById('blood-eclipse-banner');
-    if (bannerEl) bannerEl.classList.remove('hidden');
+    if (bannerEl) {
+      bannerEl.classList.remove('hidden');
+      bannerEl.style.display = 'flex';
+    }
 
     if (this.bloodMoonInterval) clearInterval(this.bloodMoonInterval);
     this.bloodMoonInterval = setInterval(() => {
@@ -2825,10 +2834,16 @@ class FishingGame {
     }
 
     const skyEl = document.getElementById('blood-eclipse-sky');
-    if (skyEl) skyEl.classList.add('hidden');
+    if (skyEl) {
+      skyEl.classList.add('hidden');
+      skyEl.style.display = 'none';
+    }
 
     const bannerEl = document.getElementById('blood-eclipse-banner');
-    if (bannerEl) bannerEl.classList.add('hidden');
+    if (bannerEl) {
+      bannerEl.classList.add('hidden');
+      bannerEl.style.display = 'none';
+    }
 
     this.showToast('O Eclipse Vermelho se dissipou e o mar voltou ao normal.', 'info');
   }
