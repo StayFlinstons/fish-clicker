@@ -75,7 +75,7 @@ class FishingGame {
     this.timeSavedAt = null;
     this.lastActiveTime = Date.now();
 
-    // Meta-progressão: Olhos de Peixe (Inspirado no Cookie Clicker - 00:00)
+    // Meta-progressão: Olhos de Peixe (Santuário Místico - 00:00)
     this.fishEyesCount = 0;
     this.fishEyesTotal = 0;
     this.fishEyesAllocated = { gold: 0, luck: 0, speed: 0, double: 0 };
@@ -98,7 +98,7 @@ class FishingGame {
     this.invTab = 'inventory';
     this.waterRenderer = null;
 
-    // Golden Fish (estilo golden cookie)
+    // Peixe Dourado (Evento Rápido)
     this.goldenFishActive = false;
     this.goldenFishTimer = null;
     this.tempBuffs = []; // { type, multiplier, endsAt, label }
@@ -441,32 +441,44 @@ class FishingGame {
   // ═══════════════════════════════════════════
   // PROGRESSO OFFLINE (AFK REWARD)
   // ═══════════════════════════════════════════
-  checkOfflineProgress() {
+  checkOfflineProgress(simulatedSec = null) {
     const autoLevel = this.upgradeLevels.auto_pescador || 0;
-    if (autoLevel <= 0 || !this.autoFisherEnabled) return; // Precisa do ajudante automático ligado
-
     const now = Date.now();
-    const diffMs = now - (this.lastActiveTime || now);
-    const diffSec = Math.floor(diffMs / 1000);
+    const diffSec = simulatedSec !== null ? simulatedSec : Math.floor((now - (this.lastActiveTime || now)) / 1000);
 
-    // Só dá recompensa se esteve fora mais de 90 segundos
-    if (diffSec < 90) return;
+    // Mínimo de 60 segundos de ausência para disparar recompensa
+    if (diffSec < 60) return;
 
-    const u = UPGRADES.find(u => u.id === 'auto_pescador');
-    const intervalSec = u ? u.getValue(autoLevel) : 8;
+    let intervalSec = 45;
+    let sourceText = 'A correnteza suave do lago fisgou peixes durante sua ausência!';
+
+    if (autoLevel > 0 && this.autoFisherEnabled) {
+      const u = UPGRADES.find(u => u.id === 'auto_pescador');
+      intervalSec = u ? u.getValue(autoLevel) : 8;
+      sourceText = 'Seu Mergulhador Amigo pescou no fundo do lago enquanto você esteve fora!';
+    }
+
     const maxOfflineSec = 8 * 3600; // Máximo de 8 horas AFK
     const effectiveSec = Math.min(diffSec, maxOfflineSec);
-
     const totalCatchesSim = Math.floor(effectiveSec / intervalSec);
     if (totalCatchesSim <= 0) return;
 
-    // Calcular ganho médio de ouro dos peixes pescados
+    // Calcular ouro com amostragem inteligente para evitar travamento em longos períodos
     const buffs = this.getActiveBuffs();
-    let earnedGold = 0;
-    for (let i = 0; i < totalCatchesSim; i++) {
+    const sampleSize = Math.min(totalCatchesSim, 30);
+    let sampleGold = 0;
+    for (let i = 0; i < sampleSize; i++) {
       const f = this.rollFish(buffs);
       this.recordDiscovery(f);
-      earnedGold += Math.round(f.baseValue * (1 + buffs.goldMultiplier));
+      sampleGold += Math.round(f.baseValue * (1 + buffs.goldMultiplier));
+    }
+
+    let earnedGold = 0;
+    if (totalCatchesSim <= sampleSize) {
+      earnedGold = sampleGold;
+    } else {
+      const avgGold = sampleGold / sampleSize;
+      earnedGold = Math.round(avgGold * totalCatchesSim);
     }
 
     // Formatar tempo ausente
@@ -474,17 +486,19 @@ class FishingGame {
     const minutes = Math.floor((diffSec % 3600) / 60);
     let timeStr = '';
     if (hours > 0) timeStr += `${hours}h `;
-    timeStr += `${minutes}m`;
+    timeStr += `${Math.max(1, minutes)}m`;
 
     // Atualizar e exibir modal
     const modal = document.getElementById('offline-modal');
     const timeEl = document.getElementById('offline-time-text');
+    const sourceEl = document.getElementById('offline-source-text');
     const catchesEl = document.getElementById('offline-catches-text');
     const goldEl = document.getElementById('offline-gold-text');
     const collectBtn = document.getElementById('btn-collect-offline');
 
     if (modal && timeEl && catchesEl && goldEl && collectBtn) {
       timeEl.textContent = `Você esteve fora por ${timeStr}!`;
+      if (sourceEl) sourceEl.textContent = sourceText;
       catchesEl.textContent = totalCatchesSim.toLocaleString('pt-BR');
       goldEl.textContent = `+${earnedGold.toLocaleString('pt-BR')}G`;
 
@@ -1292,9 +1306,32 @@ class FishingGame {
     // Peixes da raridade secreta não aparecem na enciclopédia até serem capturados!
     const visibleList = FISH_LIST.filter(fish => !fish.secret || this.discoveredFish[fish.id]);
 
+    // Contadores gerais da enciclopédia
+    let totalCatchesCount = 0;
+    let unlockedAurasCount = 0;
+    const totalSpecies = FISH_LIST.length;
+    const discoveredCount = Object.keys(this.discoveredFish || {}).length;
+
+    Object.values(this.discoveredFish || {}).forEach(d => {
+      if (d) {
+        totalCatchesCount += (d.count || 0);
+        if (d.caughtBloodMoon) unlockedAurasCount++;
+        if (d.caughtEclipse) unlockedAurasCount++;
+      }
+    });
+
+    const statSpeciesEl = document.getElementById('album-stat-species');
+    if (statSpeciesEl) statSpeciesEl.textContent = `${discoveredCount}/${totalSpecies}`;
+
+    const statCatchesEl = document.getElementById('album-stat-catches');
+    if (statCatchesEl) statCatchesEl.textContent = totalCatchesCount.toLocaleString('pt-BR');
+
+    const statAurasEl = document.getElementById('album-stat-auras');
+    if (statAurasEl) statAurasEl.textContent = `${unlockedAurasCount}/${totalSpecies * 2}`;
+
     grid.innerHTML = visibleList.map(fish => {
       const isDiscovered = !!this.discoveredFish[fish.id];
-      const data = this.discoveredFish[fish.id];
+      const data = this.discoveredFish[fish.id] || { maxWeight: 0, count: 0, caughtBloodMoon: false, caughtEclipse: false };
       const r = RARITIES[fish.rarity] || RARITIES.COMUM;
       const spriteURL = isDiscovered ? this.getFishSpriteURL(fish.icon) : this.getFishSilhouetteURL(fish.icon);
 
@@ -1326,13 +1363,24 @@ class FishingGame {
             </div>
             ${isDiscovered ? `
               <div class="flex items-center justify-between text-[8px] sm:text-[8.5px] text-slate-300 mt-2 bg-slate-950/70 px-2 py-1 border border-slate-800/80" style="font-family:var(--font-pixel);">
-                <div title="Maior peso capturado: ${data.maxWeight}kg">
-                  <span class="text-amber-400">★ Recorde:</span> <strong class="text-amber-300">${data.maxWeight}kg</strong>
+                <div title="Maior peso capturado: ${data.maxWeight || 0}kg">
+                  <span class="text-amber-400">★ Recorde:</span> <strong class="text-amber-300">${data.maxWeight || 0}kg</strong>
                 </div>
-                <div title="Total pescado: ${data.count}">
-                  <span class="text-cyan-400"># Pescados:</span> <strong class="text-cyan-300">${data.count}</strong>
+                <div title="Total pescado: ${data.count || 1}">
+                  <span class="text-cyan-400"># Pescados:</span> <strong class="text-cyan-300">${data.count || 1}x</strong>
                 </div>
               </div>
+
+              <!-- Registro de Auras Místicas Descobertas -->
+              <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtBloodMoon ? 'border-red-500 bg-red-950/90 text-red-300 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtBloodMoon ? 'Capturado com Aura da Lua Sangrenta (+50% Ouro, +25% Sorte)' : 'Ainda não capturado com Aura da Lua Sangrenta'}">
+                  🩸 ${data.caughtBloodMoon ? 'LUA SANGRENTA' : 'LUA SANGRENTA (?)'}
+                </span>
+                <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtEclipse ? 'border-red-700 bg-black/95 text-red-400 shadow-[0_0_8px_rgba(185,28,28,0.6)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtEclipse ? 'Capturado com Aura do Eclipse (+40% Vel., +35% Dupla)' : 'Ainda não capturado com Aura do Eclipse'}">
+                  🌑 ${data.caughtEclipse ? 'ECLIPSE' : 'ECLIPSE (?)'}
+                </span>
+              </div>
+
               ${fish.buff ? `
                 <div class="text-[8px] sm:text-[8.5px] ${isSecretCard ? 'text-red-300 bg-red-950/70 border-red-700/80' : 'text-purple-300 bg-purple-950/60 border-purple-800/60'} mt-1.5 px-2 py-1 border leading-relaxed break-words" style="font-family:var(--font-pixel);">
                   ★ ${fish.buff.text}
@@ -1362,6 +1410,14 @@ class FishingGame {
       this._fishSilhouetteCache[iconId] = getFishSilhouetteDataURL(iconId, 3);
     }
     return this._fishSilhouetteCache[iconId];
+  }
+
+  getBloodMoonSpriteURL(scale = 3.5) {
+    const key = `blood_moon_${scale}`;
+    if (!this._fishSpriteCache[key]) {
+      this._fishSpriteCache[key] = getBloodMoonFishDataURL(scale);
+    }
+    return this._fishSpriteCache[key];
   }
 
   // ── PERSISTÊNCIA ──
@@ -1448,6 +1504,33 @@ class FishingGame {
           this.settings = { ...this.settings, ...d.settings };
         }
         this.lastActiveTime = d.lastActiveTime || Date.now();
+
+        // Limpeza de chaves de versões legadas para liberar espaço do localStorage
+        ['pescaria_clicker_save_v3', 'pescaria_clicker_save_v2', 'pescaria_clicker_save_v1'].forEach(k => {
+          try { localStorage.removeItem(k); } catch (_) {}
+        });
+
+        // Retro-compatibilidade e sanitização das estatísticas do álbum
+        Object.keys(this.discoveredFish).forEach(id => {
+          const entry = this.discoveredFish[id];
+          if (!entry || typeof entry !== 'object') {
+            this.discoveredFish[id] = { maxWeight: 0, count: 1, caughtBloodMoon: false, caughtEclipse: false };
+          } else {
+            if (typeof entry.maxWeight !== 'number') entry.maxWeight = 0;
+            if (typeof entry.count !== 'number') entry.count = 1;
+            entry.caughtBloodMoon = Boolean(entry.caughtBloodMoon);
+            entry.caughtEclipse = Boolean(entry.caughtEclipse);
+          }
+        });
+
+        // Registrar auras já presentes nos peixes do inventário e aquário
+        const currentFish = [...this.inventory, ...this.aquarium];
+        currentFish.forEach(f => {
+          if (f && f.id && this.discoveredFish[f.id]) {
+            if (f.specialAura === 'lua_sangrenta') this.discoveredFish[f.id].caughtBloodMoon = true;
+            if (f.specialAura === 'eclipse') this.discoveredFish[f.id].caughtEclipse = true;
+          }
+        });
       }
     } catch(e) { console.error('Erro ao carregar:', e); }
   }
@@ -1622,7 +1705,12 @@ class FishingGame {
     const isNewRecord = fish.weight > prevRecord;
 
     if (isNew) {
-      this.discoveredFish[fish.id] = { maxWeight: fish.weight, count: 1 };
+      this.discoveredFish[fish.id] = {
+        maxWeight: fish.weight,
+        count: 1,
+        caughtBloodMoon: fish.specialAura === 'lua_sangrenta',
+        caughtEclipse: fish.specialAura === 'eclipse'
+      };
       // Recompensa em ouro pela primeira descoberta de espécie
       const bonusMap = { COMUM: 50, INCOMUM: 120, RARO: 300, EPICO: 800, LENDARIO: 2500, MITICO: 10000, SECRETO: 25000 };
       const bonus = bonusMap[fish.rarity] || 50;
@@ -1639,6 +1727,12 @@ class FishingGame {
       this.discoveredFish[fish.id].count = (this.discoveredFish[fish.id].count || 0) + 1;
       if (isNewRecord) {
         this.discoveredFish[fish.id].maxWeight = fish.weight;
+      }
+      if (fish.specialAura === 'lua_sangrenta') {
+        this.discoveredFish[fish.id].caughtBloodMoon = true;
+      }
+      if (fish.specialAura === 'eclipse') {
+        this.discoveredFish[fish.id].caughtEclipse = true;
       }
     }
     this.checkAchievements();
@@ -2536,7 +2630,7 @@ class FishingGame {
   }
 
   // ═══════════════════════════════════════════
-  // PEIXE DOURADO (Golden Cookie style)
+  // PEIXE DOURADO (Evento Rápido de Sorte)
   // ═══════════════════════════════════════════
   initGoldenFish() {
     this.scheduleNextGoldenFish();
@@ -2567,7 +2661,7 @@ class FishingGame {
     const el = document.createElement('div');
     if (isBloodMoon) {
       el.id = 'blood-moon-fish-event';
-      el.innerHTML = `<img src="${getBloodMoonFishDataURL(3.5)}" alt="Peixe da Lua Sangrenta" style="width:56px;height:38px;image-rendering:pixelated;filter:drop-shadow(0 0 14px #dc2626) drop-shadow(0 0 6px #7f1d1d);pointer-events:none;">`;
+      el.innerHTML = `<img src="${this.getBloodMoonSpriteURL(3.5)}" alt="Peixe da Lua Sangrenta" style="width:56px;height:38px;image-rendering:pixelated;filter:drop-shadow(0 0 14px #dc2626) drop-shadow(0 0 6px #7f1d1d);pointer-events:none;">`;
       el.style.cssText = `
         position:absolute; z-index:35; cursor:pointer; user-select:none;
         animation: goldenFishFloat 1.8s ease-in-out infinite, goldenFishShimmer 0.5s ease-in-out infinite alternate;
@@ -2767,7 +2861,7 @@ class FishingGame {
         animation: goldenRewardPulse 0.5s ease-in-out; max-width:440px;
       ">
         <div style="display:flex; justify-content:center; margin-bottom:10px;">
-          <img src="${getBloodMoonFishDataURL(3.5)}" alt="Peixe da Lua Sangrenta" style="width:64px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 0 16px #ef4444);">
+          <img src="${this.getBloodMoonSpriteURL(3.5)}" alt="Peixe da Lua Sangrenta" style="width:64px;height:42px;image-rendering:pixelated;filter:drop-shadow(0 0 16px #ef4444);">
         </div>
         <div style="font-family:var(--font-pixel); font-size:13px; color:#ef4444; font-weight:bold; letter-spacing:2px; text-shadow:0 0 12px #dc2626;">
           🌑 ECLIPSE VERMELHO! 🌑
@@ -2849,7 +2943,8 @@ class FishingGame {
   }
 
   startTempBuffLoop() {
-    setInterval(() => {
+    if (this._tempBuffTimer) clearInterval(this._tempBuffTimer);
+    this._tempBuffTimer = setInterval(() => {
       const now = Date.now();
       const before = this.tempBuffs.length;
       this.tempBuffs = this.tempBuffs.filter(b => b.endsAt > now);
@@ -2975,6 +3070,7 @@ class FishingGame {
         this.consoleLog('unlockall      - Desbloqueia varas e iscas', '#ccc');
         this.consoleLog('clearinv       - Limpa inventário', '#ccc');
         this.consoleLog('buff <tipo> [s] - Buff temporário (gold/luck/speed/double)', '#ccc');
+        this.consoleLog('offline [minutos] - Simula ausência offline/AFK (default: 60)', '#38bdf8');
         this.consoleLog('skiptime / skip [phase] - Pula horário do dia (day/sunset/night)', '#ccc');
         this.consoleLog('time / tod [phase|skip] - Consulta ou define horário do dia', '#ccc');
         this.consoleLog('fisheye [n]    - Adiciona n Olhos de Peixe (default: 1)', '#ccc');
@@ -3064,6 +3160,14 @@ class FishingGame {
         this.startBloodMoonEvent(60000);
         this.consoleLog('Eclipse Vermelho e Mar Sangrento iniciados por 60 segundos!', '#dc2626');
         break;
+
+      case 'offline':
+      case 'afk': {
+        const mins = Math.max(1, parseInt(arg) || 60);
+        this.consoleLog(`Simulando ${mins} minutos de ausência offline...`, '#38bdf8');
+        this.checkOfflineProgress(mins * 60);
+        break;
+      }
 
       case 'catchid': {
         const query = parts[1];

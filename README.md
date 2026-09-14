@@ -35,7 +35,7 @@ Conforme você pesca, acumula ouro, aprimora suas varas de pescar e iscas, desbl
 - **Pesca Manual:** Arremesse e fisgue peixes clicando no lago.
 - **Linha de Pesca Conectada:** Linha animada milimetricamente conectada na ponta da sua vara de pesca até a água.
 - **Pescador Automático:** Contrate ajudantes que pescam de forma passiva enquanto você gerencia seus recursos.
-- **Peixe Dourado (Golden Fish):** Evento surpresa estilo *golden cookie* que surge nadando pelo lago concedendo bônus temporários e montantes enormes de ouro instantâneo.
+- **Peixe Dourado (Golden Fish):** Evento surpresa veloz que surge nadando pelo lago concedendo bônus temporários e montantes enormes de ouro instantâneo.
 - **Ímã Dourado:** Upgrade passivo que captura automaticamente o Peixe Dourado.
 
 ### 🐟 2. Ecossistema Rico de Peixes (21+ Espécies)

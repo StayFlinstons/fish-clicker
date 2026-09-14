@@ -436,6 +436,24 @@
           <div id="album-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500" style="width: 0%;"></div>
         </div>
 
+        <!-- Barra de estatísticas do álbum -->
+        <div id="album-stats-summary" class="bg-slate-950/90 border border-slate-800 px-3 py-1.5 flex items-center justify-around text-center text-[8px] sm:text-[8.5px] shrink-0" style="font-family:var(--font-pixel);">
+          <div>
+            <span class="text-slate-500">DESCOBERTOS:</span>
+            <span id="album-stat-species" class="text-cyan-400 font-bold ml-1">0/28</span>
+          </div>
+          <div class="w-px h-4 bg-slate-800"></div>
+          <div>
+            <span class="text-slate-500">TOTAL PESCADOS:</span>
+            <span id="album-stat-catches" class="text-emerald-400 font-bold ml-1">0</span>
+          </div>
+          <div class="w-px h-4 bg-slate-800"></div>
+          <div>
+            <span class="text-slate-500">AURAS MÍSTICAS:</span>
+            <span id="album-stat-auras" class="text-red-400 font-bold ml-1">0/56</span>
+          </div>
+        </div>
+
         <!-- Grid dos peixes (scrollable) -->
         <div id="album-grid" class="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 p-1 pr-2">
           <!-- Renderizado dinamicamente via JS -->
@@ -584,6 +602,7 @@
       <div>
         <h3 class="text-xs font-bold text-amber-300" style="font-family:var(--font-pixel);">BEM-VINDO DE VOLTA!</h3>
         <p id="offline-time-text" class="text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">Você esteve ausente por 2h 15m</p>
+        <p id="offline-source-text" class="text-[7.5px] text-emerald-400 mt-0.5" style="font-family:var(--font-pixel);">Seu Mergulhador Amigo trabalhou enquanto você esteve fora!</p>
       </div>
 
       <div class="bg-slate-950 border-2 border-slate-800 p-3 space-y-2 text-left">
@@ -985,7 +1004,7 @@
           <span class="inline-flex"><svg class="w-5 h-5" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="1" fill="#38bdf8"/><rect x="1" y="2" width="10" height="8" fill="#0284c7"/><rect x="0" y="4" width="12" height="4" fill="#0369a1"/><rect x="2" y="3" width="8" height="6" fill="#f8fafc"/><rect x="4" y="4" width="4" height="4" fill="#0f172a"/><rect x="5" y="4" width="2" height="2" fill="#38bdf8"/><rect x="6" y="5" width="1" height="1" fill="#ffffff"/><rect x="3" y="10" width="6" height="1" fill="#38bdf8"/></svg></span>
           <div>
             <h3 class="text-xs font-bold text-cyan-300" style="font-family:var(--font-pixel);">SANTUÁRIO DOS OLHOS DE PEIXE</h3>
-            <p class="text-[7.5px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Meta-progressão diária inspirada nos Torrões de Açúcar</p>
+            <p class="text-[7.5px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Meta-progressão mística diária às 00:00</p>
           </div>
         </div>
         <button onclick="window.game.closeFishEyesModal()" class="text-slate-400 hover:text-white text-lg leading-none cursor-pointer">✕</button>
@@ -1166,7 +1185,7 @@
             <span class="text-[7px] bg-cyan-950 border border-cyan-600/60 text-cyan-300 px-1 py-0.5">META-PROGRESSÃO</span>
           </div>
           <p class="text-slate-300 text-[8px] leading-relaxed">
-            Inspirado nos <i>Torrões de Açúcar</i> do Cookie Clicker:
+            Sistema místico de aprimoramento permanente diário:
           </p>
           <ul class="list-disc list-inside space-y-1 text-slate-400 text-[7.5px] leading-normal pl-1">
             <li><b class="text-amber-300">Recompensa Diária às 00:00:</b> Ganhe 1 Olho de Peixe a cada dia real que passa (com acúmulo de dias offline).</li>
