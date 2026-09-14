@@ -1192,8 +1192,439 @@ export const PIXEL_ICONS = {
   lockedTrophy: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="5" fill="#334155" stroke="#1e293b" stroke-width="0.8"/><rect x="1" y="2" width="2" height="3" fill="#1e293b"/><rect x="9" y="2" width="2" height="3" fill="#1e293b"/><rect x="5" y="6" width="2" height="2" fill="#1e293b"/><rect x="3" y="8" width="6" height="2" fill="#0f172a"/><rect x="4" y="2" width="4" height="2" fill="#475569"/></svg>`,
   bait: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="2" width="6" height="2" fill="#cd853f"/><rect x="4" y="4" width="4" height="2" fill="#8b4513"/><rect x="2" y="6" width="4" height="2" fill="#cd853f"/></svg>`,
   portal: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="4" y="1" width="4" height="1" fill="#a855f7"/><rect x="2" y="2" width="8" height="1" fill="#06b6d4"/><rect x="1" y="3" width="10" height="6" fill="#8b5cf6"/><rect x="3" y="4" width="6" height="4" fill="#0891b2"/><rect x="4" y="5" width="4" height="2" fill="#67e8f9"/><rect x="5" y="5" width="2" height="2" fill="#ffffff"/><rect x="2" y="9" width="8" height="1" fill="#06b6d4"/><rect x="4" y="10" width="4" height="1" fill="#a855f7"/></svg>`,
-  fishEye: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="1" fill="#38bdf8"/><rect x="1" y="2" width="10" height="8" fill="#0284c7"/><rect x="0" y="4" width="12" height="4" fill="#0369a1"/><rect x="2" y="3" width="8" height="6" fill="#f8fafc"/><rect x="4" y="4" width="4" height="4" fill="#0f172a"/><rect x="5" y="4" width="2" height="2" fill="#38bdf8"/><rect x="6" y="5" width="1" height="1" fill="#ffffff"/><rect x="3" y="10" width="6" height="1" fill="#38bdf8"/></svg>`
+  fishEye: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;" shape-rendering="crispEdges"><rect x="3" y="1" width="6" height="1" fill="#38bdf8"/><rect x="1" y="2" width="10" height="8" fill="#0284c7"/><rect x="0" y="4" width="12" height="4" fill="#0369a1"/><rect x="2" y="3" width="8" height="6" fill="#f8fafc"/><rect x="4" y="4" width="4" height="4" fill="#0f172a"/><rect x="5" y="4" width="2" height="2" fill="#38bdf8"/><rect x="6" y="5" width="1" height="1" fill="#ffffff"/><rect x="3" y="10" width="6" height="1" fill="#38bdf8"/></svg>`,
+  magnet: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;" shape-rendering="crispEdges"><rect x="2" y="1" width="3" height="3" fill="#cbd5e1"/><rect x="7" y="1" width="3" height="3" fill="#38bdf8"/><rect x="2" y="4" width="3" height="4" fill="#dc2626"/><rect x="7" y="4" width="3" height="4" fill="#dc2626"/><rect x="3" y="8" width="6" height="2" fill="#dc2626"/><rect x="4" y="10" width="4" height="1" fill="#991b1b"/></svg>`,
+  scenPonte: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;" shape-rendering="crispEdges"><rect x="0" y="6" width="12" height="2" fill="#64748b"/><rect x="1" y="3" width="2" height="7" fill="#334155"/><rect x="9" y="3" width="2" height="7" fill="#334155"/><rect x="3" y="4" width="6" height="1" fill="#94a3b8"/><rect x="0" y="8" width="12" height="4" fill="#0284c7"/></svg>`,
+  scenPraia: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;" shape-rendering="crispEdges"><rect x="7" y="1" width="4" height="4" fill="#facc15"/><rect x="0" y="7" width="6" height="5" fill="#fde047"/><rect x="2" y="3" width="2" height="5" fill="#78350f"/><rect x="1" y="2" width="4" height="2" fill="#15803d"/><rect x="6" y="8" width="6" height="4" fill="#06b6d4"/></svg>`,
+  scenFloresta: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;" shape-rendering="crispEdges"><rect x="4" y="1" width="4" height="2" fill="#15803d"/><rect x="3" y="3" width="6" height="2" fill="#16a34a"/><rect x="2" y="5" width="8" height="3" fill="#15803d"/><rect x="5" y="8" width="2" height="3" fill="#78350f"/><rect x="0" y="9" width="12" height="3" fill="#047857"/></svg>`,
+  backpack: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;" shape-rendering="crispEdges"><rect x="2" y="2" width="8" height="9" fill="#92400e"/><rect x="3" y="1" width="6" height="2" fill="#78350f"/><rect x="4" y="4" width="4" height="3" fill="#b45309"/><rect x="5" y="5" width="2" height="2" fill="#facc15"/><rect x="2" y="8" width="8" height="1" fill="#78350f"/></svg>`,
+  mysteryBox: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;" shape-rendering="crispEdges"><rect x="1" y="1" width="10" height="10" fill="#334155"/><rect x="2" y="2" width="8" height="8" fill="#1e293b"/><rect x="4" y="3" width="4" height="1" fill="#38bdf8"/><rect x="7" y="4" width="1" height="2" fill="#38bdf8"/><rect x="5" y="6" width="2" height="1" fill="#38bdf8"/><rect x="5" y="8" width="2" height="1" fill="#38bdf8"/></svg>`
 };
+
+/**
+ * Retorna o SVG de visualização 100% pixel art escalonado do Ímã por Tier
+ */
+export function getMagnetSpriteSVG(tier = 1, size = 48) {
+  switch (tier) {
+    case 5: // Cósmico - 100% Pixel Art Escalonado
+      return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" style="image-rendering:pixelated;" shape-rendering="crispEdges" class="drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]">
+        <!-- Núcleo de Singularidade Cósmica Pixelada -->
+        <rect x="7" y="7" width="6" height="6" fill="#4c0519"/>
+        <rect x="8" y="8" width="4" height="4" fill="#f43f5e"/>
+        <rect x="9" y="9" width="2" height="2" fill="#ffffff" class="animate-ping"/>
+        <!-- Anel de Fenda Dimensional Estelar -->
+        <rect x="3" y="3" width="4" height="2" fill="#a855f7"/>
+        <rect x="13" y="3" width="4" height="2" fill="#38bdf8"/>
+        <rect x="2" y="5" width="2" height="10" fill="#e11d48"/>
+        <rect x="16" y="5" width="2" height="10" fill="#e11d48"/>
+        <rect x="4" y="15" width="4" height="2" fill="#e11d48"/>
+        <rect x="12" y="15" width="4" height="2" fill="#e11d48"/>
+        <rect x="7" y="17" width="6" height="2" fill="#9f1239"/>
+        <!-- Pontas Cósmicas -->
+        <rect x="2" y="3" width="2" height="3" fill="#38bdf8"/>
+        <rect x="16" y="3" width="2" height="3" fill="#a855f7"/>
+        <rect x="9" y="1" width="2" height="2" fill="#facc15"/>
+      </svg>`;
+    case 4: // Neodímio N52 - 100% Pixel Art Escalonado
+      return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" style="image-rendering:pixelated;" shape-rendering="crispEdges" class="drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]">
+        <rect x="3" y="2" width="5" height="4" fill="#ffffff"/>
+        <rect x="12" y="2" width="5" height="4" fill="#0284c7"/>
+        <rect x="3" y="6" width="5" height="7" fill="#ca8a04"/>
+        <rect x="12" y="6" width="5" height="7" fill="#ca8a04"/>
+        <rect x="4" y="6" width="3" height="6" fill="#facc15"/>
+        <rect x="13" y="6" width="3" height="6" fill="#facc15"/>
+        <!-- Base de ferradura em degraus de pixels -->
+        <rect x="4" y="13" width="5" height="2" fill="#ca8a04"/>
+        <rect x="11" y="13" width="5" height="2" fill="#ca8a04"/>
+        <rect x="5" y="15" width="10" height="2" fill="#ca8a04"/>
+        <rect x="6" y="17" width="8" height="2" fill="#a16207"/>
+        <rect x="6" y="15" width="8" height="1" fill="#fef08a"/>
+      </svg>`;
+    case 3: // Eletroímã Industrial - 100% Pixel Art Escalonado
+      return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" style="image-rendering:pixelated;" shape-rendering="crispEdges" class="drop-shadow-[0_0_6px_rgba(168,85,247,0.5)]">
+        <!-- Chassi de aço escuro -->
+        <rect x="6" y="1" width="8" height="18" fill="#334155"/>
+        <rect x="7" y="2" width="6" height="16" fill="#475569"/>
+        <!-- Fios de cobre em bobina escalonada -->
+        <rect x="5" y="4" width="10" height="2" fill="#b45309"/>
+        <rect x="6" y="4" width="8" height="1" fill="#f59e0b"/>
+        <rect x="5" y="7" width="10" height="2" fill="#b45309"/>
+        <rect x="6" y="7" width="8" height="1" fill="#f59e0b"/>
+        <rect x="5" y="10" width="10" height="2" fill="#b45309"/>
+        <rect x="6" y="10" width="8" height="1" fill="#f59e0b"/>
+        <rect x="5" y="13" width="10" height="2" fill="#b45309"/>
+        <rect x="6" y="13" width="8" height="1" fill="#f59e0b"/>
+        <!-- Terminal e indicador LED -->
+        <rect x="4" y="16" width="12" height="3" fill="#7e22ce"/>
+        <rect x="9" y="1" width="2" height="2" fill="#ef4444" class="animate-pulse"/>
+      </svg>`;
+    case 2: // Ferradura AlNiCo - 100% Pixel Art Escalonado
+      return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" style="image-rendering:pixelated;" shape-rendering="crispEdges" class="drop-shadow-[0_0_4px_rgba(56,189,248,0.4)]">
+        <!-- Pontas do ímã (Azul e Prata) -->
+        <rect x="3" y="2" width="4" height="4" fill="#cbd5e1"/>
+        <rect x="13" y="2" width="4" height="4" fill="#38bdf8"/>
+        <!-- Pernas da ferradura em vermelho -->
+        <rect x="3" y="6" width="4" height="7" fill="#dc2626"/>
+        <rect x="13" y="6" width="4" height="7" fill="#dc2626"/>
+        <rect x="4" y="6" width="2" height="6" fill="#ef4444"/>
+        <rect x="14" y="6" width="2" height="6" fill="#ef4444"/>
+        <!-- Degraus da curva inferior de pixels -->
+        <rect x="4" y="13" width="4" height="2" fill="#dc2626"/>
+        <rect x="12" y="13" width="4" height="2" fill="#dc2626"/>
+        <rect x="5" y="15" width="10" height="2" fill="#dc2626"/>
+        <rect x="6" y="17" width="8" height="2" fill="#991b1b"/>
+      </svg>`;
+    case 1: // Ferrite Enferrujado - 100% Pixel Art Escalonado
+    default:
+      return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" style="image-rendering:pixelated;" shape-rendering="crispEdges">
+        <!-- Pontas enferrujadas -->
+        <rect x="3" y="3" width="4" height="4" fill="#78350f"/>
+        <rect x="4" y="3" width="2" height="3" fill="#b45309"/>
+        <rect x="13" y="3" width="4" height="4" fill="#64748b"/>
+        <rect x="14" y="3" width="2" height="3" fill="#94a3b8"/>
+        <!-- Pernas de ferro escurecido com ferrugem -->
+        <rect x="3" y="7" width="4" height="6" fill="#475569"/>
+        <rect x="13" y="7" width="4" height="6" fill="#475569"/>
+        <rect x="3" y="9" width="2" height="2" fill="#92400e"/>
+        <rect x="15" y="8" width="2" height="2" fill="#78350f"/>
+        <!-- Degraus da base de ferro em blocos -->
+        <rect x="4" y="13" width="4" height="2" fill="#334155"/>
+        <rect x="12" y="13" width="4" height="2" fill="#334155"/>
+        <rect x="5" y="15" width="10" height="2" fill="#334155"/>
+        <rect x="6" y="17" width="8" height="2" fill="#1e293b"/>
+      </svg>`;
+  }
+}
+
+/**
+ * Retorna o SVG de cada um dos 21 Itens/Minérios da Pesca Magnética em 100% Pixel Art
+ */
+export function getMagnetItemSpriteSVG(itemId, size = 24) {
+  const open = `<svg width="${size}" height="${size}" viewBox="0 0 16 16" style="image-rendering:pixelated;" shape-rendering="crispEdges" class="inline-block shrink-0">`;
+  const close = `</svg>`;
+
+  switch (itemId) {
+    // ═══ CENÁRIO 1: PONTE ═══
+    case 'lata_vintage':
+      return `${open}
+        <rect x="5" y="2" width="6" height="2" fill="#cbd5e1"/>
+        <rect x="7" y="1" width="2" height="1" fill="#f8fafc"/>
+        <rect x="4" y="4" width="8" height="9" fill="#dc2626"/>
+        <rect x="4" y="4" width="1" height="9" fill="#ef4444"/>
+        <rect x="11" y="4" width="1" height="9" fill="#991b1b"/>
+        <rect x="4" y="7" width="8" height="2" fill="#f8fafc"/>
+        <rect x="5" y="8" width="6" height="1" fill="#cbd5e1"/>
+        <rect x="5" y="13" width="6" height="1" fill="#64748b"/>
+        <rect x="8" y="5" width="1" height="1" fill="#78350f"/>
+        <rect x="5" y="10" width="2" height="1" fill="#92400e"/>
+      ${close}`;
+
+    case 'chaveiro_antigo':
+      return `${open}
+        <rect x="4" y="2" width="6" height="5" fill="#b45309"/>
+        <rect x="5" y="3" width="4" height="3" fill="#0f172a"/>
+        <rect x="4" y="7" width="2" height="7" fill="#d97706"/>
+        <rect x="2" y="11" width="2" height="1" fill="#d97706"/>
+        <rect x="2" y="13" width="2" height="1" fill="#d97706"/>
+        <rect x="8" y="6" width="2" height="8" fill="#f59e0b"/>
+        <rect x="10" y="10" width="2" height="1" fill="#f59e0b"/>
+        <rect x="10" y="12" width="3" height="1" fill="#f59e0b"/>
+      ${close}`;
+
+    case 'sinal_transito':
+      return `${open}
+        <rect x="4" y="1" width="8" height="10" fill="#dc2626"/>
+        <rect x="3" y="2" width="10" height="8" fill="#dc2626"/>
+        <rect x="2" y="3" width="12" height="6" fill="#dc2626"/>
+        <rect x="4" y="2" width="8" height="1" fill="#f8fafc"/>
+        <rect x="4" y="9" width="8" height="1" fill="#f8fafc"/>
+        <rect x="3" y="3" width="1" height="6" fill="#f8fafc"/>
+        <rect x="12" y="3" width="1" height="6" fill="#f8fafc"/>
+        <rect x="5" y="5" width="6" height="2" fill="#ffffff"/>
+        <rect x="7" y="11" width="2" height="4" fill="#64748b"/>
+      ${close}`;
+
+    case 'bicicleta_retro':
+      return `${open}
+        <rect x="1" y="8" width="4" height="4" fill="#64748b"/>
+        <rect x="2" y="9" width="2" height="2" fill="#0f172a"/>
+        <rect x="11" y="8" width="4" height="4" fill="#64748b"/>
+        <rect x="12" y="9" width="2" height="2" fill="#0f172a"/>
+        <rect x="3" y="9" width="5" height="1" fill="#ef4444"/>
+        <rect x="7" y="5" width="1" height="5" fill="#ef4444"/>
+        <rect x="5" y="7" width="4" height="1" fill="#ef4444"/>
+        <rect x="9" y="5" width="4" height="1" fill="#ef4444"/>
+        <rect x="12" y="5" width="1" height="4" fill="#ef4444"/>
+        <rect x="6" y="4" width="3" height="1" fill="#1e293b"/>
+        <rect x="11" y="4" width="3" height="1" fill="#cbd5e1"/>
+        <rect x="13" y="3" width="1" height="2" fill="#1e293b"/>
+      ${close}`;
+
+    case 'carrinho_mercado':
+      return `${open}
+        <rect x="3" y="3" width="10" height="7" fill="#94a3b8"/>
+        <rect x="4" y="4" width="8" height="5" fill="#0f172a"/>
+        <rect x="6" y="4" width="1" height="5" fill="#64748b"/>
+        <rect x="9" y="4" width="1" height="5" fill="#64748b"/>
+        <rect x="4" y="6" width="8" height="1" fill="#64748b"/>
+        <rect x="1" y="2" width="3" height="1" fill="#0284c7"/>
+        <rect x="3" y="3" width="1" height="2" fill="#64748b"/>
+        <rect x="4" y="10" width="8" height="1" fill="#64748b"/>
+        <rect x="3" y="11" width="2" height="2" fill="#334155"/>
+        <rect x="9" y="11" width="2" height="2" fill="#334155"/>
+      ${close}`;
+
+    case 'celular_flip':
+      return `${open}
+        <rect x="5" y="1" width="6" height="6" fill="#1e293b"/>
+        <rect x="6" y="2" width="4" height="4" fill="#38bdf8"/>
+        <rect x="5" y="7" width="6" height="1" fill="#0f172a"/>
+        <rect x="5" y="8" width="6" height="7" fill="#334155"/>
+        <rect x="6" y="9" width="4" height="4" fill="#64748b"/>
+        <rect x="7" y="10" width="2" height="2" fill="#cbd5e1"/>
+        <rect x="10" y="0" width="1" height="3" fill="#64748b"/>
+      ${close}`;
+
+    case 'cofre_trancado':
+      return `${open}
+        <rect x="2" y="2" width="12" height="12" fill="#1e293b"/>
+        <rect x="3" y="3" width="10" height="10" fill="#334155"/>
+        <rect x="4" y="4" width="8" height="8" fill="#1e293b"/>
+        <rect x="6" y="6" width="4" height="4" fill="#d97706"/>
+        <rect x="7" y="7" width="2" height="2" fill="#facc15"/>
+        <rect x="11" y="7" width="1" height="2" fill="#cbd5e1"/>
+        <rect x="3" y="4" width="1" height="2" fill="#64748b"/>
+        <rect x="3" y="10" width="1" height="2" fill="#64748b"/>
+      ${close}`;
+
+    // ═══ CENÁRIO 2: PRAIA ═══
+    case 'moedas_estrangeiras':
+      return `${open}
+        <rect x="3" y="9" width="10" height="3" fill="#ca8a04"/>
+        <rect x="4" y="8" width="8" height="2" fill="#facc15"/>
+        <rect x="4" y="6" width="8" height="3" fill="#ca8a04"/>
+        <rect x="5" y="5" width="6" height="2" fill="#fde047"/>
+        <rect x="5" y="3" width="7" height="3" fill="#eab308"/>
+        <rect x="6" y="2" width="5" height="2" fill="#fef08a"/>
+        <rect x="8" y="3" width="1" height="1" fill="#b45309"/>
+      ${close}`;
+
+    case 'protetor_vintage':
+      return `${open}
+        <rect x="6" y="2" width="4" height="2" fill="#f8fafc"/>
+        <rect x="5" y="4" width="6" height="10" fill="#ea580c"/>
+        <rect x="4" y="5" width="8" height="8" fill="#c2410c"/>
+        <rect x="5" y="7" width="6" height="2" fill="#facc15"/>
+        <rect x="5" y="10" width="6" height="1" fill="#fde047"/>
+        <rect x="6" y="8" width="2" height="1" fill="#78350f"/>
+      ${close}`;
+
+    case 'oculos_sol':
+      return `${open}
+        <rect x="1" y="5" width="6" height="5" fill="#ca8a04"/>
+        <rect x="2" y="6" width="4" height="3" fill="#090d16"/>
+        <rect x="3" y="6" width="1" height="1" fill="#38bdf8"/>
+        <rect x="9" y="5" width="6" height="5" fill="#ca8a04"/>
+        <rect x="10" y="6" width="4" height="3" fill="#090d16"/>
+        <rect x="11" y="6" width="1" height="1" fill="#38bdf8"/>
+        <rect x="7" y="5" width="2" height="1" fill="#eab308"/>
+        <rect x="0" y="4" width="2" height="1" fill="#a16207"/>
+        <rect x="14" y="4" width="2" height="1" fill="#a16207"/>
+      ${close}`;
+
+    case 'camera_gopro':
+      return `${open}
+        <rect x="3" y="3" width="10" height="9" fill="#0f172a"/>
+        <rect x="2" y="2" width="12" height="11" fill="none" stroke="#38bdf8" stroke-width="1"/>
+        <rect x="5" y="5" width="6" height="5" fill="#334155"/>
+        <rect x="6" y="6" width="4" height="3" fill="#0284c7"/>
+        <rect x="7" y="7" width="2" height="1" fill="#38bdf8"/>
+        <rect x="11" y="4" width="1" height="1" fill="#ef4444" class="animate-pulse"/>
+      ${close}`;
+
+    case 'relogio_ouro':
+      return `${open}
+        <rect x="6" y="1" width="4" height="3" fill="#ca8a04"/>
+        <rect x="6" y="12" width="4" height="3" fill="#ca8a04"/>
+        <rect x="4" y="4" width="8" height="8" fill="#eab308"/>
+        <rect x="5" y="5" width="6" height="6" fill="#0284c7"/>
+        <rect x="7" y="6" width="1" height="3" fill="#ffffff"/>
+        <rect x="8" y="7" width="2" height="1" fill="#ffffff"/>
+        <rect x="12" y="7" width="1" height="2" fill="#fde047"/>
+      ${close}`;
+
+    case 'alianca_diamante':
+      return `${open}
+        <rect x="4" y="6" width="8" height="8" fill="#e2e8f0"/>
+        <rect x="6" y="8" width="4" height="4" fill="#0f172a"/>
+        <rect x="6" y="4" width="4" height="2" fill="#cbd5e1"/>
+        <rect x="6" y="2" width="4" height="3" fill="#38bdf8"/>
+        <rect x="7" y="1" width="2" height="1" fill="#ffffff"/>
+        <rect x="7" y="3" width="2" height="1" fill="#ffffff"/>
+        <rect x="11" y="1" width="1" height="1" fill="#38bdf8"/>
+      ${close}`;
+
+    case 'colar_perolas':
+      return `${open}
+        <rect x="7" y="2" width="2" height="2" fill="#ffffff"/>
+        <rect x="4" y="4" width="2" height="2" fill="#334155"/>
+        <rect x="10" y="4" width="2" height="2" fill="#334155"/>
+        <rect x="2" y="7" width="3" height="3" fill="#1e293b"/>
+        <rect x="11" y="7" width="3" height="3" fill="#1e293b"/>
+        <rect x="3" y="10" width="3" height="3" fill="#334155"/>
+        <rect x="10" y="10" width="3" height="3" fill="#334155"/>
+        <rect x="6" y="11" width="4" height="4" fill="#090d16"/>
+        <rect x="7" y="12" width="2" height="2" fill="#a855f7"/>
+      ${close}`;
+
+    // ═══ CENÁRIO 3: FLORESTA ═══
+    case 'minerio_ferro':
+      return `${open}
+        <rect x="3" y="4" width="10" height="9" fill="#334155"/>
+        <rect x="4" y="3" width="8" height="11" fill="#475569"/>
+        <rect x="2" y="6" width="12" height="5" fill="#1e293b"/>
+        <rect x="5" y="5" width="2" height="2" fill="#cbd5e1"/>
+        <rect x="9" y="6" width="3" height="2" fill="#f8fafc"/>
+        <rect x="6" y="9" width="3" height="2" fill="#e2e8f0"/>
+        <rect x="10" y="10" width="2" height="1" fill="#94a3b8"/>
+      ${close}`;
+
+    case 'pedra_pirita':
+      return `${open}
+        <rect x="4" y="4" width="5" height="5" fill="#ca8a04"/>
+        <rect x="5" y="3" width="4" height="4" fill="#facc15"/>
+        <rect x="5" y="4" width="2" height="2" fill="#fef08a"/>
+        <rect x="7" y="7" width="6" height="6" fill="#b45309"/>
+        <rect x="8" y="6" width="5" height="5" fill="#eab308"/>
+        <rect x="9" y="7" width="2" height="2" fill="#fde047"/>
+        <rect x="2" y="8" width="5" height="5" fill="#a16207"/>
+        <rect x="3" y="7" width="4" height="4" fill="#facc15"/>
+      ${close}`;
+
+    case 'geodo_ametista':
+      return `${open}
+        <rect x="3" y="3" width="10" height="10" fill="#334155"/>
+        <rect x="2" y="5" width="12" height="6" fill="#1e293b"/>
+        <rect x="5" y="5" width="6" height="6" fill="#0f172a"/>
+        <rect x="5" y="5" width="3" height="3" fill="#a855f7"/>
+        <rect x="6" y="6" width="1" height="1" fill="#e9d5ff"/>
+        <rect x="8" y="5" width="3" height="2" fill="#7e22ce"/>
+        <rect x="9" y="6" width="1" height="1" fill="#c084fc"/>
+        <rect x="6" y="8" width="4" height="3" fill="#9333ea"/>
+        <rect x="7" y="9" width="2" height="1" fill="#f3e8ff"/>
+      ${close}`;
+
+    case 'quartzo_prismatico':
+      return `${open}
+        <rect x="7" y="1" width="2" height="13" fill="#38bdf8"/>
+        <rect x="6" y="3" width="4" height="10" fill="#06b6d4"/>
+        <rect x="7" y="2" width="2" height="3" fill="#ffffff"/>
+        <rect x="4" y="5" width="3" height="8" fill="#f43f5e"/>
+        <rect x="4" y="6" width="1" height="4" fill="#fbcfe8"/>
+        <rect x="10" y="6" width="3" height="7" fill="#facc15"/>
+        <rect x="11" y="7" width="1" height="3" fill="#fef08a"/>
+        <rect x="4" y="12" width="8" height="2" fill="#475569"/>
+      ${close}`;
+
+    case 'fossil_trilobita':
+      return `${open}
+        <rect x="3" y="3" width="10" height="10" fill="#cbd5e1"/>
+        <rect x="2" y="4" width="12" height="8" fill="#94a3b8"/>
+        <rect x="4" y="2" width="8" height="12" fill="#e2e8f0"/>
+        <rect x="6" y="4" width="4" height="2" fill="#78350f"/>
+        <rect x="5" y="5" width="6" height="1" fill="#451a03"/>
+        <rect x="6" y="6" width="4" height="1" fill="#78350f"/>
+        <rect x="5" y="7" width="6" height="1" fill="#451a03"/>
+        <rect x="6" y="8" width="4" height="1" fill="#78350f"/>
+        <rect x="5" y="9" width="6" height="1" fill="#451a03"/>
+        <rect x="7" y="10" width="2" height="1" fill="#78350f"/>
+      ${close}`;
+
+    case 'meteorito_espacial':
+      return `${open}
+        <rect x="3" y="3" width="10" height="10" fill="#18181b"/>
+        <rect x="2" y="5" width="12" height="6" fill="#09090b"/>
+        <rect x="5" y="2" width="6" height="12" fill="#27272a"/>
+        <rect x="5" y="5" width="2" height="1" fill="#ef4444"/>
+        <rect x="6" y="6" width="2" height="1" fill="#f97316"/>
+        <rect x="9" y="8" width="2" height="2" fill="#facc15"/>
+        <rect x="6" y="10" width="3" height="1" fill="#ea580c"/>
+        <rect x="4" y="2" width="1" height="1" fill="#fbbf24"/>
+        <rect x="11" y="4" width="1" height="1" fill="#fb923c"/>
+      ${close}`;
+
+    case 'cristal_cosmico':
+      return `${open}
+        <rect x="7" y="1" width="2" height="14" fill="#a855f7"/>
+        <rect x="5" y="3" width="6" height="10" fill="#d946ef"/>
+        <rect x="3" y="5" width="10" height="6" fill="#ec4899"/>
+        <rect x="6" y="4" width="4" height="8" fill="#f472b6"/>
+        <rect x="7" y="5" width="2" height="6" fill="#ffffff"/>
+        <rect x="1" y="2" width="2" height="2" fill="#38bdf8"/>
+        <rect x="13" y="3" width="2" height="2" fill="#facc15"/>
+        <rect x="2" y="12" width="2" height="2" fill="#facc15"/>
+        <rect x="13" y="11" width="2" height="2" fill="#38bdf8"/>
+      ${close}`;
+
+    // ═══ RECEITAS DA FORJA ═══
+    case 'linha_reforcada':
+      return `${open}
+        <rect x="4" y="2" width="8" height="2" fill="#78350f"/>
+        <rect x="4" y="12" width="8" height="2" fill="#78350f"/>
+        <rect x="5" y="4" width="6" height="8" fill="#94a3b8"/>
+        <rect x="6" y="4" width="4" height="8" fill="#cbd5e1"/>
+        <line x1="5" y1="6" x2="11" y2="6" stroke="#38bdf8" stroke-width="1"/>
+        <line x1="5" y1="9" x2="11" y2="9" stroke="#38bdf8" stroke-width="1"/>
+      ${close}`;
+
+    case 'carretel_precisao':
+      return `${open}
+        <rect x="3" y="3" width="10" height="10" fill="#ca8a04"/>
+        <rect x="5" y="5" width="6" height="6" fill="#facc15"/>
+        <rect x="7" y="2" width="2" height="4" fill="#475569"/>
+        <rect x="9" y="2" width="3" height="2" fill="#1e293b"/>
+        <rect x="7" y="7" width="2" height="2" fill="#0f172a"/>
+      ${close}`;
+
+    case 'propulsor_mergulhador':
+      return `${open}
+        <rect x="4" y="5" width="8" height="6" fill="#eab308"/>
+        <rect x="3" y="6" width="10" height="4" fill="#facc15"/>
+        <rect x="1" y="4" width="2" height="8" fill="#334155"/>
+        <rect x="12" y="7" width="3" height="2" fill="#0284c7"/>
+        <rect x="6" y="3" width="4" height="2" fill="#1e293b"/>
+      ${close}`;
+
+    case 'gazua_mestre':
+      return `${open}
+        <rect x="3" y="2" width="5" height="5" fill="#e2e8f0"/>
+        <rect x="4" y="3" width="3" height="3" fill="#0f172a"/>
+        <rect x="7" y="4" width="7" height="2" fill="#cbd5e1"/>
+        <rect x="12" y="6" width="2" height="2" fill="#cbd5e1"/>
+        <rect x="10" y="6" width="1" height="1" fill="#cbd5e1"/>
+      ${close}`;
+
+    case 'antena_ressonancia':
+      return `${open}
+        <rect x="2" y="8" width="6" height="6" fill="#475569"/>
+        <rect x="3" y="7" width="6" height="6" fill="#94a3b8"/>
+        <rect x="8" y="3" width="2" height="6" fill="#38bdf8"/>
+        <rect x="9" y="2" width="2" height="2" fill="#facc15" class="animate-pulse"/>
+        <rect x="11" y="1" width="2" height="2" fill="#a855f7"/>
+      ${close}`;
+
+    // Fallback padrão: Caixa surpresa retrô
+    default:
+      return `${open}
+        <rect x="2" y="2" width="12" height="12" fill="#334155"/>
+        <rect x="3" y="3" width="10" height="10" fill="#1e293b"/>
+        <rect x="6" y="4" width="4" height="2" fill="#facc15"/>
+        <rect x="8" y="6" width="2" height="2" fill="#facc15"/>
+        <rect x="6" y="8" width="2" height="2" fill="#facc15"/>
+        <rect x="6" y="11" width="2" height="1" fill="#facc15"/>
+      ${close}`;
+  }
+}
 
 // ═══════════════════════════════════════════════
 // POSICIONAMENTO PRECISO DA LINHA DE PESCA

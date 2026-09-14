@@ -3,6 +3,13 @@ import { RODS, BAITS, UPGRADES, isCosmicOrHigherRod } from './itemsData.js';
 import { sound } from './sound.js';
 import { ACHIEVEMENTS } from './achievementsData.js';
 import {
+  MAGNET_TIERS,
+  MAGNET_SCENARIOS,
+  MAGNET_ITEMS,
+  FORGE_RECIPES,
+  MUSEUM_COLLECTIONS
+} from './magnetData.js';
+import {
   renderFishermanToCanvas,
   getFishDataURL,
   getBloodMoonFishDataURL,
@@ -14,6 +21,8 @@ import {
   getRodIconDataURL,
   getBaitIconDataURL,
   getUpgradeIconDataURL,
+  getMagnetSpriteSVG,
+  getMagnetItemSpriteSVG,
   OUTFIT_PRESETS,
   HAIR_COLORS
 } from './pixelArt.js';
@@ -62,7 +71,8 @@ class FishingGame {
       fishGlow: true,
       fishAnimations: true,
       waterParticles: true,
-      scanlines: true
+      scanlines: true,
+      fishNotifications: true
     };
 
     // Álbum de Peixes (Enciclopédia)
@@ -104,6 +114,20 @@ class FishingGame {
     this.tempBuffs = []; // { type, multiplier, endsAt, label }
     this.consoleOpen = false;
     this.consoleHistory = [];
+
+    // Pesca Magnética (Desbloqueada pelo Mergulhador Amigo)
+    this.gameMode = 'pesca'; // 'pesca' | 'ima'
+    this.magnetUnlocked = false;
+    this.magnetTier = 1;
+    this.magnetScenario = 'ponte'; // 'ponte' | 'praia' | 'floresta'
+    this.magnetLeftTab = 'forge'; // 'forge' | 'museum' | 'tiers'
+    this.magnetInventory = {}; // { itemId: count }
+    this.magnetSelectedItemId = null;
+    this.museumDonations = {}; // { itemId: true }
+    this.forgeUpgrades = {}; // { recipeId: true }
+    this.isCastingMagnet = false;
+    this.magnetCatches = 0;
+    this.magnetGoldEarned = 0;
 
     // Cache fish sprites data URLs
     this._fishSpriteCache = {};
@@ -195,7 +219,9 @@ class FishingGame {
       ['lambari','carpa','truta','robalo'].forEach(f => this.waterRenderer.addSwimmingFish(f));
       this.updateDiverVisual();
       const animLoop = () => {
-        this.waterRenderer.update();
+        if (this.gameMode !== 'ima' && this.waterRenderer) {
+          this.waterRenderer.update();
+        }
         requestAnimationFrame(animLoop);
       };
       animLoop();
@@ -758,15 +784,855 @@ class FishingGame {
     modal?.classList.add('hidden');
   }
 
+  // ═══════════════════════════════════════════════
+  // PESCA MAGNÉTICA (MAGNET FISHING)
+  // ═══════════════════════════════════════════════
+
+  checkDiverMagnetDiscovery() {
+    const lvl = this.upgradeLevels.auto_pescador || 0;
+    if (lvl <= 0 || !this.autoFisherEnabled) return;
+
+    if (!this.magnetUnlocked) {
+      // Chance do mergulhador achar o primeiro ímã (0.8%)
+      const chance = 0.008;
+      if (Math.random() < chance) {
+        this.unlockMagnet(1);
+      }
+    } else if (this.magnetTier < 5) {
+      // Chance de encontrar o próximo tier
+      const nextTierData = MAGNET_TIERS.find(t => t.tier === this.magnetTier + 1);
+      if (nextTierData) {
+        let chance = nextTierData.findChance;
+        if (this.isMuseumSetCompleted('floresta')) {
+          chance *= 2.0; // Bônus da coleção da floresta
+        }
+        if (Math.random() < chance) {
+          this.upgradeMagnetTier(this.magnetTier + 1);
+        }
+      }
+    }
+  }
+
+  // ── MODOS DE JOGO (PESCARIA vs ÍMÃ) & NAVEGAÇÃO ──
+
+  setGameMode(mode) {
+    if (mode === 'ima' && !this.magnetUnlocked) {
+      this.showToast('O Mergulhador Amigo ainda não achou um ímã nas profundezas!', 'warning');
+      return;
+    }
+    this.gameMode = (mode === 'ima') ? 'ima' : 'pesca';
+    sound.playClick?.();
+
+    this.syncGameModeUI();
+
+    if (this.gameMode === 'ima') {
+      this.renderMagnetAll();
+    } else {
+      this.renderAll();
+    }
+
+    this.saveGame();
+  }
+
+  openMagnetModal() {
+    this.setGameMode('ima');
+  }
+
+  closeMagnetModal() {
+    this.setGameMode('pesca');
+  }
+
+  syncGameModeUI() {
+    const isPesca = this.gameMode === 'pesca';
+
+    // Botões de alternância no topo do lago
+    const btnPesca = document.getElementById('btn-mode-pesca');
+    const btnIma = document.getElementById('btn-mode-ima');
+
+    if (btnPesca) {
+      if (isPesca) {
+        btnPesca.className = 'inline-flex items-center gap-1.5 px-3 py-1 text-[8.5px] sm:text-[9px] font-bold border transition-all cursor-pointer bg-slate-800 text-cyan-300 border-cyan-400 shadow-[1px_1px_0_#000]';
+      } else {
+        btnPesca.className = 'inline-flex items-center gap-1.5 px-3 py-1 text-[8.5px] sm:text-[9px] font-bold border transition-all cursor-pointer bg-slate-900 text-slate-400 border-transparent hover:text-cyan-300';
+      }
+    }
+
+    if (btnIma) {
+      if (this.magnetUnlocked) {
+        btnIma.classList.remove('hidden');
+      } else {
+        btnIma.classList.add('hidden');
+      }
+      if (!isPesca) {
+        btnIma.className = 'inline-flex items-center gap-1.5 px-3 py-1 text-[8.5px] sm:text-[9px] font-bold border transition-all cursor-pointer bg-slate-800 text-amber-300 border-amber-400 shadow-[1px_1px_0_#000]';
+      } else {
+        btnIma.className = 'inline-flex items-center gap-1.5 px-3 py-1 text-[8.5px] sm:text-[9px] font-bold border transition-all cursor-pointer bg-slate-900 text-slate-400 border-transparent hover:text-amber-300';
+      }
+    }
+
+    // Seletor de Cenários do Ímã
+    const scenBar = document.getElementById('magnet-scenario-bar');
+    if (scenBar) {
+      scenBar.classList.toggle('hidden', isPesca);
+    }
+
+    // Centro: Lagos
+    const fishLake = document.getElementById('fishing-lake-area');
+    const magLake = document.getElementById('magnet-lake-area');
+    if (fishLake) fishLake.classList.toggle('hidden', !isPesca);
+    if (magLake) magLake.classList.toggle('hidden', isPesca);
+
+    // Centro: Barras de Estatísticas
+    const statsFish = document.getElementById('stats-bar-fishing');
+    const statsMag = document.getElementById('stats-bar-magnet');
+    if (statsFish) statsFish.classList.toggle('hidden', !isPesca);
+    if (statsMag) statsMag.classList.toggle('hidden', isPesca);
+
+    // Coluna Esquerda: Upgrades
+    const pUpFish = document.getElementById('panel-upgrades-fishing');
+    const pUpMag = document.getElementById('panel-upgrades-magnet');
+    if (pUpFish) pUpFish.classList.toggle('hidden', !isPesca);
+    if (pUpMag) pUpMag.classList.toggle('hidden', isPesca);
+
+    // Coluna Direita: Inventário
+    const pInvFish = document.getElementById('panel-inventory-fishing');
+    const pInvMag = document.getElementById('panel-inventory-magnet');
+    if (pInvFish) pInvFish.classList.toggle('hidden', !isPesca);
+    if (pInvMag) pInvMag.classList.toggle('hidden', isPesca);
+  }
+
+  unlockMagnet(tier = 1) {
+    this.magnetUnlocked = true;
+    this.magnetTier = tier;
+    sound.playRare?.();
+    const tData = MAGNET_TIERS.find(t => t.tier === tier) || MAGNET_TIERS[0];
+    this.showToast(`🧲 O Mergulhador Amigo encontrou nas profundezas: ${tData.name}! Use o botão "🧲 ÍMÃ" no centro para alternar os modos!`, 'success');
+
+    const btnIma = document.getElementById('btn-mode-ima');
+    if (btnIma) {
+      btnIma.classList.remove('hidden');
+      btnIma.classList.add('animate-bounce');
+      setTimeout(() => btnIma.classList.remove('animate-bounce'), 5000);
+    }
+
+    const magnetBtn = document.getElementById('btn-open-magnet');
+    if (magnetBtn) {
+      magnetBtn.classList.remove('hidden');
+      magnetBtn.classList.add('animate-bounce');
+      setTimeout(() => magnetBtn.classList.remove('animate-bounce'), 5000);
+    }
+
+    this.renderHeader();
+    this.syncGameModeUI();
+    this.saveGame();
+  }
+
+  upgradeMagnetTier(newTier) {
+    if (newTier <= this.magnetTier) return;
+    this.magnetTier = Math.min(5, newTier);
+    sound.playRare?.();
+    const tData = MAGNET_TIERS.find(t => t.tier === this.magnetTier) || MAGNET_TIERS[0];
+    this.showToast(`🌟 O Mergulhador Amigo achou um ímã superior: ${tData.name} (${tData.power}x poder magnético)!`, 'success');
+    this.renderHeader();
+    if (this.gameMode === 'ima') {
+      this.renderMagnetAll();
+    }
+    this.saveGame();
+  }
+
+  switchMagnetScenario(scenarioId) {
+    if (this.isCastingMagnet) return;
+    if (!MAGNET_SCENARIOS[scenarioId]) return;
+    this.magnetScenario = scenarioId;
+    sound.playClick?.();
+    this.renderMagnetCenter();
+    this.saveGame();
+  }
+
+  setMagnetLeftTab(tabName) {
+    this.magnetLeftTab = tabName;
+    sound.playClick?.();
+    this.renderMagnetLeftPanel();
+    this.saveGame();
+  }
+
+  switchMagnetSubTab(tabName) {
+    this.setMagnetLeftTab(tabName);
+  }
+
+  renderMagnetAll() {
+    this.renderMagnetCenter();
+    this.renderMagnetLeftPanel();
+    this.renderMagnetRightPanel();
+    this.renderMagnetStatsBar();
+  }
+
+  renderMagnetCenter() {
+    const tierData = MAGNET_TIERS.find(t => t.tier === this.magnetTier) || MAGNET_TIERS[0];
+    const scen = MAGNET_SCENARIOS[this.magnetScenario] || MAGNET_SCENARIOS.ponte;
+
+    const lake = document.getElementById('magnet-lake-area');
+    if (lake) {
+      if (this.magnetScenario === 'praia') {
+        lake.style.background = 'linear-gradient(to bottom, #0284c7 0%, #06b6d4 50%, #065f46 100%)';
+      } else if (this.magnetScenario === 'floresta') {
+        lake.style.background = 'linear-gradient(to bottom, #022c22 0%, #064e3b 45%, #0f172a 100%)';
+      } else {
+        lake.style.background = 'linear-gradient(to bottom, #090d16 0%, #0369a1 60%, #021f2f 100%)';
+      }
+    }
+
+    // Alternar as camadas de fundo pixel art
+    ['ponte', 'praia', 'floresta'].forEach(id => {
+      const bg = document.getElementById(`magnet-bg-${id}`);
+      if (bg) {
+        if (this.magnetScenario === id) {
+          bg.classList.remove('hidden');
+        } else {
+          bg.classList.add('hidden');
+        }
+      }
+    });
+
+    const tagline = document.getElementById('magnet-scene-tagline');
+    if (tagline) {
+      const iconSVG = this.magnetScenario === 'praia' ? PIXEL_ICONS.scenPraia : this.magnetScenario === 'floresta' ? PIXEL_ICONS.scenFloresta : PIXEL_ICONS.scenPonte;
+      tagline.innerHTML = `<span class="inline-flex items-center gap-1.5">${iconSVG} <span>${scen.name}: ${scen.tagline}</span></span>`;
+    }
+
+    const tierInfo = document.getElementById('magnet-scene-tier-info');
+    if (tierInfo) tierInfo.textContent = `Ímã T${this.magnetTier} (${tierData.power.toFixed(1)}x Poder)`;
+
+    const hangingSprite = document.getElementById('magnet-hanging-sprite');
+    if (hangingSprite) {
+      hangingSprite.innerHTML = getMagnetSpriteSVG(this.magnetTier, 48);
+    }
+
+    ['ponte', 'praia', 'floresta'].forEach(id => {
+      const btn = document.getElementById(`btn-scenario-${id}`);
+      if (!btn) return;
+      if (this.magnetScenario === id) {
+        btn.className = 'inline-flex items-center gap-1 px-2 py-0.5 text-[7px] sm:text-[7.5px] font-bold border transition-all cursor-pointer bg-slate-800 text-cyan-300 border-cyan-400 shadow-[1px_1px_0_#000]';
+      } else {
+        btn.className = 'inline-flex items-center gap-1 px-2 py-0.5 text-[7px] sm:text-[7.5px] font-bold border transition-all cursor-pointer bg-slate-900 text-slate-400 border-transparent hover:text-slate-200';
+      }
+    });
+  }
+
+  renderMagnetLeftPanel() {
+    const tierData = MAGNET_TIERS.find(t => t.tier === this.magnetTier) || MAGNET_TIERS[0];
+    const subEl = document.getElementById('magnet-left-tier-subtitle');
+    const badgeEl = document.getElementById('magnet-left-tier-badge');
+    if (subEl) subEl.textContent = `${tierData.name} (${tierData.power.toFixed(1)}x Poder)`;
+    if (badgeEl) {
+      badgeEl.textContent = `TIER ${this.magnetTier}`;
+      badgeEl.style.borderColor = tierData.borderColor;
+      badgeEl.style.color = tierData.color;
+    }
+
+    ['forge', 'museum', 'tiers'].forEach(t => {
+      const btn = document.getElementById(`btn-mag-tab-${t}`);
+      if (!btn) return;
+      if (this.magnetLeftTab === t) {
+        btn.className = 'tab-btn py-1.5 text-[8px] sm:text-[8.5px] font-bold bg-slate-700 text-amber-300 border border-amber-500/60 shadow-[1px_1px_0_#000]';
+      } else {
+        btn.className = 'tab-btn py-1.5 text-[8px] sm:text-[8.5px] font-bold text-slate-500 border border-transparent hover:text-slate-300';
+      }
+    });
+
+    if (this.magnetLeftTab === 'forge') {
+      this.renderMagnetForgeContent();
+    } else if (this.magnetLeftTab === 'museum') {
+      this.renderMagnetMuseumContent();
+    } else if (this.magnetLeftTab === 'tiers') {
+      this.renderMagnetTiersContent();
+    }
+  }
+
+  renderMagnetForgeContent() {
+    const container = document.getElementById('magnet-left-content');
+    if (!container) return;
+
+    let html = `
+      <div class="bg-slate-950/80 p-2 border border-slate-800 text-[7.5px] text-slate-300 mb-2 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+        ${PIXEL_ICONS.gear} <span>Use sucatas e minérios resgatados pelo ímã para forjar upgrades tecnológicos permanentes!</span>
+      </div>
+    `;
+
+    FORGE_RECIPES.forEach(recipe => {
+      const isCrafted = Boolean(this.forgeUpgrades[recipe.id]);
+      let canCraft = !isCrafted;
+
+      const matPills = Object.entries(recipe.materials).map(([matId, reqQty]) => {
+        const curQty = this.magnetInventory[matId] || 0;
+        const hasEnough = curQty >= reqQty;
+        if (!hasEnough) canCraft = false;
+        const item = MAGNET_ITEMS[matId];
+        return `
+          <span class="inline-flex items-center gap-1 px-1.5 py-0.5 border text-[7px] font-bold ${hasEnough ? 'bg-emerald-950 text-emerald-300 border-emerald-600' : 'bg-red-950 text-red-300 border-red-800'}" style="font-family:var(--font-pixel);">
+            ${item ? getMagnetItemSpriteSVG(matId, 12) : ''} <span>${item ? item.name : matId}: ${curQty}/${reqQty}</span>
+          </span>
+        `;
+      }).join(' ');
+
+      html += `
+        <div class="bg-slate-950/90 border-2 ${isCrafted ? 'border-emerald-500/80 bg-emerald-950/15' : 'border-slate-800'} p-2.5 space-y-2">
+          <div class="flex items-start gap-2">
+            <div class="w-8 h-8 bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
+              ${getMagnetItemSpriteSVG(recipe.id, 24)}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1">
+                <h4 class="text-[8.5px] font-bold ${isCrafted ? 'text-emerald-300' : 'text-slate-200'} truncate" style="font-family:var(--font-pixel);">${recipe.name}</h4>
+                ${isCrafted ? '<span class="text-[6px] px-1 py-0.2 bg-emerald-950 text-emerald-300 border border-emerald-600 font-bold shrink-0" style="font-family:var(--font-pixel);">ATIVO</span>' : ''}
+              </div>
+              <p class="text-[7px] text-slate-400 mt-0.5 leading-snug" style="font-family:var(--font-pixel);">${recipe.desc}</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-1">
+            ${matPills}
+          </div>
+
+          <div class="pt-1 border-t border-slate-800/80 flex justify-end">
+            ${isCrafted
+              ? '<span class="px-2.5 py-1 bg-emerald-950 text-emerald-300 border border-emerald-600 text-[7.5px] font-bold" style="font-family:var(--font-pixel);">✓ FORJADO</span>'
+              : `<button onclick="window.game.craftForgeUpgrade('${recipe.id}')"
+                  ${canCraft ? '' : 'disabled'}
+                  class="pixel-btn w-full py-1.5 text-[7.5px] font-bold uppercase transition-all ${
+                    canCraft
+                      ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-[1px_1px_0_#000] cursor-pointer animate-pulse'
+                      : 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed opacity-60'
+                  }" style="font-family:var(--font-pixel);">
+                  FORJAR MELHORIA
+                </button>`
+            }
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  renderMagnetMuseumContent() {
+    const container = document.getElementById('magnet-left-content');
+    if (!container) return;
+
+    let totalDonated = 0;
+    Object.keys(MAGNET_ITEMS).forEach(id => {
+      if (this.museumDonations[id]) totalDonated++;
+    });
+
+    let html = `
+      <div class="bg-slate-950/80 p-2 border border-slate-800 text-[7.5px] text-slate-300 flex items-center justify-between mb-2" style="font-family:var(--font-pixel);">
+        <span class="inline-flex items-center gap-1.5">${PIXEL_ICONS.book} <span>Doe relíquias para bônus permanentes!</span></span>
+        <span class="text-amber-300 font-bold bg-amber-950 px-1.5 py-0.5 border border-amber-600/60">${totalDonated}/21 Doadas</span>
+      </div>
+    `;
+
+    ['ponte', 'praia', 'floresta'].forEach(scenId => {
+      const col = MUSEUM_COLLECTIONS[scenId];
+      if (!col) return;
+
+      const donatedCount = col.itemIds.filter(id => Boolean(this.museumDonations[id])).length;
+      const isComplete = donatedCount === col.itemIds.length;
+      const scenIcon = scenId === 'praia' ? PIXEL_ICONS.scenPraia : scenId === 'floresta' ? PIXEL_ICONS.scenFloresta : PIXEL_ICONS.scenPonte;
+
+      html += `
+        <div class="bg-slate-950/90 border-2 ${isComplete ? 'border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]' : 'border-slate-800'} p-2.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="w-5 h-5 flex items-center justify-center shrink-0">${scenIcon}</span>
+              <div>
+                <h4 class="text-[8.5px] font-bold ${isComplete ? 'text-amber-300' : 'text-slate-200'}" style="font-family:var(--font-pixel);">${col.name}</h4>
+                <p class="text-[6.5px] text-slate-400" style="font-family:var(--font-pixel);">${col.rewardDesc}</p>
+              </div>
+            </div>
+            <span class="px-1.5 py-0.5 text-[7px] font-bold border ${isComplete ? 'bg-amber-950 text-amber-300 border-amber-500 animate-pulse' : 'bg-slate-900 text-slate-400 border-slate-700'}" style="font-family:var(--font-pixel);">
+              ${donatedCount}/${col.itemIds.length} ${isComplete ? '★ ATIVO' : ''}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-7 gap-1 pt-1">
+            ${col.itemIds.map(id => {
+              const item = MAGNET_ITEMS[id];
+              const isDone = Boolean(this.museumDonations[id]);
+              return `
+                <div title="${item.name} ${isDone ? '(Doado)' : '(Não doado)'}"
+                  class="aspect-square bg-slate-900 border ${isDone ? 'border-amber-500 bg-amber-950/30' : 'border-slate-800 opacity-40'} flex items-center justify-center p-0.5 select-none">
+                  ${isDone ? getMagnetItemSpriteSVG(id, 20) : PIXEL_ICONS.mysteryBox}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  renderMagnetTiersContent() {
+    const container = document.getElementById('magnet-left-content');
+    if (!container) return;
+
+    let html = `
+      <div class="bg-slate-950/80 p-2 border border-slate-800 text-[7.5px] text-slate-300 mb-2 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+        ${PIXEL_ICONS.magnet} <span>Tiers superiores são encontrados exclusivamente com chances raras pelo Mergulhador Amigo!</span>
+      </div>
+    `;
+
+    MAGNET_TIERS.forEach(t => {
+      const isCurrent = this.magnetTier === t.tier;
+      const isUnlocked = this.magnetTier >= t.tier;
+
+      html += `
+        <div class="bg-slate-950/90 border-2 ${isCurrent ? 'border-amber-400 bg-amber-950/20' : isUnlocked ? 'border-slate-700' : 'border-slate-800 opacity-60'} p-2.5 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
+              ${getMagnetSpriteSVG(t.tier, 32)}
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <h4 class="text-[8.5px] font-bold" style="font-family:var(--font-pixel); color:${t.color};">${t.name}</h4>
+                <span class="text-[6.5px] px-1 bg-slate-900 border text-slate-400" style="border-color:${t.borderColor}; font-family:var(--font-pixel);">T${t.tier}</span>
+              </div>
+              <p class="text-[7px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Poder: <b class="text-amber-300">${t.power.toFixed(1)}x</b> | Puxada: ${t.pullSpeedSec}s</p>
+              <p class="text-[6.5px] text-slate-500 mt-0.5" style="font-family:var(--font-pixel);">${t.desc}</p>
+            </div>
+          </div>
+
+          <div class="shrink-0 text-right">
+            ${isCurrent
+              ? '<span class="px-2 py-1 bg-amber-950 text-amber-300 border border-amber-500 text-[7px] font-bold animate-pulse" style="font-family:var(--font-pixel);">★ EQUIPADO</span>'
+              : isUnlocked
+                ? '<span class="px-2 py-1 bg-slate-900 text-slate-400 border border-slate-700 text-[7px] font-bold" style="font-family:var(--font-pixel);">DESBLOQUEADO</span>'
+                : '<span class="px-1.5 py-0.5 bg-slate-950 text-slate-600 border border-slate-800 text-[6.5px]" style="font-family:var(--font-pixel);">BLOQUEADO</span>'
+            }
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  renderMagnetRightPanel() {
+    this.renderMagnetGrid();
+    this.renderMagnetInspector();
+  }
+
+  renderMagnetStatsBar() {
+    const catchEl = document.getElementById('stat-magnet-catches');
+    const goldEl = document.getElementById('stat-magnet-gold');
+    if (catchEl) catchEl.textContent = (this.magnetCatches || 0).toLocaleString('pt-BR');
+    if (goldEl) goldEl.textContent = `${(this.magnetGoldEarned || 0).toLocaleString('pt-BR')} G`;
+  }
+  castMagnet() {
+    if (this.isCastingMagnet) return;
+    this.isCastingMagnet = true;
+    sound.playClick?.();
+
+    const tierData = MAGNET_TIERS.find(t => t.tier === this.magnetTier) || MAGNET_TIERS[0];
+    const scen = MAGNET_SCENARIOS[this.magnetScenario] || MAGNET_SCENARIOS.ponte;
+    const rope = document.getElementById('magnet-rope');
+    const castBtn = document.getElementById('btn-cast-magnet');
+    const castBtnText = document.getElementById('btn-cast-magnet-text');
+    const statusBar = document.getElementById('magnet-status-bar');
+    const catchToast = document.getElementById('magnet-catch-toast');
+
+    if (catchToast) catchToast.classList.add('hidden');
+    if (rope) rope.style.height = '120px';
+    if (castBtn) {
+      castBtn.classList.add('opacity-75', 'cursor-not-allowed');
+      castBtn.disabled = true;
+    }
+    if (castBtnText) castBtnText.textContent = 'PUXANDO O ÍMÃ...';
+    if (statusBar) {
+      statusBar.textContent = `Ímã na água da ${scen.name}... Atraindo sucatas e minérios com ${tierData.power}x de poder!`;
+    }
+
+    let pullSec = tierData.pullSpeedSec;
+    if (this.forgeUpgrades && this.forgeUpgrades['carretel_precisao']) {
+      pullSec *= 0.75; // 25% mais rápido
+    }
+
+    setTimeout(() => {
+      // Sorteia o item baseado no cenário e no poder do ímã
+      const possibleItems = scen.lootIds
+        .map(id => MAGNET_ITEMS[id])
+        .filter(item => item && this.magnetTier >= item.minTier);
+
+      // Pesos com bias do poder do ímã
+      const weighted = possibleItems.map(it => {
+        let w = it.weight;
+        if (it.rarity === 'raro' || it.rarity === 'epico' || it.rarity === 'lendario' || it.rarity === 'mitico') {
+          w = w * (1 + (tierData.power - 1) * 0.40);
+        }
+        return { item: it, weight: w };
+      });
+
+      const totalW = weighted.reduce((acc, x) => acc + x.weight, 0);
+      let r = Math.random() * totalW;
+      let caught = possibleItems[0];
+      for (const entry of weighted) {
+        if (r <= entry.weight) {
+          caught = entry.item;
+          break;
+        }
+        r -= entry.weight;
+      }
+
+      // Adiciona ao inventário da Pesca Magnética
+      this.magnetInventory[caught.id] = (this.magnetInventory[caught.id] || 0) + 1;
+      this.magnetSelectedItemId = caught.id;
+      this.magnetCatches = (this.magnetCatches || 0) + 1;
+
+      // Animação de volta
+      if (rope) rope.style.height = '48px';
+      if (castBtn) {
+        castBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+        castBtn.disabled = false;
+      }
+      if (castBtnText) castBtnText.textContent = 'LANÇAR ÍMÃ';
+      if (statusBar) {
+        statusBar.textContent = `Resgatado com sucesso: ${caught.name}!`;
+      }
+
+      // Toast no topo do lago
+      if (catchToast && this.settings.fishNotifications !== false) {
+        const title = document.getElementById('magnet-catch-title');
+        const desc = document.getElementById('magnet-catch-desc');
+        if (title) title.innerHTML = `<span class="inline-flex items-center gap-1.5 justify-center">${getMagnetItemSpriteSVG(caught.id, 18)} <span>${caught.name}</span> <span class="text-[7px] text-amber-400">(${caught.rarity.toUpperCase()})</span></span>`;
+        if (desc) desc.textContent = `${caught.desc} | Venda: ${caught.sellValue}G`;
+        catchToast.classList.remove('hidden');
+        setTimeout(() => catchToast.classList.add('hidden'), 3500);
+      }
+
+      sound.playRare?.();
+      this.isCastingMagnet = false;
+      this.renderMagnetRightPanel();
+      this.renderMagnetLeftPanel();
+      this.renderMagnetStatsBar();
+      this.saveGame();
+    }, pullSec * 1000);
+  }
+
+  renderMagnetGrid() {
+    const container = document.getElementById('magnet-grid-slots');
+    if (!container) return;
+
+    let totalItems = 0;
+    const itemIds = Object.keys(this.magnetInventory).filter(id => (this.magnetInventory[id] || 0) > 0);
+    itemIds.forEach(id => {
+      totalItems += this.magnetInventory[id];
+    });
+
+    const badge = document.getElementById('magnet-inv-badge');
+    if (badge) {
+      badge.textContent = `${totalItems} Itens`;
+    }
+
+    const minSlots = Math.max(16, Math.ceil((itemIds.length + 1) / 4) * 4);
+    let html = '';
+
+    itemIds.forEach(id => {
+      const count = this.magnetInventory[id];
+      const item = MAGNET_ITEMS[id];
+      if (!item) return;
+
+      const isSelected = this.magnetSelectedItemId === id;
+      const rarityColors = {
+        comum: '#64748b',
+        incomum: '#10b981',
+        raro: '#06b6d4',
+        epico: '#a855f7',
+        lendario: '#facc15',
+        mitico: '#f43f5e'
+      };
+      const borderColor = rarityColors[item.rarity] || '#64748b';
+      const isDonated = Boolean(this.museumDonations[id]);
+
+      html += `
+        <button onclick="window.game.selectMagnetItem('${id}')" title="${item.name} (${count}x)"
+          class="relative aspect-square bg-slate-900 border-2 flex flex-col items-center justify-center p-1 cursor-pointer transition-all hover:scale-105 select-none ${isSelected ? 'ring-2 ring-amber-400 bg-amber-950/40' : ''}"
+          style="border-color: ${borderColor}; box-shadow: 2px 2px 0 #000;">
+          <div class="flex items-center justify-center">${getMagnetItemSpriteSVG(item.id, 28)}</div>
+          <span class="absolute bottom-0.5 right-1 text-[7px] font-bold text-white bg-slate-950/90 px-1 border border-slate-700" style="font-family:var(--font-pixel);">
+            x${count}
+          </span>
+          ${isDonated ? '<span class="absolute top-0.5 left-1 text-[6.5px] leading-none text-amber-400" title="Já doado ao Museu">★</span>' : ''}
+        </button>
+      `;
+    });
+
+    // Slots vazios preenchedores
+    const emptySlots = Math.max(0, minSlots - itemIds.length);
+    for (let i = 0; i < emptySlots; i++) {
+      html += `
+        <div class="aspect-square bg-slate-950/60 border-2 border-dashed border-slate-800 flex items-center justify-center text-slate-700 text-xs">
+          ·
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
+  }
+
+  selectMagnetItem(itemId) {
+    this.magnetSelectedItemId = itemId;
+    sound.playClick?.();
+    this.renderMagnetGrid();
+    this.renderMagnetInspector();
+  }
+
+  renderMagnetInspector() {
+    const item = MAGNET_ITEMS[this.magnetSelectedItemId];
+    const iconEl = document.getElementById('magnet-inspector-icon');
+    const nameEl = document.getElementById('magnet-inspector-name');
+    const rarityEl = document.getElementById('magnet-inspector-rarity');
+    const descEl = document.getElementById('magnet-inspector-desc');
+    const actionsEl = document.getElementById('magnet-inspector-actions');
+
+    if (!item || !this.magnetInventory[item.id]) {
+      if (iconEl) iconEl.innerHTML = PIXEL_ICONS.mysteryBox;
+      if (nameEl) nameEl.textContent = 'Selecione um item';
+      if (rarityEl) rarityEl.textContent = '--';
+      if (descEl) descEl.textContent = 'Clique em um slot do grid acima.';
+      if (actionsEl) actionsEl.classList.add('hidden');
+      return;
+    }
+
+    const count = this.magnetInventory[item.id] || 0;
+    const isDonated = Boolean(this.museumDonations[item.id]);
+
+    if (iconEl) iconEl.innerHTML = getMagnetItemSpriteSVG(item.id, 28);
+    if (nameEl) nameEl.textContent = `${item.name} (${count}x)`;
+    if (rarityEl) {
+      rarityEl.textContent = item.rarity.toUpperCase();
+      rarityEl.className = `text-[6px] px-1 py-0.2 border font-bold uppercase ${
+        item.rarity === 'lendario' ? 'bg-amber-950 text-amber-300 border-amber-500' :
+        item.rarity === 'epico' ? 'bg-purple-950 text-purple-300 border-purple-500' :
+        item.rarity === 'raro' ? 'bg-cyan-950 text-cyan-300 border-cyan-500' :
+        item.rarity === 'incomum' ? 'bg-emerald-950 text-emerald-300 border-emerald-500' :
+        'bg-slate-800 text-slate-300 border-slate-600'
+      }`;
+    }
+    if (descEl) {
+      descEl.textContent = `${item.desc} | Venda: ${item.sellValue}G`;
+    }
+
+    if (actionsEl) {
+      actionsEl.classList.remove('hidden');
+      let actHtml = '';
+
+      // Botão Doar ao Museu
+      if (!isDonated && count >= 1) {
+        actHtml += `
+          <button onclick="window.game.donateToMuseum('${item.id}')" class="pixel-btn px-2 py-1 bg-cyan-700 hover:bg-cyan-600 text-slate-950 font-bold text-[7px]" style="font-family:var(--font-pixel);">
+            🏛 DOAR (+500G +1 Olho)
+          </button>
+        `;
+      } else if (isDonated) {
+        actHtml += `
+          <span class="px-1.5 py-0.5 bg-cyan-950 border border-cyan-700/60 text-cyan-300 text-[6.5px]" style="font-family:var(--font-pixel);">
+            ✓ DOADO
+          </span>
+        `;
+      }
+
+      // Se for cofre trancado
+      if (item.isChest && count >= 1) {
+        const hasGazua = Boolean(this.forgeUpgrades['gazua_mestre']);
+        if (hasGazua) {
+          actHtml += `
+            <button onclick="window.game.openMagnetChest()" class="pixel-btn px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[7px] animate-pulse" style="font-family:var(--font-pixel);">
+              🗝️ ABRIR COFRE
+            </button>
+          `;
+        } else {
+          actHtml += `
+            <span class="px-1.5 py-0.5 bg-red-950 border border-red-800 text-red-300 text-[6.5px]" style="font-family:var(--font-pixel);">
+              🔒 REQUER GAZUA
+            </span>
+          `;
+        }
+      }
+
+      // Botão Vender 1x
+      if (count >= 1) {
+        actHtml += `
+          <button onclick="window.game.sellMagnetItem('${item.id}', 1)" class="pixel-btn px-2 py-1 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-[7px]" style="font-family:var(--font-pixel);">
+            VENDER (+${item.sellValue}G)
+          </button>
+        `;
+      }
+
+      actionsEl.innerHTML = actHtml;
+    }
+  }
+
+  donateToMuseum(itemId) {
+    if ((this.magnetInventory[itemId] || 0) < 1) return;
+    if (this.museumDonations[itemId]) {
+      this.showToast('Este item já foi doado ao Museu!', 'info');
+      return;
+    }
+    const item = MAGNET_ITEMS[itemId];
+    if (!item) return;
+
+    this.magnetInventory[itemId]--;
+    this.museumDonations[itemId] = true;
+    this.gold += 500;
+    this.fishEyesCount = (this.fishEyesCount || 0) + 1;
+    sound.playRare?.();
+    this.showToast(`🏛️ Relíquia doada ao Museu! +500G e +1 Olho de Peixe!`, 'success');
+
+    if (this.isMuseumSetCompleted(item.scenario)) {
+      const col = MUSEUM_COLLECTIONS[item.scenario];
+      sound.playLegendary?.();
+      this.showToast(`🏆 CONJUNTO COMPLETO: ${col.name}! ${col.rewardDesc}`, 'success');
+    }
+
+    this.renderHeader();
+    this.renderFishEyesBadge();
+    this.renderMagnetRightPanel();
+    this.renderMagnetLeftPanel();
+    this.saveGame();
+  }
+
+  sellMagnetItem(itemId, count = 1) {
+    const have = this.magnetInventory[itemId] || 0;
+    if (have < count) return;
+    const item = MAGNET_ITEMS[itemId];
+    if (!item) return;
+
+    const earned = item.sellValue * count;
+    this.magnetInventory[itemId] -= count;
+    this.gold += earned;
+    this.totalGoldEarned += earned;
+    this.magnetGoldEarned = (this.magnetGoldEarned || 0) + earned;
+    sound.playCoin?.();
+    this.showToast(`${count}x ${item.name} vendido(s) por +${earned.toLocaleString('pt-BR')}G!`, 'success');
+
+    this.renderHeader();
+    this.renderMagnetRightPanel();
+    this.renderMagnetStatsBar();
+    this.saveGame();
+  }
+
+  sellAllMagnetDuplicates() {
+    let totalEarned = 0;
+    let totalSold = 0;
+
+    Object.keys(this.magnetInventory).forEach(id => {
+      const count = this.magnetInventory[id] || 0;
+      const item = MAGNET_ITEMS[id];
+      if (!item || count <= 1) return;
+
+      const isDonated = Boolean(this.museumDonations[id]);
+      const toSell = isDonated ? count : count - 1;
+
+      if (toSell > 0) {
+        const earned = item.sellValue * toSell;
+        totalEarned += earned;
+        totalSold += toSell;
+        this.magnetInventory[id] -= toSell;
+      }
+    });
+
+    if (totalSold === 0) {
+      this.showToast('Nenhuma sucata repetida para vender! (Itens únicos guardados para o Museu)', 'info');
+      return;
+    }
+
+    this.gold += totalEarned;
+    this.totalGoldEarned += totalEarned;
+    this.magnetGoldEarned = (this.magnetGoldEarned || 0) + totalEarned;
+    sound.playCoin?.();
+    this.showToast(`💰 ${totalSold} sucatas repetidas vendidas por +${totalEarned.toLocaleString('pt-BR')}G!`, 'success');
+
+    this.renderHeader();
+    this.renderMagnetRightPanel();
+    this.renderMagnetStatsBar();
+    this.saveGame();
+  }
+
+  openMagnetChest() {
+    if (!this.forgeUpgrades['gazua_mestre']) {
+      this.showToast('Você precisa forjar a Gazua Mestre na Oficina para arrombar cofres!', 'warning');
+      return;
+    }
+    if ((this.magnetInventory['cofre_trancado'] || 0) < 1) return;
+
+    this.magnetInventory['cofre_trancado']--;
+
+    const goldReward = Math.floor(6000 + Math.random() * 14000);
+    const eyesReward = Math.floor(2 + Math.random() * 4);
+    this.gold += goldReward;
+    this.fishEyesCount = (this.fishEyesCount || 0) + eyesReward;
+
+    const rareDrops = ['geodo_ametista', 'quartzo_prismatico', 'meteorito_espacial'];
+    const bonusItem = rareDrops[Math.floor(Math.random() * rareDrops.length)];
+    this.magnetInventory[bonusItem] = (this.magnetInventory[bonusItem] || 0) + 1;
+
+    sound.playLegendary?.();
+    this.showToast(`🔓 COFRE ARROMBADO! +${goldReward.toLocaleString('pt-BR')}G, +${eyesReward} Olhos e 1x ${MAGNET_ITEMS[bonusItem].name}!`, 'success');
+
+    this.renderHeader();
+    this.renderFishEyesBadge();
+    this.renderMagnetRightPanel();
+    this.renderMagnetLeftPanel();
+    this.saveGame();
+  }
+
+  isMuseumSetCompleted(scenarioId) {
+    const col = MUSEUM_COLLECTIONS[scenarioId];
+    if (!col) return false;
+    return col.itemIds.every(id => Boolean(this.museumDonations[id]));
+  }
+
+  craftForgeUpgrade(recipeId) {
+    const recipe = FORGE_RECIPES.find(r => r.id === recipeId);
+    if (!recipe) return;
+    if (this.forgeUpgrades[recipeId]) {
+      this.showToast('Esta melhoria já foi forjada e está ativa!', 'info');
+      return;
+    }
+
+    for (const [matId, reqQty] of Object.entries(recipe.materials)) {
+      const curQty = this.magnetInventory[matId] || 0;
+      if (curQty < reqQty) {
+        this.showToast(`Faltam materiais! Você precisa de ${reqQty}x ${MAGNET_ITEMS[matId]?.name || matId}.`, 'warning');
+        return;
+      }
+    }
+
+    for (const [matId, reqQty] of Object.entries(recipe.materials)) {
+      this.magnetInventory[matId] -= reqQty;
+    }
+
+    this.forgeUpgrades[recipeId] = true;
+    sound.playLegendary?.();
+    this.showToast(`⚙️ SUCESSO! Você forjou: ${recipe.name}!`, 'success');
+
+    this.renderHeader();
+    this.renderBuffs();
+    this.renderMagnetLeftPanel();
+    this.renderMagnetRightPanel();
+    this.saveGame();
+  }
+
   renderFishEyesBadge() {
     const badge = document.getElementById('fish-eyes-badge');
     if (badge) {
       const count = this.fishEyesCount || 0;
-      badge.textContent = `${count}`;
+      badge.textContent = `${count} ${count === 1 ? 'OLHO' : 'OLHOS'}`;
       if (count > 0) {
-        badge.className = 'text-[8px] font-bold text-amber-300 animate-pulse';
+        badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-amber-300 bg-amber-950 px-1.5 py-0.5 border border-amber-800/80 animate-pulse shrink-0 whitespace-nowrap';
       } else {
-        badge.className = 'text-[8px] font-bold text-cyan-300';
+        badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-cyan-300 bg-cyan-950 px-1.5 py-0.5 border border-cyan-800/80 shrink-0 whitespace-nowrap';
       }
     }
   }
@@ -892,6 +1758,19 @@ class FishingGame {
     }
   }
 
+  toggleMainMenu(forceState) {
+    const menu = document.getElementById('main-dropdown-menu');
+    if (!menu) return;
+    const isHidden = menu.classList.contains('hidden');
+    const shouldShow = forceState !== undefined ? forceState : isHidden;
+    if (shouldShow) {
+      sound.playClick();
+      menu.classList.remove('hidden');
+    } else {
+      menu.classList.add('hidden');
+    }
+  }
+
   toggleSetting(key) {
     if (this.settings[key] === undefined) return;
     this.settings[key] = !this.settings[key];
@@ -942,6 +1821,7 @@ class FishingGame {
     updateBtn('btn-setting-fishAnimations', this.settings.fishAnimations);
     updateBtn('btn-setting-waterParticles', this.settings.waterParticles);
     updateBtn('btn-setting-scanlines', this.settings.scanlines);
+    updateBtn('btn-setting-fishNotifications', this.settings.fishNotifications !== false);
   }
 
   openConsoleFromSettings() {
@@ -1108,20 +1988,17 @@ class FishingGame {
 
   updateChapter1Badge() {
     const badge = document.getElementById('chapter1-badge');
-    const btn = document.getElementById('btn-open-chapter1');
-    if (!badge || !btn) return;
+    if (!badge) return;
 
     if (this.chapter1Completed) {
       badge.textContent = 'PORTAL ATIVO';
-      badge.className = 'text-[8px] font-bold text-cyan-300 animate-pulse';
-      btn.className = 'h-9 px-2.5 bg-cyan-950/90 border-2 border-cyan-400 flex items-center gap-1.5 text-xs pixel-btn shadow-[0_0_12px_rgba(6,182,212,0.6)] hover:border-cyan-300';
+      badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-cyan-300 bg-cyan-950 px-1.5 py-0.5 border border-cyan-800/80 animate-pulse shrink-0 whitespace-nowrap';
     } else {
       const hasRod = this.unlockedRods.includes('vara_travessia');
       const hasBait = this.unlockedBaits.includes('essencia_travessia');
       const progress = (hasRod ? 1 : 0) + (hasBait ? 1 : 0);
-      badge.textContent = `CAP. 1 (${progress}/2)`;
-      badge.className = 'text-[8px] font-bold text-cyan-400';
-      btn.className = 'h-9 px-2.5 bg-slate-900 border-2 border-slate-700 flex items-center gap-1.5 text-xs pixel-btn hover:border-cyan-400';
+      badge.textContent = progress > 0 ? `CAP. 1 (${progress}/2)` : 'CAP. 1';
+      badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-purple-300 bg-purple-950 px-1.5 py-0.5 border border-purple-800/80 shrink-0 whitespace-nowrap';
     }
   }
 
@@ -1250,7 +2127,7 @@ class FishingGame {
     if (discoveredSecret > 0) {
       if (badge) {
         badge.textContent = `${totalDiscovered}/${baseTotal}+`;
-        badge.className = 'text-[8px] font-bold text-red-400 animate-pulse';
+        badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-red-300 bg-red-950 px-1.5 py-0.5 border border-red-800/80 animate-pulse shrink-0 whitespace-nowrap';
       }
       if (progText) {
         progText.innerHTML = `<span class="text-red-400 font-bold">🌌 ${totalDiscovered}/${baseTotal} (+${discoveredSecret} SECRETO)</span>`;
@@ -1263,7 +2140,7 @@ class FishingGame {
       const str = `${discoveredNormal}/${baseTotal}`;
       if (badge) {
         badge.textContent = str;
-        badge.className = 'text-[8px] font-bold text-cyan-300';
+        badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-cyan-300 bg-cyan-950 px-1.5 py-0.5 border border-cyan-800/80 shrink-0 whitespace-nowrap';
       }
       if (progText) progText.textContent = `${str} (${Math.round((discoveredNormal/baseTotal)*100)}%)`;
       if (progBar) {
@@ -1399,6 +2276,7 @@ class FishingGame {
   }
 
   getFishSpriteURL(iconId) {
+    if (!this._fishSpriteCache) this._fishSpriteCache = {};
     if (!this._fishSpriteCache[iconId]) {
       this._fishSpriteCache[iconId] = getFishDataURL(iconId, 3);
     }
@@ -1406,6 +2284,7 @@ class FishingGame {
   }
 
   getFishSilhouetteURL(iconId) {
+    if (!this._fishSilhouetteCache) this._fishSilhouetteCache = {};
     if (!this._fishSilhouetteCache[iconId]) {
       this._fishSilhouetteCache[iconId] = getFishSilhouetteDataURL(iconId, 3);
     }
@@ -1413,6 +2292,7 @@ class FishingGame {
   }
 
   getBloodMoonSpriteURL(scale = 3.5) {
+    if (!this._fishSpriteCache) this._fishSpriteCache = {};
     const key = `blood_moon_${scale}`;
     if (!this._fishSpriteCache[key]) {
       this._fishSpriteCache[key] = getBloodMoonFishDataURL(scale);
@@ -1456,6 +2336,16 @@ class FishingGame {
         lastFishEyeDate: this.lastFishEyeDate || null,
         autoFisherEnabled: this.autoFisherEnabled,
         autoSellerEnabled: this.autoSellerEnabled,
+        gameMode: this.gameMode || 'pesca',
+        magnetLeftTab: this.magnetLeftTab || 'forge',
+        magnetUnlocked: Boolean(this.magnetUnlocked),
+        magnetTier: this.magnetTier || 1,
+        magnetScenario: this.magnetScenario || 'ponte',
+        magnetInventory: this.magnetInventory || {},
+        museumDonations: this.museumDonations || {},
+        forgeUpgrades: this.forgeUpgrades || {},
+        magnetCatches: this.magnetCatches || 0,
+        magnetGoldEarned: this.magnetGoldEarned || 0,
         settings: this.settings,
         lastActiveTime: Date.now()
       }));
@@ -1500,6 +2390,16 @@ class FishingGame {
         this.lastFishEyeDate = d.lastFishEyeDate || null;
         this.autoFisherEnabled = d.autoFisherEnabled !== undefined ? Boolean(d.autoFisherEnabled) : true;
         this.autoSellerEnabled = d.autoSellerEnabled !== undefined ? Boolean(d.autoSellerEnabled) : true;
+        this.gameMode = d.gameMode || 'pesca';
+        this.magnetLeftTab = d.magnetLeftTab || 'forge';
+        this.magnetUnlocked = Boolean(d.magnetUnlocked);
+        this.magnetTier = typeof d.magnetTier === 'number' ? Math.max(1, Math.min(5, d.magnetTier)) : 1;
+        this.magnetScenario = d.magnetScenario || 'ponte';
+        this.magnetInventory = (d.magnetInventory && typeof d.magnetInventory === 'object') ? d.magnetInventory : {};
+        this.museumDonations = (d.museumDonations && typeof d.museumDonations === 'object') ? d.museumDonations : {};
+        this.forgeUpgrades = (d.forgeUpgrades && typeof d.forgeUpgrades === 'object') ? d.forgeUpgrades : {};
+        this.magnetCatches = typeof d.magnetCatches === 'number' ? d.magnetCatches : 0;
+        this.magnetGoldEarned = typeof d.magnetGoldEarned === 'number' ? d.magnetGoldEarned : 0;
         if (d.settings) {
           this.settings = { ...this.settings, ...d.settings };
         }
@@ -1637,6 +2537,20 @@ class FishingGame {
     out.fishingSpeedBonus += (fe.speed || 0) * 0.01;
     out.doubleCatchChance += (fe.double || 0) * 0.01;
 
+    // Bônus da Pesca Magnética (Oficina de Forja & Museu)
+    if (this.forgeUpgrades && this.forgeUpgrades['propulsor_mergulhador']) {
+      out.autoFishSpeedBonus += 0.35;
+    }
+    if (this.forgeUpgrades && this.forgeUpgrades['carretel_precisao']) {
+      out.fishingSpeedBonus += 0.25;
+    }
+    if (this.isMuseumSetCompleted('ponte')) {
+      out.goldMultiplier += 0.12;
+    }
+    if (this.isMuseumSetCompleted('praia')) {
+      out.doubleCatchChance += 0.15;
+    }
+
     // Caps dinâmicos: Ouro e Sorte começam com base cap de 200% (2.0) e expandem com os olhos
     const goldCap = 2.00 + (fe.gold || 0) * 0.01;
     const luckCap = 2.00 + (fe.luck || 0) * 0.01;
@@ -1648,7 +2562,7 @@ class FishingGame {
       luckBonus: Math.min(out.luckBonus, luckCap),
       fishingSpeedBonus: Math.min(out.fishingSpeedBonus, speedCap),
       doubleCatchChance: Math.min(out.doubleCatchChance, doubleCap),
-      autoFishSpeedBonus: Math.min(out.autoFishSpeedBonus, 0.50)
+      autoFishSpeedBonus: Math.min(out.autoFishSpeedBonus, 0.65)
     };
   }
 
@@ -1767,7 +2681,10 @@ class FishingGame {
     });
     const template = pool[Math.floor(Math.random() * pool.length)] || FISH_LIST.find(f => f.rarity === selectedRarity) || FISH_LIST[0];
 
-    const weight = +(template.minWeight + Math.random() * (template.maxWeight - template.minWeight)).toFixed(2);
+    let weight = +(template.minWeight + Math.random() * (template.maxWeight - template.minWeight)).toFixed(2);
+    if (this.forgeUpgrades && this.forgeUpgrades['linha_reforcada']) {
+      weight = +(weight * 1.15).toFixed(2);
+    }
     const weightFactor = weight / template.minWeight;
     const rawValue = Math.round(template.baseValue * Math.pow(weightFactor, 0.7));
 
@@ -2032,6 +2949,7 @@ class FishingGame {
       if (now - this.lastAutoFishTime >= finalMs) {
         this.lastAutoFishTime = now;
         if (this.inventory.length < this.getMaxInventory()) this.fish(true);
+        this.checkDiverMagnetDiscovery();
       }
     }, 250);
   }
@@ -2194,11 +3112,16 @@ class FishingGame {
   // ── RENDER ──
   renderAll() {
     this.renderHeader();
-    this.renderUpgrades();
-    this.renderInventory();
-    this.renderAquarium();
-    this.renderBuffs();
-    this.renderStats();
+    this.syncGameModeUI();
+    if (this.gameMode === 'ima') {
+      this.renderMagnetAll();
+    } else {
+      this.renderUpgrades();
+      this.renderInventory();
+      this.renderAquarium();
+      this.renderBuffs();
+      this.renderStats();
+    }
     this.updateAlbumBadge();
   }
 
@@ -2224,6 +3147,27 @@ class FishingGame {
       }
       inv.style.fontFamily = 'var(--font-pixel)';
     }
+
+    const magnetBtn = document.getElementById('btn-open-magnet');
+    const magnetBadge = document.getElementById('magnet-badge');
+    const btnModeIma = document.getElementById('btn-mode-ima');
+    if (magnetBtn) {
+      if (this.magnetUnlocked) {
+        magnetBtn.classList.remove('hidden');
+        if (magnetBadge) {
+          magnetBadge.textContent = `ÍMÃ T${this.magnetTier || 1}`;
+        }
+      } else {
+        magnetBtn.classList.add('hidden');
+      }
+    }
+    if (btnModeIma) {
+      if (this.magnetUnlocked) {
+        btnModeIma.classList.remove('hidden');
+      } else {
+        btnModeIma.classList.add('hidden');
+      }
+    }
   }
 
   renderBuffs() {
@@ -2231,16 +3175,17 @@ class FishingGame {
     if (!c) return;
     const b = this.getActiveBuffs();
     const pills = [];
-    if (b.goldMultiplier > 0)     pills.push(`<span class="buff-pill px-2 py-0.5 border border-amber-700 text-amber-300 text-[10px]" style="font-family:var(--font-pixel);">+${Math.round(b.goldMultiplier*100)}% OURO</span>`);
-    if (b.luckBonus > 0)          pills.push(`<span class="buff-pill px-2 py-0.5 border border-purple-700 text-purple-300 text-[10px]" style="font-family:var(--font-pixel);">+${Math.round(b.luckBonus*100)}% SORTE</span>`);
-    if (b.fishingSpeedBonus > 0)  pills.push(`<span class="buff-pill px-2 py-0.5 border border-cyan-700 text-cyan-300 text-[10px]" style="font-family:var(--font-pixel);">+${Math.round(b.fishingSpeedBonus*100)}% VEL</span>`);
-    if (b.doubleCatchChance > 0)  pills.push(`<span class="buff-pill px-2 py-0.5 border border-emerald-700 text-emerald-300 text-[10px]" style="font-family:var(--font-pixel);">+${Math.round(b.doubleCatchChance*100)}% DUPLA</span>`);
+    if (b.goldMultiplier > 0)     pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-amber-700 text-amber-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.goldMultiplier*100)}% OURO</span>`);
+    if (b.luckBonus > 0)          pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-purple-700 text-purple-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.luckBonus*100)}% SORTE</span>`);
+    if (b.fishingSpeedBonus > 0)  pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-cyan-700 text-cyan-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.fishingSpeedBonus*100)}% VEL</span>`);
+    if (b.doubleCatchChance > 0)  pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-emerald-700 text-emerald-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.doubleCatchChance*100)}% DUPLA</span>`);
     c.innerHTML = pills.length
       ? pills.join('')
-      : '<span class="text-[10px] text-slate-600 italic" style="font-family:var(--font-pixel);">Nenhum buff ativo</span>';
+      : '<span class="text-[8px] text-slate-600 italic" style="font-family:var(--font-pixel);">Nenhum buff ativo</span>';
   }
 
   renderUpgrades() {
+    if (this.gameMode === 'ima') return;
     const list = document.getElementById('upgrades-content-list');
     if (!list) return;
     let html = '';
@@ -2368,6 +3313,7 @@ class FishingGame {
   }
 
   renderInventory() {
+    if (this.gameMode === 'ima') return;
     const c = document.getElementById('inventory-fish-list');
     if (!c) return;
 
@@ -2541,6 +3487,7 @@ class FishingGame {
 
   // ── EFEITOS VISUAIS ──
   createWaterRipple() {
+    if (this.gameMode === 'ima') return;
     const lake = document.getElementById('fishing-lake-area');
     if (!lake) return;
     const r = document.createElement('div');
@@ -2552,6 +3499,8 @@ class FishingGame {
   }
 
   showCatchNotification(fish) {
+    if (this.settings.fishNotifications === false) return;
+    if (this.gameMode === 'ima') return;
     const c = document.getElementById('catch-toast-container');
     if (!c) return;
     const r = RARITIES[fish.rarity] || RARITIES.COMUM;
@@ -2590,7 +3539,7 @@ class FishingGame {
   }
 
   showFloatingText(text, color = '#38bdf8', offY = 0) {
-    const lake = document.getElementById('fishing-lake-area');
+    const lake = document.getElementById(this.gameMode === 'ima' ? 'magnet-lake-area' : 'fishing-lake-area');
     if (!lake) return;
     const el = document.createElement('div');
     el.className = 'floating-number';
@@ -2603,6 +3552,7 @@ class FishingGame {
     lake.appendChild(el);
     setTimeout(() => el.remove(), 1100);
   }
+
 
   showToast(msg, type = 'info') {
     const bgMap = {
@@ -2645,7 +3595,7 @@ class FishingGame {
     if (this.goldenFishActive) return;
     this.goldenFishActive = true;
 
-    const lake = document.getElementById('fishing-lake-area');
+    const lake = document.getElementById(this.gameMode === 'ima' ? 'magnet-lake-area' : 'fishing-lake-area');
     if (!lake) { this.goldenFishActive = false; this.scheduleNextGoldenFish(); return; }
 
     const isCosmic = isCosmicOrHigherRod(this.selectedRodId);
@@ -3075,6 +4025,9 @@ class FishingGame {
         this.consoleLog('time / tod [phase|skip] - Consulta ou define horário do dia', '#ccc');
         this.consoleLog('fisheye [n]    - Adiciona n Olhos de Peixe (default: 1)', '#ccc');
         this.consoleLog('midnight       - Simula virada das 00:00 para coletar Olho', '#ccc');
+        this.consoleLog('magnet [tier]  - Desbloqueia ou define Tier da Pesca Magnética (1 a 5)', '#f59e0b');
+        this.consoleLog('magnetitem <id> [n] - Adiciona item magnético ao inventário', '#f59e0b');
+        this.consoleLog('magnetall      - Desbloqueia todos os ímãs e itens magnéticos', '#f59e0b');
         this.consoleLog('reset          - Reseta progresso', '#ccc');
         this.consoleLog('clear          - Limpa console', '#ccc');
         break;
@@ -3309,6 +4262,57 @@ class FishingGame {
         break;
       }
 
+      case 'magnet':
+      case 'cheatmagnet': {
+        const tier = Math.max(1, Math.min(5, parseInt(arg) || 1));
+        this.magnetUnlocked = true;
+        this.magnetTier = tier;
+        this.renderHeader();
+        this.consoleLog(`Pesca Magnética desbloqueada no Tier ${tier} (${MAGNET_TIERS[tier - 1]?.name})!`, '#f59e0b');
+        this.setGameMode('ima');
+        break;
+      }
+
+      case 'magnettier': {
+        const tier = Math.max(1, Math.min(5, parseInt(arg) || 1));
+        this.upgradeMagnetTier(tier);
+        this.consoleLog(`Tier do Ímã alterado para ${tier}!`, '#f59e0b');
+        break;
+      }
+
+      case 'magnetitem': {
+        const itemId = parts[1];
+        const qty = Math.max(1, parseInt(parts[2]) || 1);
+        if (!itemId || !MAGNET_ITEMS[itemId]) {
+          this.consoleLog(`Item inválido! Ex: magnetitem minerio_ferro 5. IDs: ${Object.keys(MAGNET_ITEMS).join(', ')}`, '#ff6b6b');
+          break;
+        }
+        this.magnetInventory[itemId] = (this.magnetInventory[itemId] || 0) + qty;
+        this.consoleLog(`+${qty}x ${MAGNET_ITEMS[itemId].name} adicionado à Mochila de Garimpo!`, '#f59e0b');
+        if (this.gameMode === 'ima') this.renderMagnetRightPanel();
+        break;
+      }
+
+      case 'magnetall': {
+        this.magnetUnlocked = true;
+        this.magnetTier = 5;
+        Object.keys(MAGNET_ITEMS).forEach(id => {
+          this.magnetInventory[id] = (this.magnetInventory[id] || 0) + 10;
+          this.museumDonations[id] = true;
+        });
+        FORGE_RECIPES.forEach(r => {
+          this.forgeUpgrades[r.id] = true;
+        });
+        this.consoleLog('Todos os ímãs (Tier 5), 10x de cada item, Museu e Forja desbloqueados!', '#f59e0b');
+        this.renderHeader();
+        this.setGameMode('ima');
+        break;
+      }
+
+      case 'magnetopen':
+        this.setGameMode('ima');
+        break;
+
       case 'reset':
         this.resetProgress();
         break;
@@ -3461,6 +4465,14 @@ class FishingGame {
     document.getElementById('btn-open-patch-notes')?.addEventListener('click', () => this.openPatchNotesModal());
     document.getElementById('btn-toggle-time')?.addEventListener('click', () => this.showTimeOfDayStatus());
 
+    // Fechar dropdown de menu ao clicar fora dele
+    document.addEventListener('click', (e) => {
+      const container = document.getElementById('main-menu-container');
+      if (container && !container.contains(e.target)) {
+        this.toggleMainMenu(false);
+      }
+    });
+
     // Fechar modais ao clicar fora (backdrop click) e via tecla Escape
     const allModals = ['sell-filter-modal', 'album-modal', 'offline-modal', 'profile-modal', 'achievements-modal', 'chapter1-modal', 'settings-modal', 'fish-eyes-modal', 'patch-notes-modal'];
     allModals.forEach(id => {
@@ -3477,6 +4489,7 @@ class FishingGame {
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        this.toggleMainMenu(false);
         if (this.consoleOpen) {
           this.toggleConsole(false);
         }
