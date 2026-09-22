@@ -34,7 +34,7 @@ import {
 // O jogo detecta automaticamente e abre o modal de Notas de Atualização
 // APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
 // ══════════════════════════════════════════════════════════════════════════════
-export const GAME_VERSION = '1.4.0';
+export const GAME_VERSION = '1.4.1';
 
 class FishingGame {
   constructor() {
