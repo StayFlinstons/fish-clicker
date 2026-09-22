@@ -24,7 +24,8 @@ export const BAITS = [
   { id:'isca_brilhante',     name:'Isca Neon Glow',               price:2000,   tier:3, luckMultiplier:1.25, doubleCatchBonus:0.05, icon:'bait', desc:'Brilha no escuro, atraindo raros.',    unlocked:false },
   { id:'queijo_mistico',     name:'Massa Mística Fermentada',     price:12000,  tier:4, luckMultiplier:1.50, doubleCatchBonus:0.08, icon:'bait', desc:'Fórmula secreta com ervas arcanas.',   unlocked:false },
   { id:'ouro_liquido',       name:'Gota de Éter Divino',          price:80000,  tier:5, luckMultiplier:2.00, doubleCatchBonus:0.15, icon:'bait', desc:'Vibra na frequência dos deuses aquáticos.', unlocked:false },
-  { id:'essencia_travessia', name:'Essência do Vórtice Dimensional', price:250000, tier:6, luckMultiplier:2.50, doubleCatchBonus:0.25, icon:'bait', desc:'Exala névoa dimensional que rompe fronteiras. Requisito para o próximo mundo.', unlocked:false }
+  { id:'essencia_travessia', name:'Essência do Vórtice Dimensional', price:250000, tier:6, luckMultiplier:2.50, doubleCatchBonus:0.25, icon:'bait', desc:'Exala névoa dimensional que rompe fronteiras. Requisito para o próximo mundo.', unlocked:false },
+  { id:'isca_kraken_ancestral', name:'Isca do Kraken Ancestral', price:0, tier:7, luckMultiplier:3.50, doubleCatchBonus:0.50, icon:'bait', unbuyable:true, desc:'Forjada no Altar com o sacrifício de 15 criaturas lendárias. Atrai o terror primordial do abismo.', unlocked:false }
 ];
 
 export const UPGRADES = [

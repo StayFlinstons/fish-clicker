@@ -33,7 +33,35 @@ const PALETTES = {
   fenix_ocaso:    { body:'#ea580c', belly:'#fdf2f8', eye:'#38bdf8', fin:'#db2777', outline:'#831843' },
   tubarao_lunar:  { body:'#94a3b8', belly:'#f1f5f9', eye:'#38bdf8', fin:'#64748b', outline:'#334155' },
   kraken_estelar: { body:'#312e81', belly:'#c7d2fe', eye:'#c084fc', fin:'#4338ca', outline:'#1e1b4b' },
-  lampreia_negra: { body:'#09090b', belly:'#18181b', eye:'#ff1a1a', fin:'#7f1d1d', outline:'#450a0a' }
+  lampreia_negra: { body:'#09090b', belly:'#18181b', eye:'#ff1a1a', fin:'#7f1d1d', outline:'#450a0a' },
+  // ═══════════════════════════════════════════
+  // PEIXES DO MUNDO 2: O ABISMO OCEÂNICO
+  // ═══════════════════════════════════════════
+  camarao_neon:         { body:'#06b6d4', belly:'#cffafe', eye:'#38bdf8', fin:'#0891b2', outline:'#164e63' },
+  peixe_lanterna:       { body:'#0284c7', belly:'#bae6fd', eye:'#fde047', fin:'#0369a1', outline:'#0c4a6e' },
+  agua_viva_aurora:     { body:'#818cf8', belly:'#e0e7ff', eye:'#c084fc', fin:'#6366f1', outline:'#3730a3' },
+  polvo_cintilante:     { body:'#a855f7', belly:'#f3e8ff', eye:'#38bdf8', fin:'#9333ea', outline:'#581c87' },
+  caranguejo_obsidiana: { body:'#18181b', belly:'#3f3f46', eye:'#ef4444', fin:'#27272a', outline:'#09090b' },
+  carpa_magmatica:      { body:'#ea580c', belly:'#fed7aa', eye:'#facc15', fin:'#c2410c', outline:'#7c2d12' },
+  moreia_brasa:         { body:'#dc2626', belly:'#fecaca', eye:'#fef08a', fin:'#b91c1c', outline:'#7f1d1d' },
+  dragao_hidrotermico:  { body:'#991b1b', belly:'#fca5a5', eye:'#fbbf24', fin:'#7f1d1d', outline:'#450a0a' },
+  arenque_fantasma:     { body:'#64748b', belly:'#f1f5f9', eye:'#38bdf8', fin:'#475569', outline:'#1e293b' },
+  enguia_espectral:     { body:'#0d9488', belly:'#ccfbf1', eye:'#2dd4bf', fin:'#0f766e', outline:'#134e4a' },
+  peixe_cofre:          { body:'#d97706', belly:'#fef3c7', eye:'#fbbf24', fin:'#b45309', outline:'#78350f' },
+  tubarao_espectro:     { body:'#334155', belly:'#cbd5e1', eye:'#f43f5e', fin:'#1e293b', outline:'#0f172a' },
+  peixe_diabo:          { body:'#1e1b4b', belly:'#c7d2fe', eye:'#fb7185', fin:'#312e81', outline:'#0f0d24' },
+  tubarao_duende:       { body:'#831843', belly:'#fce7f3', eye:'#f43f5e', fin:'#9d174d', outline:'#500724' },
+  quimera_abissal:      { body:'#3b0764', belly:'#e9d5ff', eye:'#e879f9', fin:'#581c87', outline:'#2e1065' },
+  leviata_nucleo:       { body:'#450a0a', belly:'#fca5a5', eye:'#facc15', fin:'#7f1d1d', outline:'#1c0404' },
+  arraia_coral:         { body:'#f43f5e', belly:'#ffe4e6', eye:'#38bdf8', fin:'#e11d48', outline:'#881337' },
+  serpente_coral:       { body:'#06b6d4', belly:'#fbcfe8', eye:'#fde047', fin:'#0891b2', outline:'#0e7490' },
+  tubarao_basaltico:    { body:'#292524', belly:'#ea580c', eye:'#facc15', fin:'#1c1917', outline:'#0c0a09' },
+  fenix_magma:          { body:'#ea580c', belly:'#fef08a', eye:'#ffffff', fin:'#dc2626', outline:'#7f1d1d' },
+  espadarte_fantasma:   { body:'#10b981', belly:'#ecfdf5', eye:'#38bdf8', fin:'#059669', outline:'#064e3b' },
+  kraken_galeoes:       { body:'#064e3b', belly:'#fef08a', eye:'#34d399', fin:'#047857', outline:'#022c22' },
+  isopode_hadal:        { body:'#6b21a8', belly:'#e9d5ff', eye:'#c084fc', fin:'#581c87', outline:'#3b0764' },
+  polvo_vampiro:        { body:'#4c1d95', belly:'#f43f5e', eye:'#38bdf8', fin:'#6d28d9', outline:'#1e0538' },
+  olho_vazio:           { body:'#1e0836', belly:'#ea580c', eye:'#fef08a', fin:'#dc2626', outline:'#010003' }
 };
 
 // ═══════════════════════════════════════════════
@@ -152,7 +180,7 @@ const SPRITE_ANCIENT = [
   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 ];
 
-// Serpente / Dragão Mítico (Leviatã, Dragão, Serpente)
+// Serpente Marinha Cósmica (Corpo ondulante místico com barbelas e cauda etérea)
 const SPRITE_SERPENT = [
   [0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,0], // Chifre mítico
   [0,6,6,1,1,1,0,0,0,1,1,1,0,0,0,0],
@@ -164,6 +192,76 @@ const SPRITE_SERPENT = [
   [0,0,0,0,1,1,0,0,0,0,0,1,5,5,1,0], // Cauda etérea
   [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0],
   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
+
+// Peixe-Dragão da Fenda (Chifres pontiagudos, crista espinhosa dorsal, mandíbula de chamas azuis e barbatana farpada)
+const SPRITE_DRAGON = [
+  [0,6,0,0,1,1,0,0,1,1,0,0,1,1,0,0], // Espinhos dorsais de dragão
+  [0,1,6,1,2,5,1,1,2,5,1,1,2,5,1,0], // Dorso serrilhado
+  [1,1,2,2,4,1,2,2,2,2,2,2,2,2,1,1], // Olho dourado (4) e ponta da cauda
+  [1,6,2,2,2,2,2,2,2,2,2,2,2,2,2,1], // Focinho com presa e corpo voraz
+  [6,1,6,1,3,3,3,3,2,2,2,2,2,2,1,5], // Chama azul expelida (6) e farpa caudal (5)
+  [0,1,6,1,1,3,3,3,3,3,2,2,2,2,1,1], // Barbelas místicas e ventre
+  [0,0,6,0,1,1,5,5,3,3,2,2,2,1,1,0], // Barbatana de garra peitoral
+  [0,0,0,0,0,1,5,5,1,1,1,1,1,1,0,0], // Nadadeira ventral
+  [0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
+
+// Leviatã Bioluminescente (Colosso abissal com antena de luz, fotóforos brilhantes e cauda caudal dupla)
+const SPRITE_LEVIATHAN = [
+  [0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0], // Antena de bioluminescência
+  [0,0,1,6,1,0,0,1,1,1,0,0,0,0,1,1], // Haste e topo da cauda
+  [0,1,1,1,1,1,1,2,2,2,1,1,0,1,5,1], // Dorso e barbatana caudal superior
+  [1,2,2,4,2,2,6,2,2,6,2,2,1,1,5,1], // Olho verde néon (4) e fotóforos brilhantes (6)
+  [1,6,2,2,2,2,2,2,2,2,2,2,2,2,1,0], // Focinho com fotóforo e corpo imponente
+  [1,1,3,3,3,3,6,3,3,6,2,2,2,2,1,0], // Ventre abissal com fotóforos ventrais
+  [0,1,3,3,3,3,3,3,3,2,2,2,2,1,5,1], // Quilha e barbatana caudal inferior
+  [0,0,1,1,5,5,5,1,1,1,1,1,1,0,1,1], // Grande nadadeira peitoral abissal
+  [0,0,0,1,5,5,1,0,0,0,0,0,0,0,0,0], // Ponta da nadadeira
+  [0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0],
+];
+
+// Leviatã do Prisma Solar (Colosso celestial com chifres e espinhos de cristal prismático)
+const SPRITE_PRISMA_LEVIATHAN = [
+  [0,6,6,0,0,0,0,6,0,0,6,0,0,6,0,0], // Cristais prismáticos dorsais
+  [6,1,1,1,1,0,1,6,1,1,6,1,1,6,1,0], // Dorso cristalino
+  [1,2,2,2,4,1,2,2,2,2,2,2,2,2,1,6], // Olho prismático e lâmina caudal
+  [1,6,2,2,2,2,2,2,2,2,2,2,2,2,1,6], // Presas cristalinas e corpo serpentino
+  [1,1,6,3,3,3,3,2,2,2,2,2,2,2,1,6], // Ventre radiante solar
+  [0,1,1,3,3,3,3,3,2,2,2,2,2,1,6,0], // Quilha ventral
+  [0,0,1,1,5,5,3,3,3,2,2,2,1,1,0,0], // Barbatana peitoral de luz
+  [0,0,0,1,5,6,5,1,1,1,1,1,1,0,0,0], // Espinho da barbatana
+  [0,0,0,0,1,6,1,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+];
+
+// Fênix do Ocaso Eterno (Ave-peixe alada com crista e plumas de fogo em cauda tripla)
+const SPRITE_PHOENIX = [
+  [0,0,0,6,0,0,1,5,6,0,0,0,0,0,0,0], // Topo da asa flamejante
+  [0,0,6,1,1,1,5,5,5,1,0,0,0,6,0,0], // Crista de fogo e brasa
+  [0,6,1,2,4,1,2,5,5,1,1,0,1,5,6,0], // Bico de rapina e pluma superior
+  [6,1,2,2,2,2,2,2,2,2,2,1,1,5,6,0], // Ponta do bico e corpo alado
+  [0,1,1,3,3,3,2,2,2,2,2,2,2,1,5,6], // Peito plumado e pluma central
+  [0,0,1,3,3,3,3,2,2,2,2,2,1,1,5,6], // Asa ventral e pluma inferior
+  [0,0,0,1,5,5,5,1,1,2,2,1,1,6,1,0], // Envergadura da asa de chamas
+  [0,0,0,1,5,6,5,1,0,1,1,0,1,5,6,0], // Penugem ardente
+  [0,0,0,0,1,6,1,0,0,0,0,0,0,1,6,1], // Brasas cadentes
+  [0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0],
+];
+
+// Kraken do Abismo Estelar (Manto cósmico com olhos astrais e múltiplos tentáculos com ventosas)
+const SPRITE_KRAKEN = [
+  [0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0], // Cúpula do manto estelar
+  [0,1,2,2,6,2,1,0,0,0,0,0,1,1,0,0], // Estrela no manto e tentáculo superior
+  [1,5,2,2,2,2,2,1,0,0,0,1,2,6,1,0], // Barbatana cefálica e ventosa astral
+  [1,5,5,4,4,2,2,1,1,1,1,2,2,1,0,0], // Olhos cósmicos penetrantes (4)
+  [0,1,1,4,4,3,3,2,6,2,2,2,1,1,1,1], // Ventosas e tentáculo estendido
+  [0,1,2,3,3,1,1,2,1,1,2,2,6,2,2,1], // Sifão e braços abissais
+  [1,2,6,1,1,2,6,1,0,1,1,2,1,1,1,0], // Tentáculos ondulantes inferiores
+  [1,6,2,1,2,6,1,0,1,2,6,1,0,0,0,0], // Espirais de tentáculos com estrelas
+  [0,1,6,2,6,1,0,0,1,6,2,1,0,0,0,0], // Ventosas bioluminescentes
+  [0,0,1,1,1,0,0,0,0,1,1,0,0,0,0,0], // Pontas dos tentáculos
 ];
 
 // Lampreia Negra do Vazio (Corpo serpentino com aura vermelha e dentes abissais)
@@ -199,17 +297,43 @@ const FISH_ANATOMY = {
   pirarucu:  SPRITE_ANCIENT,
   tubarao:   SPRITE_SHARK,
   arraia:    SPRITE_RAY,
-  dragao:    SPRITE_SERPENT,
+  dragao:    SPRITE_DRAGON,
   celacanto:      SPRITE_ANCIENT,
-  leviata:        SPRITE_SERPENT,
+  leviata:        SPRITE_LEVIATHAN,
   serpente:       SPRITE_SERPENT,
   peixe_sol:      SPRITE_CLASSIC,
-  prisma_solar:   SPRITE_SERPENT,
+  prisma_solar:   SPRITE_PRISMA_LEVIATHAN,
   crepusculo:     SPRITE_RAY,
-  fenix_ocaso:    SPRITE_SERPENT,
+  fenix_ocaso:    SPRITE_PHOENIX,
   tubarao_lunar:  SPRITE_SHARK,
-  kraken_estelar: SPRITE_SERPENT,
+  kraken_estelar: SPRITE_KRAKEN,
   lampreia_negra: SPRITE_LAMPREY,
+  // Mundo 2
+  camarao_neon:         SPRITE_SLENDER,
+  peixe_lanterna:       SPRITE_CLASSIC,
+  agua_viva_aurora:     SPRITE_RAY,
+  polvo_cintilante:     SPRITE_PUFFER,
+  caranguejo_obsidiana: SPRITE_PUFFER,
+  carpa_magmatica:      SPRITE_CLASSIC,
+  moreia_brasa:         SPRITE_SERPENT,
+  dragao_hidrotermico:  SPRITE_DRAGON,
+  arenque_fantasma:     SPRITE_SLENDER,
+  enguia_espectral:     SPRITE_SERPENT,
+  peixe_cofre:          SPRITE_PUFFER,
+  tubarao_espectro:     SPRITE_SHARK,
+  peixe_diabo:          SPRITE_PIRANHA,
+  tubarao_duende:       SPRITE_SHARK,
+  quimera_abissal:      SPRITE_ANCIENT,
+  leviata_nucleo:       SPRITE_LEVIATHAN,
+  arraia_coral:         SPRITE_RAY,
+  serpente_coral:       SPRITE_SERPENT,
+  tubarao_basaltico:    SPRITE_SHARK,
+  fenix_magma:          SPRITE_PHOENIX,
+  espadarte_fantasma:   SPRITE_SLENDER,
+  kraken_galeoes:       SPRITE_KRAKEN,
+  isopode_hadal:        SPRITE_PUFFER,
+  polvo_vampiro:        SPRITE_RAY,
+  olho_vazio:           SPRITE_LEVIATHAN,
 };
 
 
@@ -228,6 +352,55 @@ const FISH_ANATOMY = {
 // 9=colete  10=colete_sombra  11=camisa_gola  12=calca_jeans  13=jeans_sombra  14=bota_couro  15=bota_sombra
 // 16=mao  20=haste_vara  21=ponta_vara  22=cabo_vara  23=carretel/aneis  24=anzol_chapeu
 // ═══════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════
+// ESCAFANDRISTA / MERGULHADOR DO ABISMO (32x32)
+// Capacete de latão clássico com visor circular iluminado,
+// traje reforçado de mergulho profundo com placa de lastro e mangueira de oxigênio
+// Mesmas coordenadas da vara para alinhamento milimétrico com a linha
+// ═══════════════════════════════════════════════
+const DIVER_WITH_ROD = [
+  // Linha 0 a 3: Curvatura da ponta da vara de pesca (idêntica)
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,21,21,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,23,20,20,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,20,20,20,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,20,20,20,0,0,0,0,0,0,0,0],
+  // Linha 4 a 7: Cúpula de Latão do Escafandro e válvula superior
+  [0,0,0,0,0,1,1,31,31,31,31,1,1,0,0,0,0,0,0,23,20,20,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,1,31,30,30,30,30,30,30,31,1,0,0,0,20,20,20,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,1,30,30,32,32,32,32,32,30,30,30,1,0,20,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,1,30,30,32,33,33,33,33,32,30,30,30,30,1,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  // Linha 8 a 12: Visor de Vidro Circular Central Iluminado
+  [0,1,30,30,32,33,34,34,34,34,33,32,30,30,1,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,30,30,32,33,34,35,35,34,33,32,30,30,1,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,30,30,32,33,34,35,35,34,33,32,30,30,1,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,30,30,32,33,34,34,34,34,33,32,30,30,1,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,30,30,32,33,33,33,33,32,30,30,1,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  // Linha 13 a 15: Colar de rebites de latão e placa de lastro
+  [0,0,0,1,30,30,30,30,30,30,30,30,1,0,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,1,31,32,32,32,32,32,32,31,1,22,22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,36,36,36,30,30,30,36,36,36,1,22,22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  // Linha 16 a 21: Traje de lona pesada com lastro de peito e luvas
+  [0,1,36,36,37,36,30,30,30,36,37,36,36,1,22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,36,37,37,36,36,36,36,36,37,37,36,16,16,22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,36,36,36,36,37,36,37,36,36,36,36,1,16,16,22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,36,37,37,36,37,36,37,36,37,37,36,1,23,23,23,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,36,36,36,36,36,36,36,36,36,1,0,0,22,22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  // Linha 22 a 27: Cinto com blocos de chumbo e calça reforçada
+  [0,0,1,38,39,38,39,38,39,38,39,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,36,36,36,36,36,36,36,36,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,36,37,36,36,36,36,37,36,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,36,37,36,1,1,36,37,36,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,36,36,1,0,0,1,36,36,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,36,36,1,0,0,1,36,36,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  // Linha 28 a 31: Botas pesadas de chumbo para o leito do oceano
+  [0,0,1,38,38,39,1,0,1,38,38,39,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,38,38,38,39,1,0,1,38,38,38,39,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,39,39,39,39,1,0,1,39,39,39,39,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
 
 const FISHERMAN_WITH_ROD = [
   // Linha 0 a 3: Curvatura extrema da ponta da vara de pescar
@@ -422,6 +595,10 @@ export const ROD_COLORS = {
   vara_titanio:  { rod:'#42a5f5', handle:'#1565c0', tip:'#90caf9', glow:'rgba(66,165,245,0.4)' },
   vara_cosmica:  { rod:'#ab47bc', handle:'#7b1fa2', tip:'#ce93d8', glow:'rgba(171,71,188,0.5)' },
   vara_travessia:{ rod:'#06b6d4', handle:'#0e7490', tip:'#a5f3fc', glow:'rgba(6,182,212,0.6)' },
+  vara_arpao_basico:     { rod:'#38bdf8', handle:'#0f172a', tip:'#e0f2fe', glow:'rgba(56,189,248,0.4)' },
+  vara_pneumatica:       { rod:'#f97316', handle:'#7c2d12', tip:'#fdba74', glow:'rgba(249,115,22,0.5)' },
+  vara_liga_titanio:     { rod:'#10b981', handle:'#064e3b', tip:'#6ee7b7', glow:'rgba(16,185,129,0.6)' },
+  vara_tridente_poseidon:{ rod:'#a855f7', handle:'#581c87', tip:'#e9d5ff', glow:'rgba(168,85,247,0.8)' },
 };
 
 // ═══════════════════════════════════════════════
@@ -434,6 +611,11 @@ export const BAIT_VISUALS = {
   queijo_mistico:     { color1:'#ffd700', color2:'#b8860b' },
   ouro_liquido:       { color1:'#e040fb', color2:'#7c4dff' },
   essencia_travessia: { color1:'#06b6d4', color2:'#8b5cf6' },
+  isca_kraken_ancestral: { color1:'#c084fc', color2:'#e11d48' },
+  isca_plankton_neon:    { color1:'#22d3ee', color2:'#06b6d4' },
+  isca_camarao_brasa:    { color1:'#f97316', color2:'#dc2626' },
+  isca_alga_espectral:   { color1:'#34d399', color2:'#059669' },
+  isca_cristal_hadal:    { color1:'#c084fc', color2:'#7c3aed' },
 };
 
 // ═══════════════════════════════════════════════
@@ -549,6 +731,24 @@ const BAIT_SPRITES = {
     [0,0,0,1,1,2,2,3,2,2,1,1,0,0,0,0],
     [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  ],
+  isca_kraken_ancestral: [
+    [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,1,1,5,5,5,5,5,1,1,0,0,0,0],
+    [0,0,1,5,2,2,3,3,3,2,2,5,1,0,0,0],
+    [0,1,5,2,3,3,4,4,4,3,3,2,5,1,0,0],
+    [0,1,5,2,3,4,4,1,4,4,3,2,5,1,0,0],
+    [1,5,2,3,4,4,1,1,1,4,4,3,2,5,1,0],
+    [1,5,2,3,4,4,1,1,1,4,4,3,2,5,1,0],
+    [1,5,2,3,4,4,1,1,1,4,4,3,2,5,1,0],
+    [1,5,2,3,4,4,1,1,1,4,4,3,2,5,1,0],
+    [0,1,5,2,3,4,4,1,4,4,3,2,5,1,0,0],
+    [0,1,5,2,3,3,4,4,4,3,3,2,5,1,0,0],
+    [0,0,1,5,2,2,3,3,3,2,2,5,1,0,0,0],
+    [0,0,0,1,1,5,5,5,5,5,1,1,0,0,0,0],
+    [0,0,1,6,1,0,1,6,1,0,1,6,1,0,0,0],
+    [0,0,1,6,1,0,1,6,1,0,1,6,1,0,0,0],
+    [0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0],
   ]
 };
 
@@ -718,10 +918,11 @@ function drawPixelGrid(ctx, sprite, palette, scale, offsetX = 0, offsetY = 0) {
   }
 }
 
-export function renderFishermanToCanvas(canvas, scale = 4, rodId = 'vara_bambu', gender = 'male', outfitId = 'verde', hairId = 'ruivo') {
+export function renderFishermanToCanvas(canvas, scale = 4, rodId = 'vara_bambu', gender = 'male', outfitId = 'verde', hairId = 'ruivo', isWorld2 = false) {
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
-  const sprite = gender === 'female' ? FISHERWOMAN_WITH_ROD : FISHERMAN_WITH_ROD;
+  const isW2 = Boolean(isWorld2) || (canvas.id === 'fisherman-canvas' && Boolean(window.game ? window.game.currentWorld === 2 : false));
+  const sprite = isW2 ? DIVER_WITH_ROD : (gender === 'female' ? FISHERWOMAN_WITH_ROD : FISHERMAN_WITH_ROD);
   const cols = 32;
   const rows = sprite.length;
   canvas.width = cols * scale;
@@ -735,6 +936,16 @@ export function renderFishermanToCanvas(canvas, scale = 4, rodId = 'vara_bambu',
 
   const palette = {
     ...BODY_PALETTE,
+    30: '#b45309', // latão escuro
+    31: '#f59e0b', // latão claro
+    32: '#78350f', // aro do visor
+    33: '#0284c7', // vidro azul
+    34: '#38bdf8', // brilho do vidro
+    35: '#ffffff', // ponto de luz do escafandro
+    36: '#1e293b', // traje de borracha/lona escura
+    37: '#0f172a', // sombra do traje
+    38: '#475569', // lastro de chumbo
+    39: '#334155', // chumbo escuro
     5: hair.color,         // Cabelo / Barba
     9: outfit.vest,        // Colete
     10: outfit.vestShadow, // Sombra do colete
@@ -793,6 +1004,16 @@ export function getBaitIconDataURL(baitId, scale = 2.5) {
     pal = { 1: '#3b0764', 2: '#a855f7', 3: '#c084fc', 4: '#e879f9' };
   } else if (baitId === 'essencia_travessia') {
     pal = { 1: '#082f49', 2: '#0891b2', 3: '#8b5cf6', 4: '#67e8f9', 5: '#f472b6' };
+  } else if (baitId === 'isca_kraken_ancestral') {
+    pal = { 1: '#0f172a', 2: '#1e1b4b', 3: '#4338ca', 4: '#c084fc', 5: '#f43f5e', 6: '#38bdf8' };
+  } else if (baitId === 'isca_plankton_neon') {
+    pal = { 1: '#083344', 2: '#06b6d4', 3: '#22d3ee', 4: '#a5f3fc', 5: '#ffffff' };
+  } else if (baitId === 'isca_camarao_brasa') {
+    pal = { 1: '#450a0a', 2: '#ea580c', 3: '#f97316', 4: '#fed7aa', 5: '#ef4444' };
+  } else if (baitId === 'isca_alga_espectral') {
+    pal = { 1: '#064e3b', 2: '#059669', 3: '#34d399', 4: '#a7f3d0', 5: '#6ee7b7' };
+  } else if (baitId === 'isca_cristal_hadal') {
+    pal = { 1: '#3b0764', 2: '#7c3aed', 3: '#a855f7', 4: '#e9d5ff', 5: '#c084fc' };
   }
 
   drawPixelGrid(ctx, sprite, pal, scale);
@@ -838,12 +1059,21 @@ export function renderFishToCanvas(canvas, fishIconId, scale = 4) {
   let specialColor = '#ffffff';
   if (fishIconId === 'bagre') specialColor = pal.fin;
   else if (fishIconId === 'baiacu') specialColor = '#e0f2fe';
-  else if (['dragao', 'leviata', 'serpente', 'prisma_solar', 'fenix_ocaso', 'kraken_estelar'].includes(fishIconId)) specialColor = '#fef08a';
+  else if (fishIconId === 'dragao') specialColor = '#38bdf8'; // Chamas azuis abissais e barbelas
+  else if (fishIconId === 'leviata') specialColor = '#76ff03'; // Antena e fotóforos bioluminescentes verde néon
+  else if (fishIconId === 'serpente') specialColor = '#fef08a'; // Chifre místico dourado celestial
+  else if (fishIconId === 'prisma_solar') specialColor = '#67e8f9'; // Cristais prismáticos celestes
+  else if (fishIconId === 'fenix_ocaso') specialColor = '#fef08a'; // Brasas e plumas douradas solares
+  else if (fishIconId === 'kraken_estelar') specialColor = '#38bdf8'; // Ventosas astrais bioluminescentes
   else if (fishIconId === 'crepusculo') specialColor = pal.outline;
   else if (fishIconId === 'tubarao_lunar') specialColor = '#f8fafc';
   else if (fishIconId === 'peixe_sol') specialColor = '#fef08a';
   else if (fishIconId === 'pirarucu') specialColor = '#ef4444'; // escamas vermelhas lendárias do pirarucu
-  else if (fishIconId === 'lampreia_negra') specialColor = '#ef4444'; // aura carmesim abissal pulsante
+  else if (fishIconId === 'lampreia_negra') specialColor = '#ef4444';
+  else if (fishIconId === 'serpente_coral') specialColor = '#facc15';
+  else if (fishIconId === 'fenix_magma') specialColor = '#fef08a';
+  else if (fishIconId === 'kraken_galeoes') specialColor = '#facc15';
+  else if (fishIconId === 'olho_vazio') specialColor = '#facc15'; // aura carmesim abissal pulsante
 
   const colorMap = {
     1: pal.outline,
@@ -899,30 +1129,23 @@ export function updateRodSVG(rodId, baitId) {
   const rodCol = ROD_COLORS[rodId] || ROD_COLORS.vara_bambu;
   const baitVis = BAIT_VISUALS[baitId] || BAIT_VISUALS.minhoca;
 
-  // Vara (2 segmentos: cabo e vara principal)
-  const elHandle = document.getElementById('svg-rod-handle');
-  const elRod = document.getElementById('svg-rod-main');
-  const elTip = document.getElementById('svg-rod-tip');
-  const elGlow = document.getElementById('svg-rod-glow');
-
-  if (elHandle) elHandle.setAttribute('stroke', rodCol.handle);
-  if (elRod) elRod.setAttribute('stroke', rodCol.rod);
-  if (elTip) elTip.setAttribute('stroke', rodCol.tip);
-
-  if (elGlow) {
+  const elLine = document.getElementById('fishing-line-path');
+  if (elLine) {
     if (rodCol.glow) {
-      elGlow.setAttribute('stroke', rodCol.glow);
-      elGlow.setAttribute('opacity', '1');
+      elLine.setAttribute('stroke', rodCol.glow);
+      elLine.style.filter = `drop-shadow(0 0 3px ${rodCol.glow})`;
     } else {
-      elGlow.setAttribute('opacity', '0');
+      elLine.setAttribute('stroke', '#e2e8f0');
+      elLine.style.filter = '';
     }
   }
 
-  // Isca
-  const elBait1 = document.getElementById('svg-bait-1');
-  const elBait2 = document.getElementById('svg-bait-2');
-  if (elBait1) elBait1.setAttribute('fill', baitVis.color1);
-  if (elBait2) elBait2.setAttribute('fill', baitVis.color2);
+  // Atualiza sprite da isca / anzol pixel art de acordo com a isca equipada
+  const hookImg = document.getElementById('hook-bait-img');
+  if (hookImg) {
+    const validBait = baitId || 'minhoca';
+    hookImg.src = `icons/baits/hook_${validBait}.png`;
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -948,8 +1171,24 @@ export class PixelWaterRenderer {
       bubbleTimer: 0
     };
     this.bloodMoonActive = false;
+    this.isWorld2 = false;
+    this.world2Biome = null;
     this._resize();
     window.addEventListener('resize', () => this._resize());
+  }
+
+  setWorldMode(isW2, biomeId = null) {
+    const wasW2 = this.isWorld2;
+    this.isWorld2 = !!isW2;
+    this.world2Biome = biomeId;
+    if (wasW2 !== this.isWorld2 || this.fishSprites.length === 0) {
+      this.fishSprites = [];
+      if (this.isWorld2) {
+        ['camarao_neon', 'peixe_lanterna', 'agua_viva_aurora', 'polvo_cintilante', 'moreia_brasa', 'arenque_fantasma'].forEach(f => this.addSwimmingFish(f));
+      } else {
+        ['lambari', 'carpa', 'truta', 'robalo'].forEach(f => this.addSwimmingFish(f));
+      }
+    }
   }
 
   setDiverActive(active) {
@@ -990,6 +1229,11 @@ export class PixelWaterRenderer {
     const { ctx, canvas } = this;
     const W = canvas.width, H = canvas.height, px = 4;
     ctx.clearRect(0, 0, W, H);
+
+    if (this.isWorld2) {
+      this._renderWorld2Ambience(ctx, W, H, px);
+      return;
+    }
 
     // Paletas por horário
     let wc, lightColor, lightAlpha, waveColor1, waveColor2;
@@ -1102,6 +1346,118 @@ export class PixelWaterRenderer {
     });
   }
 
+  _renderWorld2Ambience(ctx, W, H, px) {
+    const biome = this.world2Biome || 'recife_bioluminescente';
+
+    // Spawn de bolhas profundas transparentes
+    if (Math.random() < 0.08) {
+      this.bubbles.push({
+        x: 20 + Math.random() * (W - 40),
+        y: H,
+        speed: 0.6 + Math.random() * 0.9,
+        drift: (Math.random() - 0.5) * 0.4
+      });
+    }
+
+    this.bubbles = this.bubbles.filter(b => {
+      b.y -= b.speed;
+      b.x += b.drift;
+      if (b.y < 0) return false;
+      const bx = Math.round(b.x / px) * px;
+      const by = Math.round(b.y / px) * px;
+
+      if (biome === 'fendas_vulcanicas') {
+        ctx.fillStyle = 'rgba(249, 115, 22, 0.75)';
+        ctx.fillRect(bx, by, px, px);
+        ctx.fillStyle = 'rgba(254, 240, 138, 0.85)';
+        ctx.fillRect(bx, by, 2, 2);
+      } else if (biome === 'cemiterio_naufragios') {
+        ctx.fillStyle = 'rgba(52, 211, 153, 0.65)';
+        ctx.fillRect(bx, by, px, px);
+        ctx.fillStyle = 'rgba(209, 250, 229, 0.8)';
+        ctx.fillRect(bx, by, 2, 2);
+      } else if (biome === 'zona_hadal') {
+        ctx.fillStyle = 'rgba(192, 132, 252, 0.75)';
+        ctx.fillRect(bx, by, px, px);
+        ctx.fillStyle = 'rgba(243, 232, 255, 0.85)';
+        ctx.fillRect(bx, by, 2, 2);
+      } else {
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.65)';
+        ctx.fillRect(bx, by, px, px);
+        ctx.fillStyle = 'rgba(207, 250, 254, 0.8)';
+        ctx.fillRect(bx, by, 2, 2);
+      }
+      return true;
+    });
+
+    // Fagulhas e partículas em suspensão sutis
+    const t = this.time;
+    ctx.save();
+    for (let i = 0; i < 6; i++) {
+      const px_x = (Math.sin(t * 0.8 + i * 1.5) * 0.4 + 0.5) * W;
+      const px_y = (Math.cos(t * 0.6 + i * 1.2) * 0.35 + 0.5) * H;
+      const alpha = 0.3 + 0.4 * Math.sin(t * 2 + i);
+
+      if (biome === 'fendas_vulcanicas') {
+        ctx.fillStyle = `rgba(239, 68, 68, ${alpha})`;
+      } else if (biome === 'cemiterio_naufragios') {
+        ctx.fillStyle = `rgba(16, 185, 129, ${alpha})`;
+      } else if (biome === 'zona_hadal') {
+        ctx.fillStyle = `rgba(168, 85, 247, ${alpha})`;
+      } else {
+        ctx.fillStyle = `rgba(6, 182, 212, ${alpha})`;
+      }
+      ctx.fillRect(Math.round(px_x / px) * px, Math.round(px_y / px) * px, px, px);
+    }
+    ctx.restore();
+
+    // ── PEIXINHOS ABISSAIS NADANDO NA TELA NO MUNDO 2 ──
+    if (this.fishSprites.length < 5) {
+      const w2Icons = ['camarao_neon', 'peixe_lanterna', 'agua_viva_aurora', 'polvo_cintilante', 'moreia_brasa', 'arenque_fantasma', 'peixe_diabo'];
+      const randIcon = w2Icons[Math.floor(Math.random() * w2Icons.length)];
+      this.addSwimmingFish(randIcon);
+    }
+
+    this.fishSprites.forEach(f => {
+      f.x += f.speed * f.dir;
+      f.wobble += 0.05;
+      if (f.x < -80) {
+        f.x = W + 30;
+        f.y = 45 + Math.random() * (H - 95);
+      }
+      this._drawMinifish(f, Math.sin(f.wobble) * 2);
+    });
+
+    // ── SONDA AUTÔNOMA SUBMARINA (DRONE ROV) PATRULHANDO O ABISMO ──
+    if (this.diverActive) {
+      const d = this.diver;
+      d.x += d.speed * d.dir;
+      d.wobble += 0.035;
+      d.bubbleTimer++;
+
+      // Propulsores de popa soltam bolhas periódicas
+      if (d.bubbleTimer >= 22) {
+        d.bubbleTimer = 0;
+        const bx = d.x - 2;
+        const by = d.y + Math.sin(d.wobble) * 3 + 14;
+        this.bubbles.push({
+          x: bx,
+          y: by,
+          speed: 0.4 + Math.random() * 0.4,
+          drift: -0.5 - Math.random() * 0.3
+        });
+      }
+
+      // Loop contínuo ao cruzar a tela
+      if (d.x > W + 90) {
+        d.x = -90;
+        d.y = 45 + Math.random() * Math.max(40, H - 140);
+      }
+
+      this._drawAutonomousProbe(d, Math.sin(d.wobble) * 2.5);
+    }
+  }
+
   _drawDiver(d, wy) {
     const { ctx } = this;
     const s = d.size || 2.5;
@@ -1143,6 +1499,72 @@ export class PixelWaterRenderer {
         }
         ctx.fillStyle = cm[val] || '#fff';
         ctx.fillRect(posX + x * s, posY + actualY * s, s, s);
+      }
+    }
+  }
+
+  _drawAutonomousProbe(d, wy) {
+    const { ctx } = this;
+    const s = 2.8; // Escala dos pixels do drone
+
+    // Matriz 22 colunas x 11 linhas da Sonda Autônoma Submarina (estilo ROV retro pixel art)
+    const m = [
+      [0,0,0,0,0,0,0,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],
+      [0,7,1,1,1,2,2,4,4,2,2,1,1,1,0,0,0,0,0,0,0,0],
+      [7,7,1,2,2,2,2,4,4,2,2,2,2,1,1,1,0,0,0,0,0,0],
+      [0,7,1,2,2,2,2,2,2,2,2,2,2,5,5,9,1,0,0,0,0,0],
+      [0,0,1,2,2,2,2,2,2,2,2,2,2,5,6,9,1,0,0,0,0,0],
+      [7,7,1,3,3,3,3,4,4,3,3,3,3,5,5,9,1,0,0,0,0,0],
+      [0,7,1,1,1,3,3,4,4,3,3,1,1,1,1,1,0,0,0,0,0,0],
+      [0,0,0,0,0,1,8,8,1,0,1,8,8,1,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0]
+    ];
+
+    const isBeaconBlink = Math.sin(this.time * 8) > 0;
+    const cm = {
+      1: '#0f172a', // contorno escuro
+      2: '#f59e0b', // casco amarelo submarino de pesquisa
+      3: '#b45309', // sombra do casco
+      4: '#f8fafc', // faixa branca de titânio
+      5: '#0284c7', // visor de vidro
+      6: '#38bdf8', // reflexo de vidro
+      7: '#64748b', // propulsores de popa
+      8: '#94a3b8', // garras mecânicas
+      9: '#ffffff', // foco do farol
+      10: isBeaconBlink ? '#ef4444' : '#7f1d1d' // sinalizador LED piscante no topo
+    };
+
+    const posX = Math.round(d.x);
+    const posY = Math.round(d.y + wy);
+
+    // Feixe de luz do farol projetado à frente da sonda em degraus de pixel
+    const lightX = posX + 16 * s;
+    const lightY = posY + 6 * s;
+    ctx.save();
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.16)';
+    for (let step = 0; step < 9; step++) {
+      const lx = Math.round(lightX + step * 7);
+      const spread = Math.round(step * 3.2);
+      ctx.fillRect(lx, Math.round(lightY - spread), 7, spread * 2 + 4);
+    }
+    // Núcleo brilhante do farol
+    ctx.fillStyle = 'rgba(254, 240, 138, 0.25)';
+    for (let step = 0; step < 4; step++) {
+      const lx = Math.round(lightX + step * 6);
+      const spread = Math.round(step * 1.5);
+      ctx.fillRect(lx, Math.round(lightY - spread), 6, spread * 2 + 2);
+    }
+    ctx.restore();
+
+    // Desenho dos blocos de pixel do corpo da sonda
+    for (let y = 0; y < m.length; y++) {
+      for (let x = 0; x < m[y].length; x++) {
+        const val = m[y][x];
+        if (!val) continue;
+        ctx.fillStyle = cm[val] || '#fff';
+        ctx.fillRect(Math.round(posX + x * s), Math.round(posY + y * s), Math.ceil(s), Math.ceil(s));
       }
     }
   }
@@ -1631,39 +2053,43 @@ export function getMagnetItemSpriteSVG(itemId, size = 24) {
 // ═══════════════════════════════════════════════
 export function updateFishingLine() {
   const lake = document.getElementById('fishing-lake-area');
-  const canvas = document.getElementById('fisherman-canvas');
   const line = document.getElementById('fishing-line-path');
-  const buoyGroup = document.getElementById('svg-buoy-group');
-  if (!lake || !canvas || !line) return;
+  const hookRig = document.getElementById('hook-rig-element');
+  const hookImg = document.getElementById('hook-bait-img');
+  const btnPescar = document.getElementById('btn-pescar-main');
+  if (!lake || !line) return;
 
   const lakeRect = lake.getBoundingClientRect();
-  const canvasRect = canvas.getBoundingClientRect();
   if (lakeRect.width === 0 || lakeRect.height === 0) return;
 
-  // Ponta da vara calculada diretamente pelo rect do canvas no viewport
-  // Na matriz 32x32: Coluna 28 de 32 (X: 28.2 / 32), Linha 0.8 de 32 (Y: 0.8 / 32)
-  const tipX = (canvasRect.left - lakeRect.left) + (canvasRect.width * (28.2 / 32));
-  const tipY = (canvasRect.top - lakeRect.top) + (canvasRect.height * (0.8 / 32));
+  let targetX = 50;
 
-  // Converte para percentual de 0 a 100 (mesmo viewBox 0 0 100 100 do SVG)
-  const tipXPercent = (tipX / lakeRect.width) * 100;
-  const tipYPercent = (tipY / lakeRect.height) * 100;
+  if (btnPescar) {
+    const btnRect = btnPescar.getBoundingClientRect();
+    const btnCenterX = (btnRect.left + btnRect.width / 2) - lakeRect.left;
+    const btnTopY = btnRect.top - lakeRect.top;
 
-  // Posição de destino da bóia na água
-  const buoyX = Math.min(Math.max(tipXPercent + 26, 46), 62);
-  const buoyY = Math.min(Math.max(tipYPercent + 14, 68), 75);
+    targetX = Math.min(Math.max((btnCenterX / lakeRect.width) * 100, 35), 65);
+  }
 
-  // Ponto de controle da curva Bezier com curvatura gravitacional natural
-  const ctrlX = tipXPercent + (buoyX - tipXPercent) * 0.45;
-  const ctrlY = Math.min(tipYPercent + (buoyY - tipYPercent) * 0.85 + 2, 73);
+  // Posicionamento centralizado no meio da tela aquática (solicitado pelo usuário)
+  const rigHeight = hookImg && hookImg.offsetHeight > 20 ? hookImg.offsetHeight : 80;
+  // O centro visual do anzol/bóia fica em 46% da altura do lago, conferindo destaque no meio da tela
+  const idealCenterPx = lakeRect.height * 0.46;
+  const targetTopPx = idealCenterPx - (rigHeight * 0.4);
+  const targetY = Math.min(Math.max((targetTopPx / lakeRect.height) * 100, 15), 65);
 
-  line.setAttribute('d', `M ${tipXPercent.toFixed(2)} ${tipYPercent.toFixed(2)} Q ${ctrlX.toFixed(2)} ${ctrlY.toFixed(2)}, ${buoyX.toFixed(2)} ${buoyY.toFixed(2)}`);
+  // Ondulação orgânica suave da linha descendo da superfície
+  const ctrl1X = targetX - 0.4;
+  const ctrl1Y = targetY * 0.35;
+  const ctrl2X = targetX + 0.4;
+  const ctrl2Y = targetY * 0.70;
 
-  // Reposiciona a bóia para que ela fique conectada no fim da linha
-  if (buoyGroup) {
-    const dx = buoyX - 55.2;
-    const dy = buoyY - 70.5;
-    buoyGroup.setAttribute('transform', `translate(${dx.toFixed(2)}, ${dy.toFixed(2)})`);
+  line.setAttribute('d', `M ${targetX.toFixed(2)} 0 C ${ctrl1X.toFixed(2)} ${ctrl1Y.toFixed(2)}, ${ctrl2X.toFixed(2)} ${ctrl2Y.toFixed(2)}, ${targetX.toFixed(2)} ${targetY.toFixed(2)}`);
+
+  if (hookRig) {
+    hookRig.style.left = `${targetX.toFixed(2)}%`;
+    hookRig.style.top = `${targetY.toFixed(2)}%`;
   }
 }
 

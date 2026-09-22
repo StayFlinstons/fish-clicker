@@ -1,3 +1,4 @@
+import { WORLD2_BIOMES, FISH_WORLD_2, RODS_WORLD_2, BAITS_WORLD_2, UPGRADES_WORLD_2, ASCENSION_PARTS } from './world2Data.js';
 import { RARITIES, FISH_LIST, generateFishBuffs } from './fishData.js';
 import { RODS, BAITS, UPGRADES, isCosmicOrHigherRod } from './itemsData.js';
 import { sound } from './sound.js';
@@ -27,8 +28,20 @@ import {
   HAIR_COLORS
 } from './pixelArt.js';
 
+// ══════════════════════════════════════════════════════════════════════════════
+// VERSÃO DO JOGO & NOTAS DE ATUALIZAÇÃO AUTOMÁTICAS
+// Incremente esta versão (ex: '1.4.0' -> '1.4.1') a cada atualização no GitHub.
+// O jogo detecta automaticamente e abre o modal de Notas de Atualização
+// APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
+// ══════════════════════════════════════════════════════════════════════════════
+export const GAME_VERSION = '1.4.0';
+
 class FishingGame {
   constructor() {
+    window.game = this;
+    this.gameVersion = GAME_VERSION;
+    this.patchNotesCooldownActive = false;
+    this.patchNotesTimerInterval = null;
     this.gold = 0;
     this.totalCatches = 0;
     this.totalGoldEarned = 0;
@@ -86,6 +99,11 @@ class FishingGame {
     this.lastActiveTime = Date.now();
 
     // Meta-progressão: Olhos de Peixe (Santuário Místico - 00:00)
+    this.speciesDonations = {}; // { [fishId]: true }
+    this.donatedSpeciesHistory = {}; // { [fishId]: true } registro permanente para nunca mais exibir botao doar
+    this.offeringCycle = 1;
+    this.activeFishEyesTab = 'attributes'; // 'attributes' | 'offering'
+    this.world2BiomeOffsetMs = 0;
     this.fishEyesCount = 0;
     this.fishEyesTotal = 0;
     this.fishEyesAllocated = { gold: 0, luck: 0, speed: 0, double: 0 };
@@ -97,8 +115,20 @@ class FishingGame {
     this.bloodMoonInterval = null;
     this.goldenFishCountSinceBlood = 0;
 
-    // Fim do Capítulo 1 / Portal Dimensional
+    // Fim do Capítulo 1 / Portal Dimensional & Altar das 15 Almas
     this.chapter1Completed = false;
+    this.sacrificedFishCount = 0;
+    this.currentWorld = 1; // 1 = Superfície, 2 = Abismo
+    this.activeWorld2Biome = 'recife_bioluminescente';
+    this.ascensionParts = {
+      bateria_neon: false,
+      casco_titanio: false,
+      helice_galeao: false,
+      sistema_lastro_hadal: false
+    };
+    this.submarineAssembled = false; // 1 = Neo-Píer (Superfície), 2 = O Abismo (Fundo do Mar)
+    this.world1Data = null;
+    this.world2SavedData = null;
     this.isResetting = false;
 
     this.isFishing = false;
@@ -129,6 +159,9 @@ class FishingGame {
     this.magnetCatches = 0;
     this.magnetGoldEarned = 0;
 
+    // Celebração de primeira captura por raridade (1x por raridade permanentemente)
+    this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
+
     // Cache fish sprites data URLs
     this._fishSpriteCache = {};
     this._fishSilhouetteCache = {};
@@ -141,6 +174,7 @@ class FishingGame {
     this.applySettings();
     this.initPixelArt();
     this.initTimeOfDay();
+    this.initWorld2BiomeCycle();
     this.setupEventListeners();
     this.renderAll();
     this.startAutoFisher();
@@ -157,6 +191,7 @@ class FishingGame {
     this.startMidnightTimerLoop();
     this.renderFishEyesBadge();
     this.initPWA();
+    this.checkPatchNotesOnStartup();
     setInterval(() => this.saveGame(), 5000);
     window.addEventListener('beforeunload', () => this.saveGame());
   }
@@ -233,30 +268,14 @@ class FishingGame {
   }
 
   updateFisherman() {
-    const fishermanCanvas = document.getElementById('fisherman-canvas');
-    if (fishermanCanvas) {
-      renderFishermanToCanvas(
-        fishermanCanvas,
-        4,
-        this.selectedRodId,
-        this.playerGender,
-        this.playerOutfit,
-        this.playerHair
-      );
-    }
-    // Atualiza cores da isca no SVG
+    // Atualiza cores da linha, brilhos e a isca no anzol submerso
     updateRodSVG(this.selectedRodId, this.selectedBaitId);
-    // Posiciona a linha de pesca milimetricamente conectada na ponta da vara
+    // Posiciona e alinha a linha de pesca descendo verticalmente da superfície até a isca
     updateFishingLine();
-    // Atualiza o nome exibido no cabeçalho e na plaquinha do píer
-    this.renderPlayerName();
   }
 
   renderPlayerName() {
-    const btnName = document.getElementById('profile-btn-name');
-    if (btnName) btnName.textContent = this.playerName || 'Pescador';
-    const tag = document.getElementById('fisherman-name-tag');
-    if (tag) tag.textContent = this.playerName || 'Pescador';
+    // Mantido por compatibilidade
   }
 
   // ═══════════════════════════════════════════
@@ -311,12 +330,21 @@ class FishingGame {
   }
 
   showTimeOfDayStatus() {
+    sound.playClick?.();
+    if (this.currentWorld === 2) {
+      const curBiome = WORLD2_BIOMES.find(b => b.id === this.activeWorld2Biome) || WORLD2_BIOMES[0];
+      const rem = this.getWorld2BiomeRemaining();
+      const biomeIds = ['recife_bioluminescente', 'fendas_vulcanicas', 'cemiterio_naufragios', 'zona_hadal'];
+      const nextIdx = (biomeIds.indexOf(this.activeWorld2Biome) + 1) % biomeIds.length;
+      const nextBiome = WORLD2_BIOMES.find(b => b.id === biomeIds[nextIdx]) || WORLD2_BIOMES[0];
+      this.showToast(`Região: ${curBiome.icon} ${curBiome.name} (${curBiome.depth} · ${curBiome.pressure}) | Muda para ${nextBiome.name} em ${rem.text} (5m)`, 'info');
+      return;
+    }
     const rem = this.getTimeRemainingInPhase();
     const names = { day: 'DIA ☀️', sunset: 'PÔR DO SOL 🌅', night: 'NOITE 🌙' };
     const nextNames = { day: 'Pôr do Sol 🌅', sunset: 'Noite 🌙', night: 'Dia ☀️' };
     const currName = names[this.timeOfDay] || (this.timeOfDay || 'DIA').toUpperCase();
     const nextName = nextNames[this.timeOfDay] || 'Próximo';
-    sound.playClick?.();
     this.showToast(`Horário atual: ${currName} | Muda para ${nextName} em ${rem.text} (aguarde os 5m)`, 'info');
   }
 
@@ -403,6 +431,7 @@ class FishingGame {
 
     // Checa a cada segundo se o horário deve virar
     this._timeCycleTimer = setInterval(() => {
+      if (this.currentWorld === 2) return;
       const newTime = this.getCycleTimeOfDay();
       const remaining = this.getTimeRemainingInPhase();
       this.updateTimeIndicatorTooltip(remaining);
@@ -436,6 +465,19 @@ class FishingGame {
   applyTimeOfDay() {
     const btn = document.getElementById('btn-toggle-time');
     const lakeArea = document.getElementById('fishing-lake-area');
+
+    if (this.currentWorld === 2) {
+      this.applyWorld2BiomeScenery(this.activeWorld2Biome);
+      if (btn) {
+        const curBiome = WORLD2_BIOMES.find(b => b.id === this.activeWorld2Biome) || WORLD2_BIOMES[0];
+        btn.innerHTML = `<span class="text-sm select-none" style="image-rendering:pixelated;">${curBiome.icon || '🌊'}</span>`;
+        const rem = this.getWorld2BiomeRemaining();
+        btn.title = `Região Atual: ${curBiome.name} (${curBiome.depth} · ${curBiome.pressure})\nPróxima região em ${rem.text} (Ciclo de 5 min)`;
+      }
+      return;
+    } else {
+      document.getElementById('world2-lake-scenery')?.classList.add('hidden');
+    }
 
     if (btn) {
       const icon = this.timeOfDay === 'day' ? (PIXEL_ICONS.day || PIXEL_ICONS.sun) :
@@ -543,145 +585,12 @@ class FishingGame {
     }
   }
 
-  // ═══════════════════════════════════════════
-  // PERFIL DO PESCADOR E CUSTOMIZAÇÃO
-  // ═══════════════════════════════════════════
-  openProfile() {
-    sound.playClick();
-    this.editingProfile = {
-      name: this.playerName,
-      gender: this.playerGender,
-      outfit: this.playerOutfit,
-      hair: this.playerHair
-    };
-
-    const nameInput = document.getElementById('profile-name-input');
-    if (nameInput) nameInput.value = this.editingProfile.name;
-
-    this.renderProfileCustomizationOptions();
-    this.updateProfilePreview();
-
-    const modal = document.getElementById('profile-modal');
-    modal?.classList.remove('hidden');
-  }
-
-  closeProfile() {
-    sound.playClick();
-    const modal = document.getElementById('profile-modal');
-    modal?.classList.add('hidden');
-  }
-
-  renderProfileCustomizationOptions() {
-    // 1. Gênero
-    document.querySelectorAll('.profile-gender-btn').forEach(btn => {
-      const g = btn.dataset.gender;
-      const isSelected = g === this.editingProfile.gender;
-      btn.className = `profile-gender-btn py-1.5 px-2 text-[8px] font-bold border-2 flex items-center justify-center gap-1.5 transition-all ${
-        isSelected
-          ? 'border-emerald-400 bg-emerald-950/60 text-emerald-200'
-          : 'border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-500'
-      }`;
-      btn.style.fontFamily = 'var(--font-pixel)';
-      btn.onclick = () => {
-        this.editingProfile.gender = g;
-        sound.playClick();
-        this.renderProfileCustomizationOptions();
-        this.updateProfilePreview();
-      };
-    });
-
-    // 2. Roupas (Presets)
-    const outfitsGrid = document.getElementById('profile-outfits-grid');
-    if (outfitsGrid) {
-      outfitsGrid.innerHTML = Object.values(OUTFIT_PRESETS).map(outfit => {
-        const isSelected = outfit.id === this.editingProfile.outfit;
-        return `
-          <button type="button" data-outfit="${outfit.id}" class="profile-outfit-opt-btn p-1.5 text-left border-2 text-[8px] flex items-center gap-1.5 transition-all ${
-            isSelected
-              ? 'border-emerald-400 bg-emerald-950/40 text-emerald-200'
-              : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-600'
-          }" style="font-family:var(--font-pixel);">
-            <span class="w-3.5 h-3.5 shrink-0 border border-black/40 inline-flex flex-col" style="background:${outfit.vest};">
-              <span class="w-full h-1.5" style="background:${outfit.pants};"></span>
-            </span>
-            <span class="break-words leading-tight">${outfit.name}</span>
-          </button>`;
-      }).join('');
-
-      outfitsGrid.querySelectorAll('.profile-outfit-opt-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          this.editingProfile.outfit = e.currentTarget.dataset.outfit;
-          sound.playClick();
-          this.renderProfileCustomizationOptions();
-          this.updateProfilePreview();
-        };
-      });
-    }
-
-    // 3. Cores de Cabelo
-    const hairGrid = document.getElementById('profile-hair-grid');
-    if (hairGrid) {
-      hairGrid.innerHTML = Object.values(HAIR_COLORS).map(hair => {
-        const isSelected = hair.id === this.editingProfile.hair;
-        return `
-          <button type="button" data-hair="${hair.id}" class="profile-hair-opt-btn px-2 py-1 border-2 text-[8px] flex items-center gap-1.5 transition-all ${
-            isSelected
-              ? 'border-emerald-400 bg-emerald-950/40 text-emerald-200'
-              : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-600'
-          }" style="font-family:var(--font-pixel);">
-            <span class="w-2.5 h-2.5 rounded-none shrink-0 border border-black/50 inline-block" style="background:${hair.color};"></span>
-            <span>${hair.name}</span>
-          </button>`;
-      }).join('');
-
-      hairGrid.querySelectorAll('.profile-hair-opt-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          this.editingProfile.hair = e.currentTarget.dataset.hair;
-          sound.playClick();
-          this.renderProfileCustomizationOptions();
-          this.updateProfilePreview();
-        };
-      });
-    }
-  }
-
-  updateProfilePreview() {
-    const canvas = document.getElementById('profile-preview-canvas');
-    if (canvas) {
-      renderFishermanToCanvas(
-        canvas,
-        4,
-        this.selectedRodId,
-        this.editingProfile.gender,
-        this.editingProfile.outfit,
-        this.editingProfile.hair
-      );
-    }
-    const nameEl = document.getElementById('profile-preview-name');
-    if (nameEl) nameEl.textContent = this.editingProfile.name || 'Pescador';
-
-    const statsEl = document.getElementById('profile-preview-stats');
-    if (statsEl) {
-      statsEl.innerHTML = `${this.totalCatches.toLocaleString('pt-BR')} pescados · ${this.gold.toLocaleString('pt-BR')}G`;
-    }
-  }
-
-  saveProfile() {
-    const nameInput = document.getElementById('profile-name-input');
-    let newName = (nameInput ? nameInput.value : '').trim();
-    if (!newName) newName = 'Pescador';
-
-    this.playerName = newName;
-    this.playerGender = this.editingProfile.gender;
-    this.playerOutfit = this.editingProfile.outfit;
-    this.playerHair = this.editingProfile.hair;
-
-    this.updateFisherman();
-    this.saveGame();
-    sound.playUpgrade();
-    this.showToast('Perfil atualizado com sucesso!', 'success');
-    this.closeProfile();
-  }
+  // Métodos de perfil desativados a pedido do usuário
+  openProfile() {}
+  closeProfile() {}
+  renderProfileCustomizationOptions() {}
+  updateProfilePreview() {}
+  saveProfile() {}
 
   // ═══════════════════════════════════════════
   // SISTEMA DE OLHOS DE PEIXE (META-PROGRESSÃO 00:00)
@@ -708,6 +617,9 @@ class FishingGame {
   }
 
   checkMidnightFishEye(notify = true) {
+    // A mecânica de Olhos de Peixe só é ativada após capturar o primeiro peixe Lendário
+    if (!this.firstRarityCatches?.LENDARIO) return;
+
     const todayKey = this.getLocalDateKey();
     if (!this.lastFishEyeDate) {
       this.lastFishEyeDate = todayKey;
@@ -758,10 +670,18 @@ class FishingGame {
   }
 
   openFishEyesModal() {
-    sound.playClick();
-    this.checkMidnightFishEye(false);
-    this.renderFishEyesBadge();
-    this.renderFishEyesModal();
+    if (!this.firstRarityCatches?.LENDARIO) {
+      this.showToast('🔒 Capture seu 1º Peixe Lendário para despertar o Santuário dos Olhos!', 'warning');
+      return;
+    }
+    try {
+      sound.playClick?.();
+      this.checkMidnightFishEye(false);
+      this.renderFishEyesBadge();
+      this.renderFishEyesModal();
+    } catch (e) {
+      console.error('Erro ao renderizar Santuário dos Olhos:', e);
+    }
     const modal = document.getElementById('fish-eyes-modal');
     modal?.classList.remove('hidden');
   }
@@ -772,13 +692,98 @@ class FishingGame {
     modal?.classList.add('hidden');
   }
 
-  openPatchNotesModal() {
+  checkPatchNotesOnStartup() {
+    try {
+      const storageKey = 'fc_last_seen_patch_version';
+      const lastSeen = localStorage.getItem(storageKey);
+      if (lastSeen !== this.gameVersion) {
+        // Registra a nova versão para que só exiba uma única vez após o update
+        localStorage.setItem(storageKey, this.gameVersion);
+        setTimeout(() => {
+          this.openPatchNotesModal(true); // true = ativa o timer obrigatório de 5s para fechar
+        }, 600);
+      }
+    } catch (e) {
+      console.warn('Erro ao verificar notas de atualização:', e);
+    }
+  }
+
+  openPatchNotesModal(withCooldown = false) {
     sound.playClick?.();
     const modal = document.getElementById('patch-notes-modal');
-    modal?.classList.remove('hidden');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const btnClose = document.getElementById('btn-close-patch-notes');
+    const btnCloseX = document.getElementById('btn-close-patch-notes-x');
+
+    if (this.patchNotesTimerInterval) {
+      clearInterval(this.patchNotesTimerInterval);
+      this.patchNotesTimerInterval = null;
+    }
+
+    if (withCooldown) {
+      this.patchNotesCooldownActive = true;
+      let secondsLeft = 5;
+
+      if (btnCloseX) {
+        btnCloseX.style.display = 'none';
+      }
+
+      if (btnClose) {
+        btnClose.disabled = true;
+        btnClose.textContent = `ENTENDIDO (${secondsLeft}s)`;
+        btnClose.style.opacity = '0.5';
+        btnClose.style.cursor = 'not-allowed';
+        btnClose.style.pointerEvents = 'none';
+        btnClose.classList.remove('animate-pulse');
+      }
+
+      this.patchNotesTimerInterval = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft > 0) {
+          if (btnClose) btnClose.textContent = `ENTENDIDO (${secondsLeft}s)`;
+        } else {
+          clearInterval(this.patchNotesTimerInterval);
+          this.patchNotesTimerInterval = null;
+          this.patchNotesCooldownActive = false;
+
+          if (btnClose) {
+            btnClose.disabled = false;
+            btnClose.textContent = 'ENTENDIDO';
+            btnClose.style.opacity = '1';
+            btnClose.style.cursor = 'pointer';
+            btnClose.style.pointerEvents = 'auto';
+            btnClose.classList.add('animate-pulse');
+          }
+          if (btnCloseX) {
+            btnCloseX.style.display = '';
+          }
+          sound.playCatch?.();
+        }
+      }, 1000);
+    } else {
+      this.patchNotesCooldownActive = false;
+      if (btnClose) {
+        btnClose.disabled = false;
+        btnClose.textContent = 'ENTENDIDO';
+        btnClose.style.opacity = '1';
+        btnClose.style.cursor = 'pointer';
+        btnClose.style.pointerEvents = 'auto';
+        btnClose.classList.remove('animate-pulse');
+      }
+      if (btnCloseX) {
+        btnCloseX.style.display = '';
+      }
+    }
   }
 
   closePatchNotesModal() {
+    if (this.patchNotesCooldownActive) return;
+    if (this.patchNotesTimerInterval) {
+      clearInterval(this.patchNotesTimerInterval);
+      this.patchNotesTimerInterval = null;
+    }
     sound.playClick?.();
     const modal = document.getElementById('patch-notes-modal');
     modal?.classList.add('hidden');
@@ -789,6 +794,7 @@ class FishingGame {
   // ═══════════════════════════════════════════════
 
   checkDiverMagnetDiscovery() {
+    return; // Desativado temporariamente
     const lvl = this.upgradeLevels.auto_pescador || 0;
     if (lvl <= 0 || !this.autoFisherEnabled) return;
 
@@ -1625,6 +1631,16 @@ class FishingGame {
   }
 
   renderFishEyesBadge() {
+    const btn = document.getElementById('btn-open-fish-eyes');
+    const isUnlocked = Boolean(this.firstRarityCatches?.LENDARIO);
+    if (btn) {
+      if (isUnlocked) {
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
+
     const badge = document.getElementById('fish-eyes-badge');
     if (badge) {
       const count = this.fishEyesCount || 0;
@@ -1643,27 +1659,34 @@ class FishingGame {
 
     const alloc = this.fishEyesAllocated || { gold: 0, luck: 0, speed: 0, double: 0 };
 
-    // Ouro: Base cap 200% (2.0) + 1% por olho
+    // Ouro: Base cap 200% no Mundo 1 e 250% no Mundo 2 + 1% por olho investido
+    const isW2 = this.currentWorld === 2;
+    const baseGold = isW2 ? 250 : 200;
     const goldLvl = alloc.gold || 0;
     const goldBonus = goldLvl * 1;
-    const goldCap = 200 + goldBonus;
+    const goldCap = baseGold + goldBonus;
     const lvlGold = document.getElementById('fe-lvl-gold');
     if (lvlGold) lvlGold.textContent = `${goldLvl} Olho(s)`;
     const bonusGold = document.getElementById('fe-bonus-gold');
     if (bonusGold) bonusGold.textContent = `+${goldBonus}%`;
     const capGold = document.getElementById('fe-cap-gold');
     if (capGold) capGold.textContent = `${goldCap}%`;
+    const baseGoldEl = document.getElementById('fe-base-gold-label');
+    if (baseGoldEl) baseGoldEl.textContent = `(Base: ${baseGold}%)`;
 
-    // Sorte: Base cap 200% (2.0) + 1% por olho
+    // Sorte: Base cap 200% no Mundo 1 e 250% no Mundo 2 + 1% por olho investido
+    const baseLuck = isW2 ? 250 : 200;
     const luckLvl = alloc.luck || 0;
     const luckBonus = luckLvl * 1;
-    const luckCap = 200 + luckBonus;
+    const luckCap = baseLuck + luckBonus;
     const lvlLuck = document.getElementById('fe-lvl-luck');
     if (lvlLuck) lvlLuck.textContent = `${luckLvl} Olho(s)`;
     const bonusLuck = document.getElementById('fe-bonus-luck');
     if (bonusLuck) bonusLuck.textContent = `+${luckBonus}%`;
     const capLuck = document.getElementById('fe-cap-luck');
     if (capLuck) capLuck.textContent = `${luckCap}%`;
+    const baseLuckEl = document.getElementById('fe-base-luck-label');
+    if (baseLuckEl) baseLuckEl.textContent = `(Base: ${baseLuck}%)`;
 
     // Velocidade: Base cap 60% + 1% por olho
     const speedLvl = alloc.speed || 0;
@@ -1689,7 +1712,392 @@ class FishingGame {
 
     const timerEl = document.getElementById('fe-next-timer');
     if (timerEl) timerEl.textContent = this.getTimeUntilMidnight().text;
+
+    this.renderOfferingContent();
   }
+  // ═════════════════════════════════════════════════════════════════════
+  // OFERENDA SAGRADA DE ESPÉCIES (SANTUÁRIO DOS OLHOS DE PEIXE)
+  // ═════════════════════════════════════════════════════════════════════
+  switchFishEyesTab(tab) {
+    this.activeFishEyesTab = tab;
+    const btnAttr = document.getElementById('tab-btn-fe-attributes');
+    const btnOff = document.getElementById('tab-btn-fe-offering');
+    const panelAttr = document.getElementById('fe-tab-attributes-content');
+    const panelOff = document.getElementById('fe-tab-offering-content');
+
+    if (tab === 'offering') {
+      btnAttr?.classList.remove('bg-slate-800', 'text-cyan-300', 'border-cyan-500');
+      btnAttr?.classList.add('bg-slate-950', 'text-slate-400', 'border-transparent');
+      btnOff?.classList.remove('bg-slate-950', 'text-slate-400', 'border-transparent');
+      btnOff?.classList.add('bg-slate-800', 'text-amber-300', 'border-amber-500');
+      panelAttr?.classList.add('hidden');
+      panelOff?.classList.remove('hidden');
+    } else {
+      btnOff?.classList.remove('bg-slate-800', 'text-amber-300', 'border-amber-500');
+      btnOff?.classList.add('bg-slate-950', 'text-slate-400', 'border-transparent');
+      btnAttr?.classList.remove('bg-slate-950', 'text-slate-400', 'border-transparent');
+      btnAttr?.classList.add('bg-slate-800', 'text-cyan-300', 'border-cyan-500');
+      panelAttr?.classList.remove('hidden');
+      panelOff?.classList.add('hidden');
+    }
+    sound.playClick?.();
+    this.renderFishEyesModal();
+  }
+
+  renderOfferingContent() {
+    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const total = pool.length;
+    const donatedCount = pool.filter(f => (this.speciesDonations && this.speciesDonations[f.id]) || (this.donatedSpeciesHistory && this.donatedSpeciesHistory[f.id])).length;
+
+    const isOfferingUnlocked = Boolean(this.firstRarityCatches?.MITICO);
+
+    const tabBtn = document.getElementById('tab-btn-fe-offering');
+    if (tabBtn) {
+      if (isOfferingUnlocked) {
+        tabBtn.innerHTML = `<span>🏺</span> OFERENDA DE ESPÉCIES <span id="fe-offering-tab-badge" class="px-1 py-0.2 bg-amber-950 text-amber-300 text-[6.5px] border border-amber-600/80 font-mono">${donatedCount}/${total}</span>`;
+      } else {
+        tabBtn.innerHTML = `<span>🔒</span> OFERENDAS <span class="px-1 py-0.2 bg-pink-950 text-pink-300 text-[6.5px] border border-pink-700/80 font-mono">MÍTICO</span>`;
+      }
+    }
+
+    const lockedView = document.getElementById('fe-offering-locked-view');
+    const activeView = document.getElementById('fe-offering-active-view');
+    if (!isOfferingUnlocked) {
+      lockedView?.classList.remove('hidden');
+      activeView?.classList.add('hidden');
+      return;
+    }
+
+    lockedView?.classList.add('hidden');
+    activeView?.classList.remove('hidden');
+
+    const tabBadge = document.getElementById('fe-offering-tab-badge');
+    if (tabBadge) tabBadge.textContent = `${donatedCount}/${total}`;
+
+    const cycleLabel = document.getElementById('fe-offering-cycle-label');
+    if (cycleLabel) cycleLabel.textContent = `Ciclo ${this.offeringCycle || 1}`;
+
+    const countDisplay = document.getElementById('fe-offering-count-display');
+    if (countDisplay) countDisplay.textContent = `${donatedCount} / ${total}`;
+
+    const bar = document.getElementById('fe-offering-progress-bar');
+    if (bar) {
+      const pct = total > 0 ? Math.min(100, Math.round((donatedCount / total) * 100)) : 0;
+      bar.style.width = `${pct}%`;
+    }
+
+    const readySpecies = pool.filter(f => !this.speciesDonations?.[f.id] && !this.donatedSpeciesHistory?.[f.id] && this.inventory.some(inv => inv.id === f.id));
+    const readyHint = document.getElementById('fe-offering-ready-hint');
+    if (readyHint) {
+      readyHint.textContent = `${readySpecies.length} espécie(s) pronta(s) no balde`;
+    }
+
+    const grid = document.getElementById('fe-offering-species-grid');
+    if (!grid) return;
+
+    grid.innerHTML = pool.map(fish => {
+      const isDonated = Boolean((this.speciesDonations && this.speciesDonations[fish.id]) || (this.donatedSpeciesHistory && this.donatedSpeciesHistory[fish.id]));
+      const hasInBucket = this.inventory.some(inv => inv.id === fish.id);
+      const r = RARITIES[fish.rarity] || RARITIES.COMUM || { color: '#fff', border: '#475569', label: fish.rarity, bg: 'rgba(30,41,59,0.5)' };
+      const spriteURL = this.getFishSpriteURL ? this.getFishSpriteURL(fish.icon) : null;
+
+      return `
+        <div class="p-2 border-2 flex items-center justify-between gap-2.5 min-h-[56px] ${
+          isDonated 
+            ? 'bg-emerald-950/40 border-emerald-500/80 shadow-[inset_0_0_8px_rgba(16,185,129,0.2)]' 
+            : (hasInBucket ? 'bg-amber-950/40 border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.25)] ring-1 ring-amber-500/50' : 'bg-slate-900/90 border-slate-800')
+        }" style="font-family:var(--font-pixel); box-sizing: border-box;">
+          
+          <!-- Lado Esquerdo: Sprite Pixel Art Real + Nome Completo + Raridade -->
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center bg-black/70 border border-slate-700/80 p-0.5 overflow-hidden shadow-inner">
+              ${spriteURL 
+                ? `<img src="${spriteURL}" class="max-w-full max-h-full object-contain select-none" alt="${fish.name}" style="image-rendering:pixelated;">` 
+                : `<span class="text-base select-none">🐟</span>`
+              }
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-[8.5px] sm:text-[9px] font-bold text-slate-100 leading-tight line-clamp-2" title="${fish.name}">${fish.name}</div>
+              <div class="flex items-center gap-1.5 mt-1">
+                <span class="text-[6.5px] uppercase font-bold tracking-wider px-1 py-0.5 border" style="color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lado Direito: Ação / Status -->
+          <div class="shrink-0 flex items-center justify-end pl-1">
+            ${isDonated 
+              ? '<span class="px-2.5 py-1.5 text-[7px] sm:text-[7.5px] font-bold text-emerald-300 bg-emerald-950/90 border border-emerald-400 whitespace-nowrap shadow-[0_0_8px_rgba(16,185,129,0.3)]">✓ ENTREGUE</span>' 
+              : (hasInBucket 
+                  ? `<button onclick="window.game.donateFish('${fish.id}')" class="pixel-btn px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-[8px] cursor-pointer whitespace-nowrap shadow-[0_0_8px_rgba(245,158,11,0.4)] transition-transform active:scale-95">DOAR</button>` 
+                  : '<span class="px-2 py-1.5 text-[6.5px] sm:text-[7px] font-bold text-slate-400 bg-slate-950 border border-slate-800 whitespace-nowrap">FALTA PESCAR</span>'
+                )
+            }
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  resetDonations() {
+    this.speciesDonations = {};
+    this.donatedSpeciesHistory = {};
+    this.saveGame();
+    this.renderInventory();
+    this.renderFishEyesBadge();
+    this.renderFishEyesModal();
+    this.showToast('🏺 Todas as doações de espécies foram resetadas!', 'special');
+    this.consoleLog('Todas as doações de espécies foram resetadas com sucesso!', '#38bdf8');
+  }
+
+  donateFish(fishId, uid = null) {
+    if (!this.firstRarityCatches?.MITICO) {
+      this.showToast('🔒 Capture seu 1º Peixe Mítico para liberar as doações de espécies!', 'warning');
+      return;
+    }
+
+    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const targetFish = pool.find(f => f.id === fishId);
+    if (!targetFish) return;
+
+    if (!this.speciesDonations) this.speciesDonations = {};
+    if (!this.donatedSpeciesHistory) this.donatedSpeciesHistory = {};
+
+    if (this.speciesDonations[fishId] || this.donatedSpeciesHistory[fishId]) {
+      this.showToast('Esta espécie já foi doada e registrada!', 'info');
+      return;
+    }
+
+    let invIndex = -1;
+    if (uid) {
+      invIndex = this.inventory.findIndex(inv => inv.uid === uid && !inv.locked);
+    }
+    if (invIndex === -1) {
+      invIndex = this.inventory.findIndex(inv => inv.id === fishId && !inv.locked);
+    }
+
+    if (invIndex === -1) {
+      const lockedIdx = this.inventory.findIndex(inv => inv.id === fishId);
+      if (lockedIdx !== -1) {
+        this.showToast('O peixe está travado no balde! Destrave-o para doar.', 'warning');
+      } else {
+        this.showToast('Você não possui este peixe no balde!', 'warning');
+      }
+      return;
+    }
+
+    this.inventory.splice(invIndex, 1);
+    this.speciesDonations[fishId] = true;
+    this.donatedSpeciesHistory[fishId] = true;
+    sound.playUpgrade?.() || sound.playClick?.();
+
+    // Recompensa imediata: +1 Olho de Peixe para CADA peixe doado
+    this.fishEyesCount = (this.fishEyesCount || 0) + 1;
+    this.fishEyesTotal = (this.fishEyesTotal || 0) + 1;
+
+    const allDonated = pool.every(f => this.speciesDonations[f.id]);
+    if (allDonated) {
+      // Bônus adicional de ciclo ao completar todas as 25 espécies
+      this.fishEyesCount = (this.fishEyesCount || 0) + 1;
+      this.fishEyesTotal = (this.fishEyesTotal || 0) + 1;
+      this.offeringCycle = (this.offeringCycle || 1) + 1;
+      this.speciesDonations = {};
+      this.showToast('🏆 CICLO COMPLETO! +1 OLHO PELO PEIXE E +1 OLHO BÔNUS DO SANTUÁRIO!', 'legendary');
+      sound.playUpgrade?.();
+    } else {
+      this.showToast(`🏺 ${targetFish.name} oferecido! +1 Olho de Peixe obtido!`, 'success');
+    }
+
+    this.renderFishEyesBadge();
+    this.renderFishEyesModal();
+    this.renderInventory();
+    this.renderHeader();
+    this.saveGame();
+  }
+
+  donateAllAvailableFish() {
+    if (!this.firstRarityCatches?.MITICO) {
+      this.showToast('🔒 Capture seu 1º Peixe Mítico para liberar as doações de espécies!', 'warning');
+      return;
+    }
+
+    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    if (!this.speciesDonations) this.speciesDonations = {};
+    let donatedCount = 0;
+
+    for (const fish of pool) {
+      if (this.speciesDonations[fish.id]) continue;
+      const invIdx = this.inventory.findIndex(inv => inv.id === fish.id && !inv.locked);
+      if (invIdx !== -1) {
+        this.inventory.splice(invIdx, 1);
+        this.speciesDonations[fish.id] = true;
+        if (!this.donatedSpeciesHistory) this.donatedSpeciesHistory = {};
+        this.donatedSpeciesHistory[fish.id] = true;
+        donatedCount++;
+      }
+    }
+
+    if (donatedCount === 0) {
+      sound.playClick?.();
+      this.showToast('Nenhuma nova espécie disponível para doar no balde no momento.', 'info');
+      return;
+    }
+
+    sound.playUpgrade?.();
+    // Recompensa imediata: +1 Olho de Peixe para CADA peixe doado no lote
+    this.fishEyesCount = (this.fishEyesCount || 0) + donatedCount;
+    this.fishEyesTotal = (this.fishEyesTotal || 0) + donatedCount;
+
+    const allDonated = pool.every(f => this.speciesDonations[f.id]);
+    if (allDonated) {
+      // Bônus adicional de ciclo ao completar todas as 25 espécies
+      this.fishEyesCount = (this.fishEyesCount || 0) + 1;
+      this.fishEyesTotal = (this.fishEyesTotal || 0) + 1;
+      this.offeringCycle = (this.offeringCycle || 1) + 1;
+      this.speciesDonations = {};
+      this.showToast(`🏆 OFERENDA SAGRADA COMPLETA! +${donatedCount} Olhos obtidos (+1 Olho Bônus pelo ciclo)!`, 'legendary');
+    } else {
+      this.showToast(`🏺 ${donatedCount} espécie(s) doada(s)! +${donatedCount} Olho(s) de Peixe obtido(s)!`, 'success');
+    }
+
+    this.renderFishEyesBadge();
+    this.renderFishEyesModal();
+    this.renderInventory();
+    this.renderHeader();
+    this.saveGame();
+  }
+
+  // ═════════════════════════════════════════════════════════════════════
+  // CICLO AUTOMÁTICO DE BIOMAS DO MUNDO 2 (5 MINUTOS) & CENÁRIOS RETRÔ
+  // ═════════════════════════════════════════════════════════════════════
+  getCycleWorld2Biome() {
+    const BIOME_DURATION_MS = 5 * 60 * 1000;
+    const biomeIds = ['recife_bioluminescente', 'fendas_vulcanicas', 'cemiterio_naufragios', 'zona_hadal'];
+    const virtualNow = Date.now() + (this.world2BiomeOffsetMs || 0);
+    const index = Math.floor(virtualNow / BIOME_DURATION_MS) % biomeIds.length;
+    return biomeIds[index];
+  }
+
+  getWorld2BiomeRemaining() {
+    const BIOME_DURATION_MS = 5 * 60 * 1000;
+    const virtualNow = Date.now() + (this.world2BiomeOffsetMs || 0);
+    const ms = BIOME_DURATION_MS - (virtualNow % BIOME_DURATION_MS);
+    const min = Math.floor(ms / 60000);
+    const sec = Math.floor((ms % 60000) / 1000);
+    return {
+      ms,
+      min,
+      sec,
+      text: `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+    };
+  }
+
+  skipWorld2Biome() {
+    const BIOME_DURATION_MS = 5 * 60 * 1000;
+    const rem = this.getWorld2BiomeRemaining();
+    this.world2BiomeOffsetMs = (this.world2BiomeOffsetMs || 0) + rem.ms + 50;
+    const newBiomeId = this.getCycleWorld2Biome();
+    this.activeWorld2Biome = newBiomeId;
+    this.applyWorld2BiomeScenery(newBiomeId);
+    const b = WORLD2_BIOMES.find(x => x.id === newBiomeId);
+    sound.playUpgrade?.() || sound.playClick?.();
+    this.showToast(`Bioma avançado para: ${b?.icon || '🌊'} ${b?.name || newBiomeId} (05:00)`, 'info');
+    this.saveGame();
+    this.renderAll();
+  }
+
+  setWorld2Biome(biomeId) {
+    const biomeIds = ['recife_bioluminescente', 'fendas_vulcanicas', 'cemiterio_naufragios', 'zona_hadal'];
+    const idx = biomeIds.indexOf(biomeId);
+    if (idx === -1) return;
+    const BIOME_DURATION_MS = 5 * 60 * 1000;
+    const currBiome = this.getCycleWorld2Biome();
+    const currIdx = biomeIds.indexOf(currBiome);
+    const neededSteps = (idx - currIdx + biomeIds.length) % biomeIds.length;
+    const rem = this.getWorld2BiomeRemaining();
+    if (neededSteps === 0) {
+      const virtualNow = Date.now() + (this.world2BiomeOffsetMs || 0);
+      const elapsed = virtualNow % BIOME_DURATION_MS;
+      this.world2BiomeOffsetMs = (this.world2BiomeOffsetMs || 0) - elapsed;
+    } else {
+      this.world2BiomeOffsetMs = (this.world2BiomeOffsetMs || 0) + rem.ms + (neededSteps - 1) * BIOME_DURATION_MS + 50;
+    }
+    this.activeWorld2Biome = biomeId;
+    this.applyWorld2BiomeScenery(biomeId);
+    this.saveGame();
+    this.renderAll();
+  }
+
+  applyWorld2BiomeScenery(biomeId) {
+    const sceneryContainer = document.getElementById('world2-lake-scenery');
+    const lakeArea = document.getElementById('fishing-lake-area');
+    if (!sceneryContainer) return;
+
+    if (this.currentWorld !== 2) {
+      sceneryContainer.classList.add('hidden');
+      return;
+    }
+
+    sceneryContainer.classList.remove('hidden');
+
+    const sceneryMap = {
+      'recife_bioluminescente': 'scenery-recife',
+      'fendas_vulcanicas': 'scenery-vulcanicas',
+      'cemiterio_naufragios': 'scenery-naufragios',
+      'zona_hadal': 'scenery-hadal'
+    };
+
+    const bgGradients = {
+      'recife_bioluminescente': 'linear-gradient(to bottom, #011424 0%, #032b47 25%, #064a6d 60%, #086185 85%, #022538 100%)',
+      'fendas_vulcanicas': 'linear-gradient(to bottom, #080302 0%, #1f0804 25%, #3d0c05 60%, #5c1407 85%, #120402 100%)',
+      'cemiterio_naufragios': 'linear-gradient(to bottom, #01110d 0%, #02241b 30%, #043e30 65%, #065441 85%, #011c14 100%)',
+      'zona_hadal': 'linear-gradient(to bottom, #010003 0%, #0c0117 25%, #1a0333 60%, #290452 85%, #040008 100%)'
+    };
+
+    Object.entries(sceneryMap).forEach(([bId, elemId]) => {
+      const el = document.getElementById(elemId);
+      if (el) {
+        if (bId === biomeId) {
+          el.classList.remove('hidden');
+          el.style.opacity = '1';
+        } else {
+          el.classList.add('hidden');
+          el.style.opacity = '0';
+        }
+      }
+    });
+
+    if (lakeArea && bgGradients[biomeId]) {
+      lakeArea.style.background = bgGradients[biomeId];
+    }
+    this.waterRenderer?.setWorldMode(true, biomeId);
+  }
+
+  initWorld2BiomeCycle() {
+    if (this._world2BiomeTimer) clearInterval(this._world2BiomeTimer);
+
+    this._world2BiomeTimer = setInterval(() => {
+      if (this.currentWorld === 2) {
+        const rem = this.getWorld2BiomeRemaining();
+        const autoBiome = this.getCycleWorld2Biome();
+        const curBiome = WORLD2_BIOMES.find(x => x.id === this.activeWorld2Biome) || WORLD2_BIOMES[0];
+
+        const btnTime = document.getElementById('btn-toggle-time');
+        if (btnTime) {
+          btnTime.title = `Região Atual: ${curBiome.name} (${curBiome.depth} · ${curBiome.pressure})\nPróxima região em ${rem.text} (Ciclo de 5 min)`;
+        }
+
+        if (autoBiome !== this.activeWorld2Biome) {
+          this.activeWorld2Biome = autoBiome;
+          this.syncWorld2UI();
+          this.saveGame();
+          const b = WORLD2_BIOMES.find(x => x.id === autoBiome);
+          this.showToast(`🌊 O Batiscafo adentrou a região: ${b?.icon || ''} ${b?.name || autoBiome}!`, 'special');
+        }
+      }
+    }, 1000);
+  }
+
 
   allocateFishEye(attr) {
     if (!['gold', 'luck', 'speed', 'double'].includes(attr)) return;
@@ -1987,6 +2395,15 @@ class FishingGame {
   }
 
   updateChapter1Badge() {
+    const portalBtn = document.getElementById('btn-open-chapter1');
+    if (portalBtn) {
+      if (this.unlockedRods && this.unlockedRods.includes('vara_travessia')) {
+        portalBtn.classList.remove('hidden');
+      } else {
+        portalBtn.classList.add('hidden');
+      }
+    }
+
     const badge = document.getElementById('chapter1-badge');
     if (!badge) return;
 
@@ -2050,20 +2467,23 @@ class FishingGame {
       }
     }
 
-    // Portal Status
+    // Portal Status & Altar de Sacrifício
     const portalTitle = document.getElementById('chapter1-status-title');
     const portalDesc = document.getElementById('chapter1-status-desc');
-    const completeBanner = document.getElementById('chapter1-complete-banner');
+    const altarContainer = document.getElementById('chapter1-altar-container');
 
     if (hasRod && hasBait) {
       if (portalTitle) {
-        portalTitle.textContent = '★ PORTAL DIMENSIONAL TOTALMENTE DESPERTO! ★';
+        portalTitle.textContent = '★ PORTAL DIMENSIONAL DESPERTO! ★';
         portalTitle.className = 'text-sm font-bold text-cyan-300 mt-2 tracking-wide drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]';
       }
       if (portalDesc) {
-        portalDesc.textContent = 'A fenda espacial brilha intensamente sobre as águas de Neo-Píer. Você selou com perfeição todo o Capítulo 1 da sua jornada!';
+        portalDesc.textContent = 'A fenda espacial vibra intensamente. O Altar das 15 Almas emergiu para exigir o tributo das criaturas lendárias!';
       }
-      completeBanner?.classList.remove('hidden');
+      if (altarContainer) {
+        altarContainer.classList.remove('hidden');
+        this.renderAltarSouls();
+      }
     } else {
       if (portalTitle) {
         portalTitle.textContent = 'PORTAL DIMENSIONAL EM CARGA';
@@ -2072,7 +2492,9 @@ class FishingGame {
       if (portalDesc) {
         portalDesc.textContent = 'Para estabilizar o vórtice e selar o Capítulo 1, você precisará da lendária Vara da Travessia Astral e da Essência do Vórtice Dimensional.';
       }
-      completeBanner?.classList.add('hidden');
+      if (altarContainer) {
+        altarContainer.classList.add('hidden');
+      }
     }
 
     // Estatísticas da Jornada V1
@@ -2087,6 +2509,268 @@ class FishingGame {
     if (statAch) statAch.textContent = `${this.unlockedAchievements.length} / ${ACHIEVEMENTS.length}`;
 
     modal.classList.remove('hidden');
+  }
+
+  renderAltarSouls() {
+    const grid = document.getElementById('altar-slots-grid');
+    const soulsCountEl = document.getElementById('altar-souls-count');
+    const eligibleCountEl = document.getElementById('altar-eligible-count');
+    const btnSacrifice = document.getElementById('btn-sacrifice-fish');
+    const krakenReadyBox = document.getElementById('altar-kraken-ready');
+    const altarActionSection = document.getElementById('altar-action-section');
+
+    const totalNeeded = 15;
+    const current = Math.min(totalNeeded, this.sacrificedFishCount || 0);
+
+    if (soulsCountEl) {
+      soulsCountEl.textContent = `${current} / ${totalNeeded} ALMAS`;
+    }
+
+    // Renderizar os 15 slots de almas com pixel art de chamas cósmicas
+    if (grid) {
+      let slotsHtml = '';
+      for (let i = 0; i < totalNeeded; i++) {
+        const isFilled = i < current;
+        slotsHtml += `
+          <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border-2 ${isFilled ? 'bg-purple-950 border-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.7)]' : 'bg-slate-950 border-slate-800 opacity-50'}">
+            ${isFilled 
+              ? `<svg class="w-4 h-4 drop-shadow-[0_0_4px_#f43f5e]" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="4" y="1" width="2" height="1" fill="#fbcfe8"/><rect x="3" y="2" width="4" height="2" fill="#f43f5e"/><rect x="2" y="4" width="6" height="3" fill="#e11d48"/><rect x="3" y="7" width="4" height="1" fill="#9f1239"/><rect x="4" y="8" width="2" height="1" fill="#881337"/><rect x="4" y="3" width="2" height="3" fill="#ffffff"/></svg>`
+              : `<span class="text-[7px] text-slate-600 font-bold">✧</span>`
+            }
+          </div>
+        `;
+      }
+      grid.innerHTML = slotsHtml;
+    }
+
+    // Peixes elegíveis no balde
+    const eligibleFish = this.inventory.filter(f => f.rarity === 'LENDARIO' || f.rarity === 'MITICO');
+    if (eligibleCountEl) {
+      eligibleCountEl.textContent = eligibleFish.length;
+    }
+
+    if (current >= totalNeeded) {
+      // 15/15 concluído! Isca do Kraken Ancestral desbloqueada
+      if (!this.unlockedBaits.includes('isca_kraken_ancestral')) {
+        this.unlockedBaits.push('isca_kraken_ancestral');
+        this.selectedBaitId = 'isca_kraken_ancestral';
+        this.saveGame();
+      }
+      if (altarActionSection) altarActionSection.classList.add('hidden');
+      if (krakenReadyBox) krakenReadyBox.classList.remove('hidden');
+    } else {
+      if (altarActionSection) altarActionSection.classList.remove('hidden');
+      if (krakenReadyBox) krakenReadyBox.classList.add('hidden');
+      if (btnSacrifice) {
+        btnSacrifice.disabled = eligibleFish.length === 0;
+      }
+    }
+  }
+
+  sacrificeFish() {
+    if (!this.unlockedRods.includes('vara_travessia') || !this.unlockedBaits.includes('essencia_travessia')) {
+      this.showToast('Você precisa da Vara da Travessia e da Essência do Vórtice para realizar sacrifícios!', 'warning');
+      sound.playClick();
+      return;
+    }
+
+    if ((this.sacrificedFishCount || 0) >= 15) {
+      this.showToast('O Altar já recebeu as 15 almas necessárias!', 'info');
+      sound.playClick();
+      return;
+    }
+
+    // Procura peixe lendário ou mítico não travado
+    let idx = this.inventory.findIndex(f => (f.rarity === 'LENDARIO' || f.rarity === 'MITICO') && !f.locked);
+    
+    if (idx === -1) {
+      const hasLocked = this.inventory.some(f => (f.rarity === 'LENDARIO' || f.rarity === 'MITICO') && f.locked);
+      if (hasLocked) {
+        this.showToast('Todos os seus peixes lendários/míticos estão travados no balde! Destrave um para sacrificar.', 'warning');
+      } else {
+        this.showToast('Nenhum peixe Lendário ou Mítico disponível no balde.', 'warning');
+      }
+      sound.playClick();
+      return;
+    }
+
+    const fish = this.inventory.splice(idx, 1)[0];
+    this.sacrificedFishCount = (this.sacrificedFishCount || 0) + 1;
+    sound.playSacrifice();
+
+    this.showToast(`✦ Alma de ${fish.name} oferecida ao Altar! (${this.sacrificedFishCount}/15)`, 'special');
+
+    if (this.sacrificedFishCount >= 15) {
+      if (!this.unlockedBaits.includes('isca_kraken_ancestral')) {
+        this.unlockedBaits.push('isca_kraken_ancestral');
+        this.selectedBaitId = 'isca_kraken_ancestral';
+      }
+      setTimeout(() => {
+        sound.playUpgrade();
+        this.showToast('★ O RITUAL ESTÁ COMPLETO! A ISCA DO KRAKEN FOI FORJADA! ★', 'legendary');
+      }, 500);
+    }
+
+    this.saveGame();
+    this.renderInventory();
+    this.renderAltarSouls();
+  }
+
+  sacrificeSpecificFish(uid) {
+    if (!this.unlockedRods.includes('vara_travessia') || !this.unlockedBaits.includes('essencia_travessia')) {
+      this.showToast('Você precisa da Vara da Travessia e da Essência do Vórtice para realizar sacrifícios!', 'warning');
+      sound.playClick();
+      return;
+    }
+
+    if ((this.sacrificedFishCount || 0) >= 15) {
+      this.showToast('O Altar já recebeu as 15 almas necessárias!', 'info');
+      sound.playClick();
+      return;
+    }
+
+    const idx = this.inventory.findIndex(f => f.uid === uid);
+    if (idx === -1) return;
+
+    const fish = this.inventory[idx];
+    if (fish.locked) {
+      this.showToast('Peixe travado! Destrave-o antes de sacrificar.', 'warning');
+      sound.playClick();
+      return;
+    }
+
+    if (fish.rarity !== 'LENDARIO' && fish.rarity !== 'MITICO') {
+      this.showToast('O Altar só aceita peixes Lendários ou Míticos!', 'warning');
+      sound.playClick();
+      return;
+    }
+
+    this.inventory.splice(idx, 1);
+    this.sacrificedFishCount = (this.sacrificedFishCount || 0) + 1;
+    sound.playSacrifice();
+
+    this.showToast(`✦ Alma de ${fish.name} oferecida ao Altar! (${this.sacrificedFishCount}/15)`, 'special');
+
+    if (this.sacrificedFishCount >= 15) {
+      if (!this.unlockedBaits.includes('isca_kraken_ancestral')) {
+        this.unlockedBaits.push('isca_kraken_ancestral');
+        this.selectedBaitId = 'isca_kraken_ancestral';
+      }
+      setTimeout(() => {
+        sound.playUpgrade();
+        this.showToast('★ O RITUAL ESTÁ COMPLETO! A ISCA DO KRAKEN FOI FORJADA! ★', 'legendary');
+      }, 500);
+    }
+
+    this.saveGame();
+    this.renderInventory();
+    this.renderAltarSouls();
+  }
+
+  triggerKrakenCinematic() {
+    this.closeChapter1Modal();
+    const overlay = document.getElementById('kraken-cinematic-overlay');
+    if (!overlay) return;
+
+    overlay.classList.remove('hidden');
+    overlay.style.pointerEvents = 'auto';
+    sound.playCast();
+
+    const lightning = document.getElementById('kraken-lightning-flash');
+    const dialogueBox = document.getElementById('kraken-dialogue-box');
+    const abyssFade = document.getElementById('kraken-abyss-fade');
+    const btnEnterWorld2 = document.getElementById('btn-enter-world2');
+    const shakeContainer = document.getElementById('kraken-shake-container');
+
+    // Reset de estados para execução limpa
+    if (shakeContainer) {
+      shakeContainer.style.opacity = '1';
+      shakeContainer.style.pointerEvents = 'auto';
+      shakeContainer.classList.remove('animate-bounce');
+    }
+    if (dialogueBox) dialogueBox.classList.add('opacity-0');
+    if (abyssFade) abyssFade.classList.add('opacity-0');
+    if (btnEnterWorld2) btnEnterWorld2.classList.add('hidden');
+
+    // 1. Início do evento: Tempestade e relâmpagos
+    setTimeout(() => {
+      sound.playKrakenRoar();
+      if (lightning) {
+        lightning.classList.remove('opacity-0');
+        setTimeout(() => lightning.classList.add('opacity-0'), 80);
+        setTimeout(() => lightning.classList.remove('opacity-0'), 180);
+        setTimeout(() => lightning.classList.add('opacity-0'), 260);
+      }
+    }, 600);
+
+    // 2. O Kraken surge e quebra o píer
+    setTimeout(() => {
+      sound.playPierCrash();
+      if (dialogueBox) {
+        dialogueBox.classList.remove('opacity-0');
+      }
+    }, 2000);
+
+    // 3. Arrastado para o Abismo: Fade out suave do monstro e foco no abismo
+    setTimeout(() => {
+      if (shakeContainer) {
+        shakeContainer.style.opacity = '0';
+        shakeContainer.style.pointerEvents = 'none';
+      }
+      if (abyssFade) {
+        abyssFade.classList.remove('opacity-0');
+      }
+    }, 4600);
+
+    // 4. Botão de entrar no Mundo 2 disponível e totalmente desobstruído
+    setTimeout(() => {
+      if (btnEnterWorld2) {
+        btnEnterWorld2.classList.remove('hidden');
+        btnEnterWorld2.onclick = () => {
+          sound.playClick();
+          overlay.classList.add('hidden');
+          overlay.style.pointerEvents = 'none';
+          this.enterWorld2Reset();
+          this.showToast('🌊 Você abriu os olhos na escuridão do leito abissal... Bem-vindo ao Mundo 2!', 'special');
+        };
+      }
+    }, 5800);
+  }
+
+  enterWorld2Reset() {
+    // Salva o snapshot definitivo do progresso do Mundo 1 para restauração posterior pelo Batiscafo
+    if (!this.world1Data) {
+      this.world1Data = {
+        gold: this.gold,
+        inventory: [...this.inventory],
+        aquarium: [...this.aquarium],
+        selectedRodId: this.selectedRodId,
+        unlockedRods: [...this.unlockedRods],
+        selectedBaitId: this.selectedBaitId,
+        unlockedBaits: [...this.unlockedBaits],
+        upgradeLevels: { ...this.upgradeLevels }
+      };
+    }
+
+    // Reset de Prestígio do Mundo 2:
+    // Começa com 0 ouro, inventário e aquário vazios, novos upgrades em 0
+    // Progressão limpa e autêntica no Abismo com novos equipamentos e biomas
+    this.currentWorld = 2;
+    this.gold = 0;
+    this.inventory = [];
+    this.aquarium = [];
+    this.unlockedRods = ['vara_arpao_basico'];
+    this.selectedRodId = 'vara_arpao_basico';
+    this.unlockedBaits = ['isca_plankton_neon'];
+    this.selectedBaitId = 'isca_plankton_neon';
+    this.upgradeLevels = { balde: 0, auto_pescador: 0, boia_sorte: 0, rede_dupla: 0, aquario_cap: 0, auto_vendedor: 0, ima_dourado: 0 };
+    this.activeWorld2Biome = 'recife_bioluminescente';
+    this.ascensionParts = { bateria_neon: false, casco_titanio: false, helice_galeao: false, sistema_lastro_hadal: false };
+    this.submarineAssembled = false;
+
+    this.saveGame();
+    this.updateFisherman();
+    this.renderAll();
   }
 
   closeChapter1Modal() {
@@ -2113,12 +2797,13 @@ class FishingGame {
   }
 
   updateAlbumBadge() {
-    const normalFish = FISH_LIST.filter(f => !f.secret);
-    const secretFish = FISH_LIST.filter(f => f.secret);
+    const activeList = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const normalFish = activeList.filter(f => !f.secret);
+    const secretFish = activeList.filter(f => f.secret);
     const discoveredNormal = normalFish.filter(f => this.discoveredFish[f.id]).length;
     const discoveredSecret = secretFish.filter(f => this.discoveredFish[f.id]).length;
 
-    const baseTotal = normalFish.length; // 27
+    const baseTotal = normalFish.length;
     const totalDiscovered = discoveredNormal + discoveredSecret;
     const badge = document.getElementById('album-badge');
     const progText = document.getElementById('album-progress-text');
@@ -2156,22 +2841,23 @@ class FishingGame {
     const viewFish = document.getElementById('album-view-fish');
     const viewBuffs = document.getElementById('album-view-buffs');
 
-    if (tab === 'buffs') {
-      tabFish?.classList.remove('bg-cyan-900/60', 'text-cyan-300', 'border-cyan-500/80');
-      tabFish?.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-800');
-      tabBuffs?.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-800');
-      tabBuffs?.classList.add('bg-purple-900/60', 'text-purple-300', 'border-purple-500/80');
-      viewFish?.classList.add('hidden');
-      viewBuffs?.classList.remove('hidden');
-    } else {
-      tabBuffs?.classList.remove('bg-purple-900/60', 'text-purple-300', 'border-purple-500/80');
-      tabBuffs?.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-800');
+    if (tab === 'fish') {
+      tabFish?.classList.add('bg-cyan-950', 'text-cyan-300', 'border-cyan-500');
       tabFish?.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-800');
-      tabFish?.classList.add('bg-cyan-900/60', 'text-cyan-300', 'border-cyan-500/80');
-      viewBuffs?.classList.add('hidden');
+      tabBuffs?.classList.remove('bg-cyan-950', 'text-cyan-300', 'border-cyan-500');
+      tabBuffs?.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-800');
       viewFish?.classList.remove('hidden');
+      viewBuffs?.classList.add('hidden');
+    } else {
+      tabBuffs?.classList.add('bg-cyan-950', 'text-cyan-300', 'border-cyan-500');
+      tabBuffs?.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-800');
+      tabFish?.classList.remove('bg-cyan-950', 'text-cyan-300', 'border-cyan-500');
+      tabFish?.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-800');
+      viewBuffs?.classList.remove('hidden');
+      viewFish?.classList.add('hidden');
+      this.renderAlbumBuffs();
     }
-    sound.playClick();
+    sound.playClick?.();
   }
 
   renderAlbum() {
@@ -2180,14 +2866,13 @@ class FishingGame {
 
     this.updateAlbumBadge();
 
-    // Peixes da raridade secreta não aparecem na enciclopédia até serem capturados!
-    const visibleList = FISH_LIST.filter(fish => !fish.secret || this.discoveredFish[fish.id]);
+    const activeList = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const visibleList = activeList.filter(fish => !fish.secret || this.discoveredFish[fish.id]);
 
-    // Contadores gerais da enciclopédia
     let totalCatchesCount = 0;
     let unlockedAurasCount = 0;
-    const totalSpecies = FISH_LIST.length;
-    const discoveredCount = Object.keys(this.discoveredFish || {}).length;
+    const totalSpecies = activeList.length;
+    const discoveredCount = visibleList.filter(f => this.discoveredFish[f.id]).length;
 
     Object.values(this.discoveredFish || {}).forEach(d => {
       if (d) {
@@ -2221,6 +2906,14 @@ class FishingGame {
         timeBadge = '<span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-indigo-300 border-indigo-500/80 bg-indigo-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">🌙 NOITE</span>';
       }
 
+      let biomeBadge = '';
+      if (fish.biome) {
+        const bInfo = WORLD2_BIOMES.find(b => b.id === fish.biome);
+        if (bInfo) {
+          biomeBadge = `<span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-cyan-300 border-cyan-500/80 bg-cyan-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">${bInfo.icon} ${bInfo.shortName}</span>`;
+        }
+      }
+
       const isSecretCard = fish.secret && isDiscovered;
 
       return `
@@ -2234,8 +2927,9 @@ class FishingGame {
               ${isSecretCard ? `
                 <span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-red-300 border-red-500/80 bg-red-950/90 shrink-0 whitespace-nowrap shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" style="font-family:var(--font-pixel);">🌌 SECRETO</span>
               ` : `
-                <span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${isDiscovered ? r.color : '#64748b'};border-color:${isDiscovered ? r.border : '#334155'};background:rgba(0,0,0,0.5);">${r.label}</span>
+                <span class="text-[7.5px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${isDiscovered ? r.color : '#64748b'};border-color:${isDiscovered ? r.border : '#334155'};background:rgba(0,0,0,0.5);">${r.label}</span>
                 ${timeBadge}
+                ${biomeBadge}
               `}
             </div>
             ${isDiscovered ? `
@@ -2250,10 +2944,10 @@ class FishingGame {
 
               <!-- Registro de Auras Místicas Descobertas -->
               <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtBloodMoon ? 'border-red-500 bg-red-950/90 text-red-300 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtBloodMoon ? 'Capturado com Aura da Lua Sangrenta (+50% Ouro, +25% Sorte)' : 'Ainda não capturado com Aura da Lua Sangrenta'}">
+                <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtBloodMoon ? 'border-red-500 bg-red-950/90 text-red-300 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtBloodMoon ? 'Capturado com Aura da Lua Sangrenta (+15% Ouro, +15% Sorte)' : 'Ainda não capturado com Aura da Lua Sangrenta'}">
                   🩸 ${data.caughtBloodMoon ? 'LUA SANGRENTA' : 'LUA SANGRENTA (?)'}
                 </span>
-                <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtEclipse ? 'border-red-700 bg-black/95 text-red-400 shadow-[0_0_8px_rgba(185,28,28,0.6)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtEclipse ? 'Capturado com Aura do Eclipse (+40% Vel., +35% Dupla)' : 'Ainda não capturado com Aura do Eclipse'}">
+                <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtEclipse ? 'border-red-700 bg-black/95 text-red-400 shadow-[0_0_8px_rgba(185,28,28,0.6)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtEclipse ? 'Capturado com Aura do Eclipse (+15% Vel., +15% Dupla)' : 'Ainda não capturado com Aura do Eclipse'}">
                   🌑 ${data.caughtEclipse ? 'ECLIPSE' : 'ECLIPSE (?)'}
                 </span>
               </div>
@@ -2326,10 +3020,22 @@ class FishingGame {
         unlockedAchievements: this.unlockedAchievements,
         goldenFishCatches: this.goldenFishCatches,
         chapter1Completed: this.chapter1Completed,
+        sacrificedFishCount: this.sacrificedFishCount || 0,
+        currentWorld: this.currentWorld || 1,
+        world1Data: this.world1Data || null,
+        world2SavedData: this.world2SavedData || null,
+        activeWorld2Biome: this.activeWorld2Biome || 'recife_bioluminescente',
+        ascensionParts: this.ascensionParts || { bateria_neon: false, casco_titanio: false, helice_galeao: false, sistema_lastro_hadal: false },
+        submarineAssembled: Boolean(this.submarineAssembled),
         timeOfDay: this.timeOfDay,
         timeOffsetMs: this.timeOffsetMs || 0,
         phaseMsRemaining: this.getRawMsRemaining(),
         timeSavedAt: Date.now(),
+        speciesDonations: this.speciesDonations || {},
+      donatedSpeciesHistory: this.donatedSpeciesHistory || {},
+        offeringCycle: this.offeringCycle || 1,
+        activeFishEyesTab: this.activeFishEyesTab || 'attributes',
+        world2BiomeOffsetMs: this.world2BiomeOffsetMs || 0,
         fishEyesCount: this.fishEyesCount || 0,
         fishEyesTotal: this.fishEyesTotal || 0,
         fishEyesAllocated: this.fishEyesAllocated || { gold: 0, luck: 0, speed: 0, double: 0 },
@@ -2346,6 +3052,7 @@ class FishingGame {
         forgeUpgrades: this.forgeUpgrades || {},
         magnetCatches: this.magnetCatches || 0,
         magnetGoldEarned: this.magnetGoldEarned || 0,
+        firstRarityCatches: this.firstRarityCatches || { LENDARIO: false, MITICO: false, SECRETO: false },
         settings: this.settings,
         lastActiveTime: Date.now()
       }));
@@ -2378,10 +3085,23 @@ class FishingGame {
         this.unlockedAchievements = Array.isArray(d.unlockedAchievements) ? d.unlockedAchievements : [];
         this.goldenFishCatches = d.goldenFishCatches || 0;
         this.chapter1Completed = Boolean(d.chapter1Completed);
+        this.sacrificedFishCount = typeof d.sacrificedFishCount === 'number' ? d.sacrificedFishCount : 0;
+        this.currentWorld = typeof d.currentWorld === 'number' ? d.currentWorld : 1;
+        this.world1Data = d.world1Data || null;
+        this.world2SavedData = d.world2SavedData || null;
+        this.activeWorld2Biome = d.activeWorld2Biome || 'recife_bioluminescente';
+        this.ascensionParts = d.ascensionParts || { bateria_neon: false, casco_titanio: false, helice_galeao: false, sistema_lastro_hadal: false };
+        this.submarineAssembled = Boolean(d.submarineAssembled);
         this.timeOfDay = d.timeOfDay || 'day';
         this.timeOffsetMs = d.timeOffsetMs || 0;
         this.savedPhaseMsRemaining = typeof d.phaseMsRemaining === 'number' ? d.phaseMsRemaining : null;
         this.timeSavedAt = typeof d.timeSavedAt === 'number' ? d.timeSavedAt : null;
+        this.speciesDonations = (d.speciesDonations && typeof d.speciesDonations === 'object') ? d.speciesDonations : {};
+        this.donatedSpeciesHistory = (d.donatedSpeciesHistory && typeof d.donatedSpeciesHistory === 'object') ? d.donatedSpeciesHistory : {};
+        Object.keys(this.speciesDonations).forEach(k => { if (this.speciesDonations[k]) this.donatedSpeciesHistory[k] = true; });
+        this.offeringCycle = typeof d.offeringCycle === 'number' ? d.offeringCycle : 1;
+        this.activeFishEyesTab = d.activeFishEyesTab || 'attributes';
+        this.world2BiomeOffsetMs = typeof d.world2BiomeOffsetMs === 'number' ? d.world2BiomeOffsetMs : 0;
         this.fishEyesCount = typeof d.fishEyesCount === 'number' ? d.fishEyesCount : 0;
         this.fishEyesTotal = typeof d.fishEyesTotal === 'number' ? d.fishEyesTotal : 0;
         this.fishEyesAllocated = d.fishEyesAllocated && typeof d.fishEyesAllocated === 'object'
@@ -2400,6 +3120,30 @@ class FishingGame {
         this.forgeUpgrades = (d.forgeUpgrades && typeof d.forgeUpgrades === 'object') ? d.forgeUpgrades : {};
         this.magnetCatches = typeof d.magnetCatches === 'number' ? d.magnetCatches : 0;
         this.magnetGoldEarned = typeof d.magnetGoldEarned === 'number' ? d.magnetGoldEarned : 0;
+        this.firstRarityCatches = (d.firstRarityCatches && typeof d.firstRarityCatches === 'object')
+          ? { LENDARIO: Boolean(d.firstRarityCatches.LENDARIO), MITICO: Boolean(d.firstRarityCatches.MITICO), SECRETO: Boolean(d.firstRarityCatches.SECRETO) }
+          : { LENDARIO: false, MITICO: false, SECRETO: false };
+
+        // Retro-compatibilidade: se o save antigo não tinha firstRarityCatches ou se peixes dessas raridades já foram descobertos
+        if (this.discoveredFish) {
+          try {
+            const allFishDefs = [...(typeof FISH_LIST !== 'undefined' ? FISH_LIST : []), ...(typeof FISH_WORLD_2 !== 'undefined' ? FISH_WORLD_2 : [])];
+            allFishDefs.forEach(f => {
+              if (['LENDARIO', 'MITICO', 'SECRETO'].includes(f.rarity) && this.discoveredFish[f.id]) {
+                this.firstRarityCatches[f.rarity] = true;
+              }
+            });
+          } catch(e) {}
+        }
+
+        // Retro-compatibilidade adicional: se o save legado já possuía Olhos de Peixe ou doações registradas
+        if (((this.fishEyesTotal && this.fishEyesTotal > 0) || (this.fishEyesCount && this.fishEyesCount > 0)) && !this.firstRarityCatches.LENDARIO) {
+          this.firstRarityCatches.LENDARIO = true;
+        }
+        if (this.donatedSpeciesHistory && Object.keys(this.donatedSpeciesHistory).length > 0 && !this.firstRarityCatches.MITICO) {
+          this.firstRarityCatches.MITICO = true;
+        }
+
         if (d.settings) {
           this.settings = { ...this.settings, ...d.settings };
         }
@@ -2449,34 +3193,75 @@ class FishingGame {
 
   // ── CÁLCULOS ──
   getMaxInventory() {
-    const u = UPGRADES.find(u => u.id === 'balde');
+    const list = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+    const u = list.find(u => u.id === 'balde');
     return u ? u.getValue(this.upgradeLevels.balde || 0) : 10;
   }
 
   getMaxAquarium() {
-    const u = UPGRADES.find(u => u.id === 'aquario_cap');
+    const list = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+    const u = list.find(u => u.id === 'aquario_cap');
     return u ? u.getValue(this.upgradeLevels.aquario_cap || 0) : 3;
+  }
+
+  formatFishBuffText(b) {
+    if (!b) return '';
+    const cleanMap = {
+      luck_bonus: 'Sorte',
+      gold_multiplier: 'Ouro',
+      fishing_speed: 'Vel. Pesca',
+      double_catch_chance: 'Pesca Dupla',
+      auto_fish_speed: 'Vel. Auto',
+      all_stats: 'Todos Atributos'
+    };
+    if (b.type === 'mythic_mastery') {
+      const base = b.value || 0.25;
+      return `+${Math.round(base * 100)}% Ouro, +${Math.round(base * 0.6 * 100)}% Sorte, +${Math.round(base * 0.4 * 100)}% Pesca Dupla`;
+    }
+    if (cleanMap[b.type]) {
+      const pct = Math.round((b.value || 0) * 100);
+      return `+${pct}% ${cleanMap[b.type]}`;
+    }
+    let txt = b.text || '';
+    txt = txt.replace(/Sorte\s+(Abissal|no Abismo|no Vazio|Pirata|nas Trevas)/gi, 'Sorte')
+             .replace(/Ouro\s+(no Abismo|dos Corais|Abissal|de Naufrágio|de Naufrágios)/gi, 'Ouro')
+             .replace(/Velocidade\s+Subaquática/gi, 'Vel. Pesca')
+             .replace(/Velocidade\s+de\s+Isca/gi, 'Vel. Pesca')
+             .replace(/Agilidade\s+Hadal/gi, 'Vel. Pesca')
+             .replace(/Captura\s+Dupla/gi, 'Pesca Dupla')
+             .replace(/Pesca\s+Automática/gi, 'Vel. Auto')
+             .replace(/Todos\s+os\s+Atributos\s+Submarinos/gi, 'Todos Atributos');
+    return txt;
   }
 
   getFishBuffs(fish) {
     if (!fish) return [];
-    if (Array.isArray(fish.buffs) && fish.buffs.length > 0) return fish.buffs;
-    if (fish.buff) return [fish.buff];
-    return [];
+    let list = [];
+    if (Array.isArray(fish.buffs) && fish.buffs.length > 0) list = fish.buffs;
+    else if (fish.buff) list = [fish.buff];
+
+    return list.map(b => {
+      if (!b) return b;
+      return {
+        ...b,
+        text: this.formatFishBuffText(b)
+      };
+    });
   }
 
   _applyFishBuff(b, mult, out) {
     if (!b) return;
-    if (b.type === 'gold_multiplier')     out.goldMultiplier += b.value * mult;
-    if (b.type === 'luck_bonus')          out.luckBonus += b.value * mult;
-    if (b.type === 'fishing_speed')       out.fishingSpeedBonus += b.value * mult;
-    if (b.type === 'double_catch_chance') out.doubleCatchChance += b.value * mult;
-    if (b.type === 'auto_fish_speed')     out.autoFishSpeedBonus += b.value * mult;
+    if (b.type === 'gold_multiplier')    out.goldMultiplier += (b.value || 0) * mult;
+    if (b.type === 'luck_bonus')         out.luckBonus += (b.value || 0) * mult;
+    if (b.type === 'fishing_speed')      out.fishingSpeedBonus += (b.value || 0) * mult;
+    if (b.type === 'double_catch_chance')out.doubleCatchChance += (b.value || 0) * mult;
+    if (b.type === 'auto_fish_speed')    out.autoFishSpeedBonus += (b.value || 0) * mult;
     if (b.type === 'all_stats') {
-      out.goldMultiplier += b.value * mult;
-      out.luckBonus += b.value * mult;
-      out.fishingSpeedBonus += b.value * mult;
-      out.doubleCatchChance += b.value * mult;
+      const v = (b.value || 0) * mult;
+      out.goldMultiplier += v;
+      out.luckBonus += v;
+      out.fishingSpeedBonus += v * 0.7;
+      out.doubleCatchChance += v * 0.7;
     }
     if (b.type === 'mythic_mastery') {
       const base = b.value || 0.25;
@@ -2485,12 +3270,12 @@ class FishingGame {
       out.doubleCatchChance += (base * 0.4) * mult;
     }
     if (b.type === 'event_blood_moon') {
-      out.goldMultiplier += (b.value || 0.50) * mult;
-      out.luckBonus += (b.luck || 0.25) * mult;
+      out.goldMultiplier += (b.value || 0.15) * mult;
+      out.luckBonus += (b.luck || 0.15) * mult;
     }
     if (b.type === 'event_eclipse') {
-      out.fishingSpeedBonus += (b.value || 0.40) * mult;
-      out.doubleCatchChance += (b.double || 0.35) * mult;
+      out.fishingSpeedBonus += (b.value || 0.15) * mult;
+      out.doubleCatchChance += (b.double || 0.15) * mult;
     }
   }
 
@@ -2507,19 +3292,40 @@ class FishingGame {
       this.getFishBuffs(fish).forEach(b => this._applyFishBuff(b, 1.5, out));
     });
 
-    const rod = RODS.find(r => r.id === this.selectedRodId);
-    if (rod) { out.luckBonus += rod.luckBonus || 0; out.fishingSpeedBonus += rod.speedBonus || 0; }
+    if (this.currentWorld === 2) {
+      // Mundo 2: Progressão limpa baseada em equipamentos e upgrades abissais
+      const rod = RODS_WORLD_2.find(r => r.id === this.selectedRodId);
+      if (rod) {
+        out.luckBonus += rod.luckBonus || 0;
+        out.fishingSpeedBonus += rod.fishingSpeedBonus || 0;
+        out.doubleCatchChance += rod.doubleCatchChance || 0;
+      }
 
-    const bait = BAITS.find(b => b.id === this.selectedBaitId);
-    if (bait) {
-      out.luckBonus += (bait.luckMultiplier - 1.0) * 0.15;
-      out.doubleCatchChance += bait.doubleCatchBonus || 0;
+      const bait = BAITS_WORLD_2.find(b => b.id === this.selectedBaitId);
+      if (bait) {
+        out.luckBonus += (bait.luckMultiplier - 1.0) * 0.20;
+        out.doubleCatchChance += bait.doubleCatchBonus || 0;
+      }
+
+      const boia = UPGRADES_WORLD_2.find(u => u.id === 'boia_sorte');
+      if (boia) out.luckBonus += boia.getValue(this.upgradeLevels.boia_sorte || 0);
+      const rede = UPGRADES_WORLD_2.find(u => u.id === 'rede_dupla');
+      if (rede) out.doubleCatchChance += rede.getValue(this.upgradeLevels.rede_dupla || 0);
+    } else {
+      const rod = RODS.find(r => r.id === this.selectedRodId);
+      if (rod) { out.luckBonus += rod.luckBonus || 0; out.fishingSpeedBonus += rod.speedBonus || 0; }
+
+      const bait = BAITS.find(b => b.id === this.selectedBaitId);
+      if (bait) {
+        out.luckBonus += (bait.luckMultiplier - 1.0) * 0.15;
+        out.doubleCatchChance += bait.doubleCatchBonus || 0;
+      }
+
+      const boia = UPGRADES.find(u => u.id === 'boia_sorte');
+      if (boia) out.luckBonus += boia.getValue(this.upgradeLevels.boia_sorte || 0);
+      const rede = UPGRADES.find(u => u.id === 'rede_dupla');
+      if (rede) out.doubleCatchChance += rede.getValue(this.upgradeLevels.rede_dupla || 0);
     }
-
-    const boia = UPGRADES.find(u => u.id === 'boia_sorte');
-    if (boia) out.luckBonus += boia.getValue(this.upgradeLevels.boia_sorte || 0);
-    const rede = UPGRADES.find(u => u.id === 'rede_dupla');
-    if (rede) out.doubleCatchChance += rede.getValue(this.upgradeLevels.rede_dupla || 0);
 
     // Buffs temporários (golden fish)
     const now = Date.now();
@@ -2551,11 +3357,12 @@ class FishingGame {
       out.doubleCatchChance += 0.15;
     }
 
-    // Caps dinâmicos: Ouro e Sorte começam com base cap de 200% (2.0) e expandem com os olhos
-    const goldCap = 2.00 + (fe.gold || 0) * 0.01;
-    const luckCap = 2.00 + (fe.luck || 0) * 0.01;
-    const speedCap = Math.min(0.85, 0.60 + (fe.speed || 0) * 0.01);
-    const doubleCap = Math.min(0.90, 0.60 + (fe.double || 0) * 0.01);
+    // Caps dinâmicos: Mundo 2 limite de ouro e sorte fixado em 250% (2.50) + meta-olhos
+    const isW2 = this.currentWorld === 2;
+    const goldCap = (isW2 ? 2.50 : 2.00) + (fe.gold || 0) * 0.01;
+    const luckCap = (isW2 ? 2.50 : 2.00) + (fe.luck || 0) * 0.01;
+    const speedCap = Math.min(0.95, (isW2 ? 0.85 : 0.60) + (fe.speed || 0) * 0.01);
+    const doubleCap = Math.min(1.00, (isW2 ? 1.00 : 0.60) + (fe.double || 0) * 0.01);
 
     return {
       goldMultiplier: Math.min(out.goldMultiplier, goldCap),
@@ -2569,6 +3376,12 @@ class FishingGame {
   // ── MECÂNICA DE PESCA ──
   fish(isAuto = false) {
     if (this.isFishing && !isAuto) return;
+
+    // Se estiver usando a Isca do Kraken Ancestral, dispara o evento cinemático de transição
+    if (this.selectedBaitId === 'isca_kraken_ancestral' && !isAuto) {
+      this.triggerKrakenCinematic();
+      return;
+    }
 
     const maxInv = this.getMaxInventory();
     if (this.inventory.length >= maxInv) {
@@ -2587,6 +3400,14 @@ class FishingGame {
     sound.playCast();
     this.createWaterRipple();
 
+    // Fisgada visual da bóia e anzol na água
+    const rigInner = document.getElementById('hook-rig-inner');
+    if (rigInner) {
+      rigInner.classList.remove('hook-tug-active');
+      void rigInner.offsetWidth;
+      rigInner.classList.add('hook-tug-active');
+    }
+
     const buffs = this.getActiveBuffs();
     const caught = [];
     caught.push(this.rollFish(buffs));
@@ -2604,6 +3425,10 @@ class FishingGame {
         sound.vibrateCatch(fish.rarity);
         this.showCatchNotification(fish);
         this.recordDiscovery(fish);
+        this.checkFirstRarityCatch(fish);
+        if (this.currentWorld === 2) {
+          this.checkSubmarinePartDrop(this.activeWorld2Biome || 'recife_bioluminescente');
+        }
         if (this.waterRenderer) this.waterRenderer.addSwimmingFish(fish.icon);
         this.renderHeader();
         this.renderInventory();
@@ -2673,13 +3498,23 @@ class FishingGame {
       rand -= weight;
     }
 
-    const pool = FISH_LIST.filter(f => {
-      if (f.rarity !== selectedRarity) return false;
-      // Peixes exclusivos de horário só podem ser pescados em seu período do dia
-      if (f.timeExclusive && f.timeExclusive !== this.timeOfDay) return false;
-      return true;
-    });
-    const template = pool[Math.floor(Math.random() * pool.length)] || FISH_LIST.find(f => f.rarity === selectedRarity) || FISH_LIST[0];
+    let template;
+    if (this.currentWorld === 2) {
+      const activeBiome = this.activeWorld2Biome || 'recife_bioluminescente';
+      const biomeFish = FISH_WORLD_2.filter(f => f.biome === activeBiome);
+      const pool = biomeFish.filter(f => f.rarity === selectedRarity);
+      template = pool[Math.floor(Math.random() * pool.length)] ||
+                 biomeFish[Math.floor(Math.random() * biomeFish.length)] ||
+                 FISH_WORLD_2[0];
+    } else {
+      const pool = FISH_LIST.filter(f => {
+        if (f.rarity !== selectedRarity) return false;
+        // Peixes exclusivos de horário só podem ser pescados em seu período do dia
+        if (f.timeExclusive && f.timeExclusive !== this.timeOfDay) return false;
+        return true;
+      });
+      template = pool[Math.floor(Math.random() * pool.length)] || FISH_LIST.find(f => f.rarity === selectedRarity) || FISH_LIST[0];
+    }
 
     let weight = +(template.minWeight + Math.random() * (template.maxWeight - template.minWeight)).toFixed(2);
     if (this.forgeUpgrades && this.forgeUpgrades['linha_reforcada']) {
@@ -2688,25 +3523,31 @@ class FishingGame {
     const weightFactor = weight / template.minWeight;
     const rawValue = Math.round(template.baseValue * Math.pow(weightFactor, 0.7));
 
-    const generatedBuffs = generateFishBuffs(template.id, template.rarity);
+    let generatedBuffs = [];
+    if (this.currentWorld === 2) {
+      generatedBuffs = template.buff ? [template.buff] : [];
+    } else {
+      generatedBuffs = generateFishBuffs(template.id, template.rarity);
+    }
 
     let specialAura = null;
     if (this.bloodMoonEventActive) {
-      if (Math.random() < 0.5) {
-        specialAura = 'lua_sangrenta';
-        generatedBuffs.push({
-          type: 'event_blood_moon',
-          value: 0.50,
-          luck: 0.25,
-          text: '+50% Ouro & +25% Sorte (Lua Sangrenta)'
-        });
-      } else {
+      const auraRoll = Math.random();
+      if (auraRoll < 0.10) {
         specialAura = 'eclipse';
         generatedBuffs.push({
           type: 'event_eclipse',
-          value: 0.40,
-          double: 0.35,
-          text: '+40% Vel. Pesca & +35% Dupla (Eclipse)'
+          value: 0.15,
+          double: 0.15,
+          text: '+15% Vel. Pesca & +15% Dupla (Eclipse)'
+        });
+      } else if (auraRoll < 0.20) {
+        specialAura = 'lua_sangrenta';
+        generatedBuffs.push({
+          type: 'event_blood_moon',
+          value: 0.15,
+          luck: 0.15,
+          text: '+15% Ouro & +15% Sorte (Lua Sangrenta)'
         });
       }
     }
@@ -2828,7 +3669,8 @@ class FishingGame {
 
   // ── LOJA ──
   buyRod(rodId) {
-    const rod = RODS.find(r => r.id === rodId);
+    const rodList = this.currentWorld === 2 ? RODS_WORLD_2 : RODS;
+    const rod = rodList.find(r => r.id === rodId);
     if (!rod || this.unlockedRods.includes(rodId)) return;
     if (this.gold < rod.price) { this.showToast('OURO INSUFICIENTE!', 'error'); return; }
     this.gold -= rod.price;
@@ -2849,8 +3691,9 @@ class FishingGame {
   }
 
   buyBait(baitId) {
-    const bait = BAITS.find(b => b.id === baitId);
-    if (!bait || this.unlockedBaits.includes(baitId)) return;
+    const baitList = this.currentWorld === 2 ? BAITS_WORLD_2 : BAITS;
+    const bait = baitList.find(b => b.id === baitId);
+    if (!bait || bait.unbuyable || this.unlockedBaits.includes(baitId)) return;
     if (this.gold < bait.price) { this.showToast('OURO INSUFICIENTE!', 'error'); return; }
     this.gold -= bait.price;
     this.unlockedBaits.push(baitId);
@@ -2870,7 +3713,8 @@ class FishingGame {
   }
 
   buyUpgrade(upgradeId) {
-    const u = UPGRADES.find(u => u.id === upgradeId);
+    const upgradeList = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+    const u = upgradeList.find(u => u.id === upgradeId);
     if (!u) return;
     const lvl = this.upgradeLevels[upgradeId] || 0;
     if (lvl >= u.maxLevel) { this.showToast('NÍVEL MÁXIMO!', 'info'); return; }
@@ -2933,9 +3777,10 @@ class FishingGame {
         btn.className = 'px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-emerald-600 text-slate-950 border-emerald-400 hover:bg-emerald-500';
       }
 
-      const u = UPGRADES.find(u => u.id === 'auto_pescador');
+      const upgradeList = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+      const u = upgradeList.find(u => u.id === 'auto_pescador');
       const buffs = this.getActiveBuffs();
-      const baseMs = u.getValue(lvl) * 1000;
+      const baseMs = (u ? u.getValue(lvl) : 8) * 1000;
       const finalMs = baseMs * (1 - buffs.autoFishSpeedBonus);
       const now = Date.now();
       const elapsed = now - (this.lastAutoFishTime || 0);
@@ -2995,7 +3840,8 @@ class FishingGame {
         countdownEl.className = 'text-emerald-300 font-bold bg-slate-950 px-1.5 py-0.5 border border-slate-700';
       }
 
-      const u = UPGRADES.find(up => up.id === 'auto_vendedor');
+      const sellerUpgrades = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+      const u = sellerUpgrades.find(up => up.id === 'auto_vendedor');
       const intervalSec = u ? u.getValue(lvl) : 60;
       const intervalMs = intervalSec * 1000;
       const now = Date.now();
@@ -3109,10 +3955,257 @@ class FishingGame {
     this.renderAll();
   }
 
+
+  // ═══════════════════════════════════════════
+  // MUNDO 2: SISTEMA DE BIOMAS & BATISCAFO
+  // ═══════════════════════════════════════════
+  switchWorld2Biome(biomeId) {
+    const biome = WORLD2_BIOMES.find(b => b.id === biomeId);
+    if (!biome) return;
+    this.setWorld2Biome(biomeId);
+    sound.playClick?.();
+    sound.playWaterSplash?.();
+    this.showToast(`🌊 Submergiu em: ${biome.name} (${biome.depth})`, 'special');
+  }
+
+  syncWorld2UI() {
+    const isW2 = this.currentWorld === 2;
+    const btnSubmarine = document.getElementById('btn-open-submarine');
+    const btnChapter1 = document.getElementById('btn-open-chapter1');
+    const fishermanPier = document.getElementById('fisherman-pier');
+    const world2SubPier = document.getElementById('world2-sub-pier');
+    const world1Stars = document.getElementById('world1-sky-stars');
+
+    // Botão de ir para Mundo 3: Ocultado a pedido do usuário
+    if (btnSubmarine) {
+      btnSubmarine.classList.add('hidden');
+      btnSubmarine.style.display = 'none';
+    }
+
+    if (isW2) {
+      if (btnChapter1) btnChapter1.classList.add('hidden');
+      if (fishermanPier) fishermanPier.classList.add('hidden');
+      if (world2SubPier) world2SubPier.classList.remove('hidden');
+      if (world1Stars) world1Stars.classList.add('hidden');
+
+      this.waterRenderer?.setWorldMode(true, this.activeWorld2Biome);
+      this.updateFisherman();
+      this.updateDiverVisual();
+      this.applyTimeOfDay();
+      this.applyWorld2BiomeScenery(this.activeWorld2Biome);
+    } else {
+      if (fishermanPier) fishermanPier.classList.remove('hidden');
+      if (world2SubPier) world2SubPier.classList.add('hidden');
+      if (world1Stars) world1Stars.classList.remove('hidden');
+      document.getElementById('world2-lake-scenery')?.classList.add('hidden');
+      this.waterRenderer?.setWorldMode(false);
+      this.updateFisherman();
+      this.updateDiverVisual();
+      this.applyTimeOfDay();
+    }
+  }
+
+  renderWorld2BiomesTabs() {
+    const container = document.getElementById('world2-biomes-tabs');
+    if (!container) return;
+
+    container.innerHTML = WORLD2_BIOMES.map(b => {
+      const isActive = this.activeWorld2Biome === b.id;
+      return `
+        <button onclick="window.game.switchWorld2Biome('${b.id}')" 
+          title="${b.name} (${b.depth} · ${b.pressure})\n${b.desc}" 
+          class="pixel-btn px-2 py-1 text-[7px] sm:text-[7.5px] font-bold border transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
+            isActive 
+              ? 'bg-cyan-950/90 text-cyan-200 border-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.6)]' 
+              : 'bg-slate-900/80 text-slate-400 border-slate-700 hover:text-slate-200'
+          }" style="font-family:var(--font-pixel);">
+          <span>${b.icon}</span>
+          <span>${b.shortName}</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  checkSubmarinePartDrop(biomeId) {
+    const part = ASCENSION_PARTS.find(p => p.biome === biomeId);
+    if (!part || this.ascensionParts[part.id]) return;
+
+    // 4% de chance por captura no bioma
+    if (Math.random() < 0.04) {
+      this.ascensionParts[part.id] = true;
+      this.saveGame();
+      setTimeout(() => {
+        sound.playUpgrade?.();
+        this.showToast(`★ PEÇA DO BATISCAFO RESGATADA: ${part.name}! ★`, 'legendary');
+        this.syncWorld2UI();
+      }, 400);
+    }
+  }
+
+  openSubmarineModal() {
+    sound.playClick?.();
+    this.renderSubmarineModal();
+    const modal = document.getElementById('submarine-modal');
+    modal?.classList.remove('hidden');
+  }
+
+  closeSubmarineModal() {
+    sound.playClick?.();
+    const modal = document.getElementById('submarine-modal');
+    modal?.classList.add('hidden');
+  }
+
+  renderSubmarineModal() {
+    const grid = document.getElementById('submarine-parts-grid');
+    const progEl = document.getElementById('submarine-parts-progress');
+    const btnAssemble = document.getElementById('btn-assemble-submarine');
+
+    const total = ASCENSION_PARTS.length;
+    const foundCount = ASCENSION_PARTS.filter(p => this.ascensionParts[p.id]).length;
+
+    if (progEl) {
+      progEl.textContent = `PEÇAS COLETADAS: ${foundCount} / ${total}`;
+    }
+
+    if (grid) {
+      grid.innerHTML = ASCENSION_PARTS.map(part => {
+        const found = Boolean(this.ascensionParts[part.id]);
+        const biome = WORLD2_BIOMES.find(b => b.id === part.biome);
+        return `
+          <div class="p-2.5 border-2 ${found ? 'bg-cyan-950/40 border-cyan-500/80' : 'bg-slate-950/80 border-slate-800 opacity-60'} flex items-center gap-2.5">
+            <div class="w-9 h-9 flex items-center justify-center text-xl bg-slate-900 border border-slate-700 shrink-0">
+              ${part.icon}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-1">
+                <h4 class="text-[8.5px] font-bold ${found ? 'text-cyan-300' : 'text-slate-400'} leading-tight truncate" style="font-family:var(--font-pixel);">${part.name}</h4>
+                <span class="text-[6.5px] font-bold px-1 py-0.5 border shrink-0 ${found ? 'bg-emerald-950 text-emerald-300 border-emerald-600' : 'bg-red-950 text-red-400 border-red-800'}" style="font-family:var(--font-pixel);">
+                  ${found ? 'RESGATADO' : 'PERDIDO'}
+                </span>
+              </div>
+              <p class="text-[7.5px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${part.desc}</p>
+              <div class="text-[6.5px] text-amber-400/90 mt-1 font-mono">Bioma: ${biome ? biome.shortName : '--'}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (btnAssemble) {
+      if (this.submarineAssembled) {
+        btnAssemble.disabled = false;
+        btnAssemble.className = 'pixel-btn w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-950 font-bold text-[9.5px] border border-emerald-400 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.7)]';
+        btnAssemble.textContent = '🌌 EXPEDIÇÃO AO MUNDO 3 PRONTA (EM BREVE)';
+        btnAssemble.onclick = () => {
+          sound.playUpgrade?.();
+          this.showToast('🚀 O Batiscafo está 100% equipado para o MUNDO 3! A nova dimensão será liberada na próxima grande expansão!', 'legendary');
+        };
+      } else if (foundCount >= total) {
+        btnAssemble.disabled = false;
+        btnAssemble.className = 'pixel-btn w-full py-2.5 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold text-[9.5px] border border-cyan-400 cursor-pointer animate-pulse shadow-[0_0_15px_rgba(6,182,212,0.8)]';
+        btnAssemble.textContent = '🚀 MONTAR BATISCAFO & PREPARAR ASCENSÃO AO MUNDO 3!';
+        btnAssemble.onclick = () => this.assembleSubmarine();
+      } else {
+        btnAssemble.disabled = true;
+        btnAssemble.className = 'pixel-btn w-full py-2.5 bg-slate-800 text-slate-500 font-bold text-[9px] border border-slate-700 cursor-not-allowed';
+        btnAssemble.textContent = `COLETE AS ${total - foundCount} PEÇAS RESTANTES`;
+        btnAssemble.onclick = null;
+      }
+    }
+  }
+
+  assembleSubmarine() {
+    sound.playUpgrade?.();
+    this.submarineAssembled = true;
+    this.saveGame();
+    this.showToast('★ O BATISCAFO FOI CONSTRUÍDO! PREPARANDO ROTA PARA O MUNDO 3! ★', 'legendary');
+    this.renderSubmarineModal();
+    this.syncWorld2UI();
+  }
+
+  travelBetweenWorlds(targetWorld) {
+    if (targetWorld === this.currentWorld) return;
+    sound.playUpgrade?.();
+
+    if (this.currentWorld === 2 && targetWorld === 1) {
+      this.showToast('As correntes do Abismo se fecharam. Seu caminho é sempre em frente rumo ao MUNDO 3!', 'warning');
+      return;
+      // Salva snapshot do Mundo 2
+      this.world2SavedData = {
+        gold: this.gold,
+        inventory: [...this.inventory],
+        aquarium: [...this.aquarium],
+        selectedRodId: this.selectedRodId,
+        unlockedRods: [...this.unlockedRods],
+        selectedBaitId: this.selectedBaitId,
+        unlockedBaits: [...this.unlockedBaits],
+        upgradeLevels: { ...this.upgradeLevels },
+        activeWorld2Biome: this.activeWorld2Biome
+      };
+      // Restaura dados do Mundo 1
+      if (this.world1Data) {
+        this.gold = this.world1Data.gold || 0;
+        this.inventory = [...(this.world1Data.inventory || [])];
+        this.aquarium = [...(this.world1Data.aquarium || [])];
+        this.selectedRodId = this.world1Data.selectedRodId || 'vara_bambu';
+        this.unlockedRods = [...(this.world1Data.unlockedRods || ['vara_bambu'])];
+        this.selectedBaitId = this.world1Data.selectedBaitId || 'minhoca';
+        this.unlockedBaits = [...(this.world1Data.unlockedBaits || ['minhoca'])];
+        this.upgradeLevels = { ...this.world1Data.upgradeLevels };
+      }
+      this.currentWorld = 1;
+    } else if (this.currentWorld === 1 && targetWorld === 2) {
+      // Salva snapshot do Mundo 1
+      this.world1Data = {
+        gold: this.gold,
+        inventory: [...this.inventory],
+        aquarium: [...this.aquarium],
+        selectedRodId: this.selectedRodId,
+        unlockedRods: [...this.unlockedRods],
+        selectedBaitId: this.selectedBaitId,
+        unlockedBaits: [...this.unlockedBaits],
+        upgradeLevels: { ...this.upgradeLevels }
+      };
+      // Restaura ou inicializa dados do Mundo 2
+      if (!this.world2SavedData) {
+        this.world2SavedData = {
+          gold: 0,
+          inventory: [],
+          aquarium: [],
+          selectedRodId: 'vara_arpao_basico',
+          unlockedRods: ['vara_arpao_basico'],
+          selectedBaitId: 'isca_plankton_neon',
+          unlockedBaits: ['isca_plankton_neon'],
+          upgradeLevels: { balde: 0, auto_pescador: 0, boia_sorte: 0, rede_dupla: 0, aquario_cap: 0, auto_vendedor: 0 },
+          activeWorld2Biome: 'recife_bioluminescente'
+        };
+      }
+      if (this.world2SavedData) {
+        this.gold = this.world2SavedData.gold || 0;
+        this.inventory = [...(this.world2SavedData.inventory || [])];
+        this.aquarium = [...(this.world2SavedData.aquarium || [])];
+        this.selectedRodId = this.world2SavedData.selectedRodId || 'vara_arpao_basico';
+        this.unlockedRods = [...(this.world2SavedData.unlockedRods || ['vara_arpao_basico'])];
+        this.selectedBaitId = this.world2SavedData.selectedBaitId || 'isca_plankton_neon';
+        this.unlockedBaits = [...(this.world2SavedData.unlockedBaits || ['isca_plankton_neon'])];
+        this.upgradeLevels = { ...this.world2SavedData.upgradeLevels };
+        this.activeWorld2Biome = this.world2SavedData.activeWorld2Biome || 'recife_bioluminescente';
+      }
+      this.currentWorld = 2;
+    }
+
+    this.saveGame();
+    this.closeSubmarineModal();
+    this.showToast(targetWorld === 1 ? '☀️ Você emergiu na superfície! Bem-vindo de volta ao Mundo 1!' : '🌊 O Batiscafo afundou suavemente no Abismo do Mundo 2!', 'special');
+    this.updateFisherman();
+    this.renderAll();
+  }
+
   // ── RENDER ──
   renderAll() {
     this.renderHeader();
     this.syncGameModeUI();
+    this.syncWorld2UI();
     if (this.gameMode === 'ima') {
       this.renderMagnetAll();
     } else {
@@ -3123,11 +4216,12 @@ class FishingGame {
       this.renderStats();
     }
     this.updateAlbumBadge();
+    this.updateChapter1Badge();
   }
 
   renderHeader() {
     const el = document.getElementById('player-gold');
-    if (el) el.textContent = this.gold.toLocaleString('pt-BR');
+    if (el) el.textContent = this.gold.toLocaleString('pt-BR') + ' G';
     const inv = document.getElementById('inv-counter-badge');
     if (inv) {
       if (this.invTab === 'aquarium') {
@@ -3175,6 +4269,7 @@ class FishingGame {
     if (!c) return;
     const b = this.getActiveBuffs();
     const pills = [];
+
     if (b.goldMultiplier > 0)     pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-amber-700 text-amber-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.goldMultiplier*100)}% OURO</span>`);
     if (b.luckBonus > 0)          pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-purple-700 text-purple-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.luckBonus*100)}% SORTE</span>`);
     if (b.fishingSpeedBonus > 0)  pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-cyan-700 text-cyan-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.fishingSpeedBonus*100)}% VEL</span>`);
@@ -3191,11 +4286,13 @@ class FishingGame {
     let html = '';
 
     if (this.activeTab === 'varas') {
-      html = RODS.map(rod => {
+      const rodList = this.currentWorld === 2 ? RODS_WORLD_2 : RODS;
+      html = rodList.map(rod => {
         const owned = this.unlockedRods.includes(rod.id);
         const equipped = this.selectedRodId === rod.id;
         const afford = this.gold >= rod.price;
         const iconURL = getRodIconDataURL(rod.id, 2);
+        const powerDisplay = rod.power ? `${rod.power}x` : `T${rod.tier || 1}`;
         return `
           <div class="p-2.5 border-2 ${equipped ? 'border-amber-500 bg-amber-950/30' : 'border-slate-800 bg-slate-900/80'} pixel-border-thin">
             <div class="flex items-start gap-2">
@@ -3209,15 +4306,17 @@ class FishingGame {
                 </div>
                 <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${rod.desc}</p>
                 <div class="flex flex-wrap gap-1.5 mt-1.5">
-                  <span class="text-[8px] text-cyan-400" style="font-family:var(--font-pixel);">PWR:${rod.power}x</span>
+                  <span class="text-[8px] text-cyan-400" style="font-family:var(--font-pixel);">PWR:${powerDisplay}</span>
                   ${rod.luckBonus > 0 ? `<span class="text-[8px] text-purple-400" style="font-family:var(--font-pixel);">+${Math.round(rod.luckBonus*100)}%SRT</span>` : ''}
+                  ${(rod.fishingSpeedBonus || rod.speedBonus) > 0 ? `<span class="text-[8px] text-cyan-300" style="font-family:var(--font-pixel);">+${Math.round((rod.fishingSpeedBonus || rod.speedBonus)*100)}%VEL</span>` : ''}
+                  ${rod.doubleCatchChance > 0 ? `<span class="text-[8px] text-emerald-400" style="font-family:var(--font-pixel);">+${Math.round(rod.doubleCatchChance*100)}%DUP</span>` : ''}
                 </div>
               </div>
             </div>
             <div class="mt-2">
               ${owned
                 ? (equipped
-                  ? `<button disabled class="w-full py-1 bg-amber-900/40 text-amber-400 text-[10px] border border-amber-700 cursor-default" style="font-family:var(--font-pixel);">EM USO</button>`
+                  ? `<button disabled class="pixel-btn w-full py-1 bg-amber-950/80 text-amber-300 text-[10px] border-amber-600 cursor-default" style="font-family:var(--font-pixel);">EM USO</button>`
                   : `<button onclick="window.game.equipRod('${rod.id}')" class="pixel-btn w-full py-1 bg-slate-700 text-slate-200 text-[10px] border-slate-600" style="font-family:var(--font-pixel);">EQUIPAR</button>`)
                 : `<button onclick="window.game.buyRod('${rod.id}')" class="pixel-btn w-full py-1 ${afford ? 'bg-amber-600 text-slate-950' : 'bg-slate-800 text-slate-600 cursor-not-allowed'} text-[10px]" style="font-family:var(--font-pixel);">COMPRAR ${rod.price.toLocaleString('pt-BR')}G</button>`
               }
@@ -3225,7 +4324,8 @@ class FishingGame {
           </div>`;
       }).join('');
     } else if (this.activeTab === 'iscas') {
-      html = BAITS.map(bait => {
+      const baitList = this.currentWorld === 2 ? BAITS_WORLD_2 : BAITS.filter(bait => !bait.unbuyable || this.unlockedBaits.includes(bait.id));
+      html = baitList.map(bait => {
         const owned = this.unlockedBaits.includes(bait.id);
         const equipped = this.selectedBaitId === bait.id;
         const afford = this.gold >= bait.price;
@@ -3251,7 +4351,7 @@ class FishingGame {
             <div class="mt-2">
               ${owned
                 ? (equipped
-                  ? `<button disabled class="w-full py-1 bg-cyan-900/40 text-cyan-400 text-[10px] border border-cyan-700 cursor-default" style="font-family:var(--font-pixel);">EM USO</button>`
+                  ? `<button disabled class="pixel-btn w-full py-1 bg-cyan-950/80 text-cyan-300 text-[10px] border-cyan-600 cursor-default" style="font-family:var(--font-pixel);">EM USO</button>`
                   : `<button onclick="window.game.equipBait('${bait.id}')" class="pixel-btn w-full py-1 bg-slate-700 text-slate-200 text-[10px] border-slate-600" style="font-family:var(--font-pixel);">EQUIPAR</button>`)
                 : `<button onclick="window.game.buyBait('${bait.id}')" class="pixel-btn w-full py-1 ${afford ? 'bg-cyan-600 text-slate-950' : 'bg-slate-800 text-slate-600 cursor-not-allowed'} text-[10px]" style="font-family:var(--font-pixel);">COMPRAR ${bait.price.toLocaleString('pt-BR')}G</button>`
               }
@@ -3259,7 +4359,8 @@ class FishingGame {
           </div>`;
       }).join('');
     } else {
-      html = UPGRADES.map(u => {
+      const upgradeList = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+      html = upgradeList.map(u => {
         const lvl = this.upgradeLevels[u.id] || 0;
         const isMax = lvl >= u.maxLevel;
         const price = Math.round(u.basePrice * Math.pow(u.priceMultiplier, lvl));
@@ -3301,7 +4402,7 @@ class FishingGame {
             </div>
             <div class="mt-2">
               ${isMax
-                ? `<button disabled class="w-full py-1 bg-slate-800 text-slate-500 text-[10px] border border-slate-700 cursor-default" style="font-family:var(--font-pixel);">MAX ★</button>`
+                ? `<button disabled class="pixel-btn w-full py-1 bg-slate-900 text-slate-500 text-[10px] border-slate-800 cursor-default" style="font-family:var(--font-pixel);">MAX ★</button>`
                 : `<button onclick="window.game.buyUpgrade('${u.id}')" class="pixel-btn w-full py-1 ${afford ? 'bg-emerald-600 text-slate-950' : 'bg-slate-800 text-slate-600 cursor-not-allowed'} text-[10px]" style="font-family:var(--font-pixel);">LV.${lvl+1} = ${price.toLocaleString('pt-BR')}G</button>`
               }
             </div>
@@ -3328,6 +4429,9 @@ class FishingGame {
     }
 
     const buffs = this.getActiveBuffs();
+    const canSacrifice = this.unlockedRods.includes('vara_travessia') && 
+                         this.unlockedBaits.includes('essencia_travessia') && 
+                         (this.sacrificedFishCount || 0) < 15;
 
     // Ordenação configurável
     const rarityRank = { SECRETO: 7, MITICO: 6, LENDARIO: 5, EPICO: 4, RARO: 3, INCOMUM: 2, COMUM: 1 };
@@ -3359,31 +4463,46 @@ class FishingGame {
           : '');
 
       return `
-        <div class="group p-2 border-2 bg-slate-900/90 flex items-center justify-between gap-1.5 sm:gap-2 rarity-${fish.rarity} ${auraClass} ${isTriple ? 'border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.4)]' : (isDouble ? 'border-amber-400/80' : '')}" style="background:${r.bg};">
-          <div class="flex items-center gap-2 min-w-0 flex-1">
-            <img src="${spriteURL}" class="fish-icon-canvas w-11 h-7 sm:w-12 sm:h-8 object-contain shrink-0 ${isTriple ? 'animate-pulse' : ''}" alt="${fish.name}" style="image-rendering:pixelated;">
+        <div class="group p-2 border-2 bg-slate-900/95 flex flex-col gap-1.5 rarity-${fish.rarity} ${auraClass} ${isTriple ? 'border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.4)]' : (isDouble ? 'border-amber-400/80' : '')}" style="background:${r.bg};">
+          <!-- Linha Superior: Ícone do Peixe + Nome + Raridade + Peso + Valor -->
+          <div class="flex items-start gap-2.5 min-w-0 w-full">
+            <div class="w-12 h-10 sm:w-13 sm:h-10 bg-black/40 border border-slate-700/60 flex items-center justify-center p-0.5 shrink-0">
+              <img src="${spriteURL}" class="fish-icon-canvas max-w-full max-h-full object-contain ${isTriple ? 'animate-pulse' : ''}" alt="${fish.name}" style="image-rendering:pixelated;">
+            </div>
             <div class="min-w-0 flex-1">
-              <div class="flex items-baseline gap-1.5 flex-wrap">
-                <span class="text-[9px] sm:text-[10px] font-bold ${isTriple ? 'text-red-300' : 'text-slate-100'} leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
-                <span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[9.5px] sm:text-[10.5px] font-bold ${isTriple ? 'text-red-300' : 'text-slate-100'} leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
+                <span class="text-[6.5px] sm:text-[7px] font-bold px-1 py-0.2 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
                 ${auraBadge}
-                ${isTriple ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
+                ${isTriple ? '<span class="text-[6.5px] sm:text-[7px] font-bold px-1 py-0.2 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[6.5px] sm:text-[7px] font-bold px-1 py-0.2 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
               </div>
-              <div class="flex items-center gap-1.5 text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">
-                <span>${fish.weight}kg</span>
-                <span class="text-amber-300 font-bold">${sell}G</span>
+              <div class="flex items-center gap-2.5 text-[8px] sm:text-[9px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">
+                <span>⚖️ ${fish.weight}kg</span>
+                <span class="text-amber-300 font-bold">💰 ${sell.toLocaleString('pt-BR')} G</span>
               </div>
-              ${hasBuff ? `
-                <div class="flex flex-col gap-0.5 mt-1">
-                  ${buffsList.map(b => `<span class="text-[8px] ${isTriple ? 'text-red-300' : 'text-purple-300'} leading-snug break-words" style="font-family:var(--font-pixel);">★ ${b.text}</span>`).join('')}
-                </div>
-              ` : ''}
             </div>
           </div>
-          <div class="flex items-center gap-1 shrink-0">
-            ${hasBuff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário" class="px-1.5 py-1 border text-[10px] bg-purple-900/40 border-purple-600 text-purple-300 hover:bg-purple-800/60">${PIXEL_ICONS.aquarium}</button>` : ''}
-            <button onclick="window.game.toggleLockFish('${fish.uid}')" class="px-1.5 py-1 border text-[10px] ${fish.locked ? 'bg-amber-900/40 border-amber-600 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-500 hover:text-slate-200'}">${fish.locked ? PIXEL_ICONS.lockClosed : PIXEL_ICONS.lockOpen}</button>
-            <button onclick="window.game.sellFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} class="pixel-btn px-1.5 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 cursor-not-allowed border-slate-800' : 'bg-emerald-800 text-emerald-200 border-emerald-600'} text-[9px] sm:text-[10px]" style="font-family:var(--font-pixel);">SELL</button>
+
+          <!-- Linha do Meio: Bônus e Atributos (se houver) -->
+          ${hasBuff ? `
+            <div class="bg-black/35 border border-slate-800/80 px-2 py-1 flex flex-col gap-0.5 text-[7.5px] sm:text-[8px]" style="font-family:var(--font-pixel);">
+              ${buffsList.map(b => `<span class="${isTriple ? 'text-red-300' : 'text-purple-300'} leading-tight whitespace-normal">★ ${b.text}</span>`).join('')}
+            </div>
+          ` : ''}
+
+          <!-- Linha Inferior: Barra de Ações com largura total (sem colisão com o texto) -->
+          <div class="flex items-center justify-end gap-1.5 w-full pt-1 border-t border-slate-800/80 flex-wrap">
+            ${(Boolean(this.firstRarityCatches?.MITICO) && !this.speciesDonations?.[fish.id] && !this.donatedSpeciesHistory?.[fish.id]) ? `
+              <button onclick="window.game.donateFish('${fish.id}', '${fish.uid}')" ${fish.locked ? 'disabled' : ''} title="Doar 1 exemplar desta espécie para o Santuário dos Olhos de Peixe" class="pixel-btn px-2 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-amber-950 border border-amber-500 text-amber-300 hover:bg-amber-900'} text-[7.5px] sm:text-[8px] font-bold shrink-0 flex items-center gap-1 cursor-pointer" style="font-family:var(--font-pixel);">
+                <span>🏺</span><span>DOAR</span>
+              </button>
+            ` : ''}
+            ${canSacrifice && (fish.rarity === 'LENDARIO' || fish.rarity === 'MITICO') ? `
+              <button onclick="window.game.sacrificeSpecificFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} title="Sacrificar no Altar das Almas" class="pixel-btn px-2 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-purple-950 border border-rose-500 text-rose-300 hover:bg-rose-900'} text-[7.5px] sm:text-[8px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">SACRIFICAR</button>
+            ` : ''}
+            ${hasBuff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário (+50% de bônus)" class="pixel-btn px-2 py-1 text-[10px] bg-purple-950/80 border-purple-600 text-purple-300 hover:bg-purple-900 shrink-0 cursor-pointer">${PIXEL_ICONS.aquarium}</button>` : ''}
+            <button onclick="window.game.toggleLockFish('${fish.uid}')" title="${fish.locked ? 'Destravar peixe' : 'Travar peixe'}" class="pixel-btn px-2 py-1 text-[10px] ${fish.locked ? 'bg-amber-950/90 border-amber-500 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'} shrink-0 cursor-pointer">${fish.locked ? PIXEL_ICONS.lockClosed : PIXEL_ICONS.lockOpen}</button>
+            <button onclick="window.game.sellFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} class="pixel-btn px-3 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 cursor-not-allowed border-slate-800' : 'bg-emerald-800 text-emerald-200 border-emerald-600 hover:bg-emerald-700'} text-[9px] sm:text-[10px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">SELL</button>
           </div>
         </div>`;
     }).join('');
@@ -3481,8 +4600,8 @@ class FishingGame {
   renderStats() {
     const c = document.getElementById('stat-catches');
     if (c) c.textContent = this.totalCatches.toLocaleString('pt-BR');
-    const g = document.getElementById('stat-total-gold');
-    if (g) g.textContent = this.totalGoldEarned.toLocaleString('pt-BR');
+    const g = document.getElementById('player-gold') || document.getElementById('stat-total-gold');
+    if (g) g.textContent = this.gold.toLocaleString('pt-BR') + ' G';
   }
 
   // ── EFEITOS VISUAIS ──
@@ -3818,7 +4937,7 @@ class FishingGame {
         </div>
         <div style="font-family:var(--font-pixel); font-size:9px; color:#fca5a5; margin-top:8px; line-height:1.6;">
           O Mar se transformou em Sangue por <span style="color:#ffffff; font-weight:bold;">60 segundos</span>!<br>
-          Peixes capturados recebem <span style="color:#ef4444; font-weight:bold;">Aura da Lua Sangrenta</span> (+50% Ouro, +25% Sorte) ou <span style="color:#f87171; font-weight:bold;">Aura do Eclipse</span> (+40% Vel., +35% Dupla)!
+          Peixes capturados têm chance de receber <span style="color:#ef4444; font-weight:bold;">Aura da Lua Sangrenta (10% de chance)</span> (+15% Ouro, +15% Sorte) ou <span style="color:#f87171; font-weight:bold;">Aura do Eclipse (10% de chance)</span> (+15% Vel., +15% Dupla)!
         </div>
       </div>
     `;
@@ -4016,18 +5135,31 @@ class FishingGame {
         this.consoleLog('eclipse / bloodmoon - Inicia o Eclipse Sangrento (60s)', '#f87171');
         this.consoleLog('catch [n]      - Pesca n peixes (default: 1)', '#ccc');
         this.consoleLog('catchid <id> [n] - Pesca peixe por ID numérico (1 a ' + FISH_LIST.length + ')', '#ccc');
+        this.consoleLog('catchall       - Captura todos os ' + FISH_LIST.length + ' peixes do jogo', '#34d399');
         this.consoleLog('maxupgrades    - Maximiza upgrades', '#ccc');
         this.consoleLog('unlockall      - Desbloqueia varas e iscas', '#ccc');
         this.consoleLog('clearinv       - Limpa inventário', '#ccc');
         this.consoleLog('buff <tipo> [s] - Buff temporário (gold/luck/speed/double)', '#ccc');
         this.consoleLog('offline [minutos] - Simula ausência offline/AFK (default: 60)', '#38bdf8');
         this.consoleLog('skiptime / skip [phase] - Pula horário do dia (day/sunset/night)', '#ccc');
+        this.consoleLog('world [1|2] / m1 / m2   - Alterna instantaneamente entre Mundo 1 e Mundo 2', '#38bdf8');
+        this.consoleLog('skipbiome / biome <id>  - Controla o ciclo de 5m de biomas do Mundo 2', '#06b6d4');
         this.consoleLog('time / tod [phase|skip] - Consulta ou define horário do dia', '#ccc');
         this.consoleLog('fisheye [n]    - Adiciona n Olhos de Peixe (default: 1)', '#ccc');
         this.consoleLog('midnight       - Simula virada das 00:00 para coletar Olho', '#ccc');
         this.consoleLog('magnet [tier]  - Desbloqueia ou define Tier da Pesca Magnética (1 a 5)', '#f59e0b');
         this.consoleLog('magnetitem <id> [n] - Adiciona item magnético ao inventário', '#f59e0b');
-        this.consoleLog('magnetall      - Desbloqueia todos os ímãs e itens magnéticos', '#f59e0b');
+        this.consoleLog('=== TESTES DAS NOVAS MECÂNICAS ===', '#ffd700');
+        this.consoleLog('testlendario   - Simula 1º Lendário (desbloqueia Santuário + 1 Olho)', '#38bdf8');
+        this.consoleLog('testmitico     - Simula 1º Mítico (desbloqueia Oferendas no Santuário)', '#ec4899');
+        this.consoleLog('testsecreto    - Simula 1º Secreto (celebração mística)', '#a855f7');
+        this.consoleLog('testrepetir    - Simula 2º peixe da raridade (comprova que não repete)', '#34d399');
+        this.consoleLog('resetprogresso - Reseta Santuário e Oferendas pro início', '#f59e0b');
+        this.consoleLog('liberarsantuario / travarsantuario - Controla acesso ao Santuário', '#ccc');
+        this.consoleLog('liberaroferendas / travaroferendas - Controla aba e botões de doar', '#ccc');
+        this.consoleLog('isca <nome>    - Troca anzol (minhoca, neon, ouro, kraken...)', '#ccc');
+        this.consoleLog('patchnotes     - Abre Notas de Atualização com timer de 5s', '#38bdf8');
+        this.consoleLog('resetpatchnotes- Reseta versão vista para simular 1ª abertura pós-update', '#a855f7');
         this.consoleLog('reset          - Reseta progresso', '#ccc');
         this.consoleLog('clear          - Limpa console', '#ccc');
         break;
@@ -4108,6 +5240,17 @@ class FishingGame {
         }
         break;
 
+      case 'patchnotes':
+      case 'testpatchnotes':
+        this.openPatchNotesModal(true);
+        this.consoleLog('Notas de atualização abertas com timer de 5s!', '#38bdf8');
+        break;
+
+      case 'resetpatchnotes':
+        localStorage.removeItem('fc_last_seen_patch_version');
+        this.consoleLog('Status de versão vista resetado! Ao recarregar a página o modal abrirá automaticamente.', '#a855f7');
+        break;
+
       case 'eclipse':
       case 'bloodmoon':
         this.startBloodMoonEvent(60000);
@@ -4149,21 +5292,22 @@ class FishingGame {
           const generatedBuffs = generateFishBuffs(target.id, target.rarity);
           let specialAura = null;
           if (this.bloodMoonEventActive) {
-            if (Math.random() < 0.5) {
-              specialAura = 'lua_sangrenta';
-              generatedBuffs.push({
-                type: 'event_blood_moon',
-                value: 0.50,
-                luck: 0.25,
-                text: '+50% Ouro & +25% Sorte (Lua Sangrenta)'
-              });
-            } else {
+            const auraRoll = Math.random();
+            if (auraRoll < 0.10) {
               specialAura = 'eclipse';
               generatedBuffs.push({
                 type: 'event_eclipse',
-                value: 0.40,
-                double: 0.35,
-                text: '+40% Vel. Pesca & +35% Dupla (Eclipse)'
+                value: 0.15,
+                double: 0.15,
+                text: '+15% Vel. Pesca & +15% Dupla (Eclipse)'
+              });
+            } else if (auraRoll < 0.20) {
+              specialAura = 'lua_sangrenta';
+              generatedBuffs.push({
+                type: 'event_blood_moon',
+                value: 0.15,
+                luck: 0.15,
+                text: '+15% Ouro & +15% Sorte (Lua Sangrenta)'
               });
             }
           }
@@ -4211,6 +5355,44 @@ class FishingGame {
         break;
       }
 
+      case 'catchall': {
+        let count = 0;
+        const targetList = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+        targetList.forEach(target => {
+          const weight = +(target.minWeight + Math.random() * (target.maxWeight - target.minWeight)).toFixed(2);
+          const weightFactor = weight / target.minWeight;
+          const rawValue = Math.round(target.baseValue * Math.pow(weightFactor, 0.7));
+          const generatedBuffs = generateFishBuffs(target.id, target.rarity);
+          const fish = {
+            uid: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            id: target.id,
+            numId: target.numId,
+            name: target.name,
+            rarity: target.rarity,
+            icon: target.icon,
+            weight,
+            baseValue: rawValue,
+            desc: target.desc,
+            buffs: generatedBuffs,
+            buff: generatedBuffs[0] || null,
+            isDoubleBuff: generatedBuffs.length === 2,
+            isTripleBuff: generatedBuffs.length >= 3 || target.rarity === 'SECRETO',
+            specialAura: target.rarity === 'SECRETO' ? 'void' : null,
+            locked: false
+          };
+          this.inventory.unshift(fish);
+          this.totalCatches++;
+          this.recordDiscovery(fish);
+          count++;
+        });
+        sound.playCatch('MITICO');
+        this.renderAll();
+        this.saveGame();
+        this.consoleLog(`🎣 Sucesso! Todos os ${count} peixes do jogo foram capturados e registrados na Enciclopédia!`, '#34d399');
+        this.showToast(`Capturados todos os ${count} peixes!`, 'success');
+        break;
+      }
+
       case 'maxupgrades':
         UPGRADES.forEach(u => { this.upgradeLevels[u.id] = u.maxLevel; });
         this.consoleLog('Upgrades maximizados!', '#a855f7');
@@ -4221,6 +5403,100 @@ class FishingGame {
         RODS.forEach(r => { if (!this.unlockedRods.includes(r.id)) this.unlockedRods.push(r.id); });
         BAITS.forEach(b => { if (!this.unlockedBaits.includes(b.id)) this.unlockedBaits.push(b.id); });
         this.consoleLog('Todas varas e iscas desbloqueadas!', '#38bdf8');
+        this.renderAll();
+        break;
+
+      case 'world':
+      case 'mundo':
+      case 'm':
+      case 'w': {
+        const target = (arg || '').trim();
+        if (target === '1') {
+          this.travelBetweenWorlds(1);
+          this.consoleLog('☀️ Viajou para o Mundo 1 (Superfície)!', '#fbbf24');
+        } else if (target === '2') {
+          if (this.currentWorld === 2) {
+            this.consoleLog('Você já está no Mundo 2!', '#06b6d4');
+          } else if (this.world2SavedData) {
+            this.travelBetweenWorlds(2);
+            this.consoleLog('🌊 Viajou para o Mundo 2 via Batiscafo!', '#06b6d4');
+          } else {
+            this.enterWorld2Reset();
+            this.consoleLog('🌊 Entrou no Mundo 2 (Reset de Prestígio)!', '#06b6d4');
+          }
+        } else {
+          this.consoleLog(`Mundo atual: Mundo ${this.currentWorld}. Uso: world 1 ou world 2 (ou m1 / m2)`, '#38bdf8');
+        }
+        break;
+      }
+
+      case 'world1':
+      case 'mundo1':
+      case 'm1':
+      case 'w1':
+        this.travelBetweenWorlds(1);
+        this.consoleLog('☀️ Retornou ao Mundo 1 via Batiscafo!', '#fbbf24');
+        break;
+
+      case 'world2':
+      case 'mundo2':
+      case 'm2':
+      case 'w2':
+        if (this.currentWorld === 2) {
+          this.consoleLog('Você já está no Mundo 2!', '#06b6d4');
+        } else if (this.world2SavedData) {
+          this.travelBetweenWorlds(2);
+          this.consoleLog('🌊 Retornou ao Mundo 2 via Batiscafo!', '#06b6d4');
+        } else {
+          this.enterWorld2Reset();
+          this.consoleLog('🌊 Entrou no Mundo 2 (Reset de Prestígio com Herança M1)!', '#06b6d4');
+        }
+        break;
+
+      case 'skipbiome':
+      case 'nextbiome':
+        this.skipWorld2Biome();
+        this.consoleLog('Bioma avançado para a próxima rotação de 5 minutos!', '#38bdf8');
+        break;
+
+      case 'biome':
+      case 'bioma': {
+        const bArg = (arg || '').toLowerCase();
+        const bMap = {
+          'recife': 'recife_bioluminescente',
+          'neon': 'recife_bioluminescente',
+          'fenda': 'fendas_vulcanicas',
+          'fendas': 'fendas_vulcanicas',
+          'vulcao': 'fendas_vulcanicas',
+          'vulcanicas': 'fendas_vulcanicas',
+          'naufragio': 'cemiterio_naufragios',
+          'naufragios': 'cemiterio_naufragios',
+          'cemiterio': 'cemiterio_naufragios',
+          'hadal': 'zona_hadal',
+          'abissal': 'zona_hadal'
+        };
+        const targetBiome = bMap[bArg] || (['recife_bioluminescente', 'fendas_vulcanicas', 'cemiterio_naufragios', 'zona_hadal'].includes(bArg) ? bArg : null);
+        if (targetBiome) {
+          this.setWorld2Biome(targetBiome);
+          this.consoleLog(`Bioma alterado para: ${targetBiome} (05:00 restantes)`, '#38bdf8');
+        } else {
+          const rem = this.getWorld2BiomeRemaining();
+          this.consoleLog(`Bioma atual: ${this.activeWorld2Biome} (${rem.text} restantes). Opções: recife, fendas, naufragios, hadal`, '#38bdf8');
+        }
+        break;
+      }
+
+      case 'kraken':
+        this.triggerKrakenCinematic();
+        this.consoleLog('🦑 Cinemática do Kraken Ancestral iniciada!', '#a855f7');
+        break;
+
+      case 'parts':
+      case 'unlockparts':
+        this.ascensionParts = { bateria_neon: true, casco_titanio: true, helice_galeao: true, sistema_lastro_hadal: true };
+        this.saveGame();
+        this.consoleLog('🚀 Todas as 4 peças do Batiscafo foram desbloqueadas!', '#10b981');
+        this.renderSubmarineModal();
         this.renderAll();
         break;
 
@@ -4240,6 +5516,13 @@ class FishingGame {
         this.renderBuffs();
         break;
       }
+
+            case 'resetdonations':
+      case 'resetdoacoes':
+      case 'resetdoar':
+      case 'cleardonations':
+        this.resetDonations();
+        break;
 
       case 'fisheye':
       case 'giveeye': {
@@ -4315,6 +5598,126 @@ class FishingGame {
 
       case 'reset':
         this.resetProgress();
+        break;
+
+      case 'firstcatch':
+      case 'celebration':
+      case 'animacao':
+      case 'testcatch': {
+        const rMap = {
+          'lendario': 'LENDARIO',
+          'lendaria': 'LENDARIO',
+          'lendário': 'LENDARIO',
+          'leg': 'LENDARIO',
+          'mitico': 'MITICO',
+          'mítico': 'MITICO',
+          'mythic': 'MITICO',
+          'secreto': 'SECRETO',
+          'secret': 'SECRETO'
+        };
+        const rarity = rMap[(arg || '').toLowerCase()] || 'LENDARIO';
+        this.toggleConsole(false);
+        this.testFirstCatchCelebration(rarity);
+        this.consoleLog(`🎉 Celebração disparada para raridade ${rarity}!`, '#ffd700');
+        break;
+      }
+
+      case 'resetfirstcatch':
+      case 'resetcelebration':
+        this.resetFirstCatchCelebrations();
+        break;
+
+      // ─── TESTES DAS NOVAS IMPLEMENTAÇÕES NO CONSOLE DO JOGO ───
+      case 'testlendario':
+      case 'testlegendary':
+      case 'lendario':
+        this.toggleConsole(false);
+        this.simulateFirstCatch('LENDARIO', true);
+        this.consoleLog('⭐ Captura do 1º Lendário simulada (Santuário + 1 Olho liberados)!', '#ffd700');
+        break;
+
+      case 'testmitico':
+      case 'testmythic':
+      case 'mitico':
+        this.toggleConsole(false);
+        this.simulateFirstCatch('MITICO', true);
+        this.consoleLog('⭐ Captura do 1º Mítico simulada (Oferendas do Santuário liberadas)!', '#ec4899');
+        break;
+
+      case 'testsecreto':
+      case 'testsecret':
+      case 'secreto':
+        this.toggleConsole(false);
+        this.simulateFirstCatch('SECRETO', true);
+        this.consoleLog('⭐ Captura do 1º Secreto simulada!', '#a855f7');
+        break;
+
+      case 'testrepetir':
+      case 'repetir': {
+        const targetRarity = (arg || 'LENDARIO').toUpperCase();
+        this.simulateSecondCatch(targetRarity);
+        this.consoleLog(`⭐ Tentativa de 2º peixe ${targetRarity} realizada (nenhuma celebração repetida)!`, '#34d399');
+        break;
+      }
+
+      case 'resetprogresso':
+      case 'resetolhos':
+      case 'reseteyes':
+        this.resetEyesProgression();
+        this.consoleLog('↺ Progresso dos Olhos e Santuário resetado para o início!', '#f59e0b');
+        break;
+
+      case 'travarsantuario':
+      case 'bloquearsantuario':
+        this.setSanctuaryUnlocked(false);
+        this.consoleLog('🔒 Santuário dos Olhos bloqueado e oculto do menu!', '#f87171');
+        break;
+
+      case 'liberarsantuario':
+      case 'destravarsantuario':
+        this.setSanctuaryUnlocked(true);
+        this.consoleLog('🔓 Santuário dos Olhos liberado no menu!', '#34d399');
+        break;
+
+      case 'travaroferendas':
+      case 'bloquearoferendas':
+        this.setOfferingsUnlocked(false);
+        this.consoleLog('🔒 Oferendas do Santuário e botões de doar bloqueados!', '#f87171');
+        break;
+
+      case 'liberaroferendas':
+      case 'destravaroferendas':
+        this.setOfferingsUnlocked(true);
+        this.consoleLog('🔓 Oferendas do Santuário e botões de doar liberados!', '#34d399');
+        break;
+
+      case 'testisca':
+      case 'isca':
+      case 'setisca':
+      case 'hook': {
+        const baitKey = arg || 'minhoca';
+        this.testEquipBait(baitKey);
+        this.consoleLog(`🪝 Isca/Anzol alterado para: ${baitKey}`, '#38bdf8');
+        break;
+      }
+
+      case 'testfisgada':
+      case 'fisgada':
+      case 'tug':
+        this.testTug();
+        this.consoleLog('🎣 Física de fisgada disparada no anzol!', '#38bdf8');
+        break;
+
+      case 'teststatus':
+      case 'status':
+        this.consoleLog('=== STATUS DOS SISTEMAS ===', '#ffd700');
+        this.consoleLog(`• Santuário dos Olhos: ${this.firstRarityCatches?.LENDARIO ? '🔓 Desbloqueado' : '🔒 Bloqueado / Oculto'}`, this.firstRarityCatches?.LENDARIO ? '#34d399' : '#f87171');
+        this.consoleLog(`• Oferendas de Espécies: ${this.firstRarityCatches?.MITICO ? '🔓 Liberadas' : '🔒 Bloqueadas'}`, this.firstRarityCatches?.MITICO ? '#34d399' : '#f87171');
+        this.consoleLog(`• 1º Lendário: ${this.firstRarityCatches?.LENDARIO ? '✅ Capturado' : '❌ Não capturado'}`, '#e2e8f0');
+        this.consoleLog(`• 1º Mítico: ${this.firstRarityCatches?.MITICO ? '✅ Capturado' : '❌ Não capturado'}`, '#e2e8f0');
+        this.consoleLog(`• 1º Secreto: ${this.firstRarityCatches?.SECRETO ? '✅ Capturado' : '❌ Não capturado'}`, '#e2e8f0');
+        this.consoleLog(`• Olhos de Peixe: ${this.fishEyesCount || 0} disponíveis (${this.fishEyesTotal || 0} totais)`, '#38bdf8');
+        this.consoleLog(`• Isca / Anzol atual: ${this.selectedBaitId || 'minhoca'}`, '#f59e0b');
         break;
 
       case 'clear':
@@ -4428,16 +5831,6 @@ class FishingGame {
     // Configurações
     document.getElementById('btn-open-settings')?.addEventListener('click', () => this.openSettings());
 
-    // Perfil do Pescador
-    document.getElementById('btn-open-profile')?.addEventListener('click', () => this.openProfile());
-    document.getElementById('btn-close-profile')?.addEventListener('click', () => this.closeProfile());
-    document.getElementById('btn-save-profile')?.addEventListener('click', () => this.saveProfile());
-    document.getElementById('profile-name-input')?.addEventListener('input', (e) => {
-      this.editingProfile.name = e.target.value.trim() || 'Pescador';
-      const nameEl = document.getElementById('profile-preview-name');
-      if (nameEl) nameEl.textContent = this.editingProfile.name;
-    });
-
     // Conquistas / Sala de Troféus
     document.getElementById('btn-open-achievements')?.addEventListener('click', () => this.openAchievements());
     document.getElementById('btn-close-achievements')?.addEventListener('click', () => this.closeAchievements());
@@ -4454,10 +5847,12 @@ class FishingGame {
       });
     });
 
-    // Capítulo 1 / Portal Dimensional
+    // Capítulo 1 / Portal Dimensional & Altar de Sacrifício
     document.getElementById('btn-open-chapter1')?.addEventListener('click', () => this.openChapter1Modal());
     document.getElementById('btn-close-chapter1')?.addEventListener('click', () => this.closeChapter1Modal());
     document.getElementById('btn-chapter1-confirm')?.addEventListener('click', () => this.closeChapter1Modal());
+    document.getElementById('btn-sacrifice-fish')?.addEventListener('click', () => this.sacrificeFish());
+    document.getElementById('btn-summon-kraken')?.addEventListener('click', () => this.triggerKrakenCinematic());
 
     document.getElementById('btn-open-album')?.addEventListener('click', () => this.openAlbum());
     document.getElementById('btn-close-album')?.addEventListener('click', () => this.closeAlbum());
@@ -4474,12 +5869,13 @@ class FishingGame {
     });
 
     // Fechar modais ao clicar fora (backdrop click) e via tecla Escape
-    const allModals = ['sell-filter-modal', 'album-modal', 'offline-modal', 'profile-modal', 'achievements-modal', 'chapter1-modal', 'settings-modal', 'fish-eyes-modal', 'patch-notes-modal'];
+    const allModals = ['sell-filter-modal', 'album-modal', 'offline-modal', 'achievements-modal', 'chapter1-modal', 'settings-modal', 'fish-eyes-modal', 'patch-notes-modal'];
     allModals.forEach(id => {
       const m = document.getElementById(id);
       if (m) {
         m.addEventListener('click', (e) => {
           if (e.target === m) {
+            if (id === 'patch-notes-modal' && this.patchNotesCooldownActive) return;
             m.classList.add('hidden');
             sound.playClick();
           }
@@ -4494,6 +5890,7 @@ class FishingGame {
           this.toggleConsole(false);
         }
         allModals.forEach(id => {
+          if (id === 'patch-notes-modal' && this.patchNotesCooldownActive) return;
           const m = document.getElementById(id);
           if (m && !m.classList.contains('hidden')) {
             m.classList.add('hidden');
@@ -4502,6 +5899,559 @@ class FishingGame {
       }
     });
   }
+
+  // ── SISTEMA DE CELEBRAÇÃO: PRIMEIRO PEIXE LENDÁRIO, MÍTICO OU SECRETO ──
+  checkFirstRarityCatch(fish) {
+    if (!fish || !fish.rarity) return;
+    const targetRarities = ['LENDARIO', 'MITICO', 'SECRETO'];
+    if (!targetRarities.includes(fish.rarity)) return;
+
+    if (!this.firstRarityCatches) {
+      this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
+    }
+
+    // Se já capturou QUALQUER peixe dessa raridade, não repete
+    if (this.firstRarityCatches[fish.rarity]) return;
+
+    this.firstRarityCatches[fish.rarity] = true;
+
+    // Se capturou o 1º Lendário, desbloqueia o Santuário e concede o 1º Olho de Peixe místico
+    if (fish.rarity === 'LENDARIO') {
+      this.fishEyesCount = (this.fishEyesCount || 0) + 1;
+      this.fishEyesTotal = (this.fishEyesTotal || 0) + 1;
+      this.renderFishEyesBadge();
+    }
+
+    // Se capturou o 1º Mítico, desbloqueia as Oferendas e atualiza os botões de doar no balde
+    if (fish.rarity === 'MITICO') {
+      this.renderInventory();
+    }
+
+    this.saveGame();
+
+    // Pequeno delay para a notificação inicial não conflitar
+    setTimeout(() => {
+      this.triggerFirstCatchCelebration(fish);
+    }, 350);
+  }
+
+  triggerFirstCatchCelebration(fish) {
+    const overlay = document.getElementById('first-catch-celebration-overlay');
+    if (!overlay) return;
+
+    const rarity = fish.rarity;
+    const configMap = {
+      LENDARIO: {
+        badgeText: '★ PRIMEIRO PEIXE LENDÁRIO! ★',
+        mainTitle: 'PARABÉNS! VOCÊ CAPTUROU SEU PRIMEIRO PEIXE LENDÁRIO!',
+        accentColor: '#ef4444',
+        borderColor: '#dc2626',
+        haloClass: 'bg-red-600/50',
+        radialGlow: 'radial-gradient(circle at center, rgba(239, 68, 68, 0.45) 0%, rgba(185, 28, 28, 0.2) 50%, transparent 75%)',
+        badgeClass: 'text-red-300 bg-red-950/80 border-red-500'
+      },
+      MITICO: {
+        badgeText: '★ FEITO EXTRAORDINÁRIO: MÍTICO! ★',
+        mainTitle: 'INCRÍVEL! VOCÊ CAPTUROU SEU PRIMEIRO PEIXE MÍTICO!',
+        accentColor: '#ec4899',
+        borderColor: '#ec4899',
+        haloClass: 'bg-pink-600/50',
+        radialGlow: 'radial-gradient(circle at center, rgba(236, 72, 153, 0.5) 0%, rgba(147, 51, 234, 0.25) 50%, transparent 75%)',
+        badgeClass: 'text-pink-300 bg-pink-950/80 border-pink-500'
+      },
+      SECRETO: {
+        badgeText: '★ ANOMALIA CÓSMICA: SECRETO! ★',
+        mainTitle: 'INACREDITÁVEL! VOCÊ DESCOBRIU SEU PRIMEIRO PEIXE SECRETO!',
+        accentColor: '#f87171',
+        borderColor: '#dc2626',
+        haloClass: 'bg-red-800/70',
+        radialGlow: 'radial-gradient(circle at center, rgba(220, 38, 38, 0.6) 0%, rgba(76, 5, 25, 0.4) 50%, transparent 75%)',
+        badgeClass: 'text-rose-300 bg-black/90 border-rose-600 shadow-[0_0_15px_rgba(225,29,72,0.8)]'
+      }
+    };
+
+    const cfg = configMap[rarity] || configMap.LENDARIO;
+
+    // Atualiza Textos
+    const badgeEl = document.getElementById('fc-badge-rarity');
+    if (badgeEl) {
+      badgeEl.textContent = cfg.badgeText;
+      badgeEl.className = `px-3.5 py-1 text-[8.5px] sm:text-[10px] font-bold tracking-widest uppercase border-2 shadow-[0_0_15px_rgba(0,0,0,0.8)] ${cfg.badgeClass}`;
+    }
+
+    const titleEl = document.getElementById('fc-main-title');
+    if (titleEl) {
+      titleEl.textContent = cfg.mainTitle;
+      titleEl.style.color = cfg.accentColor;
+    }
+
+    // Atualiza Brilho Radial e Halo
+    const radialGlow = document.getElementById('fc-radial-glow');
+    if (radialGlow) {
+      radialGlow.style.background = cfg.radialGlow;
+    }
+
+    const halo = document.getElementById('fc-fish-halo');
+    if (halo) {
+      halo.className = `absolute w-44 h-44 sm:w-60 sm:h-60 rounded-full blur-2xl opacity-75 animate-pulse pointer-events-none ${cfg.haloClass}`;
+    }
+
+    const frame = document.getElementById('fc-fish-frame');
+    if (frame) {
+      frame.style.borderColor = cfg.borderColor;
+      frame.style.boxShadow = `0 0 25px ${cfg.accentColor}66, 6px 6px 0 #000`;
+    }
+
+    // Imagem do Peixe
+    const spriteURL = this.getFishSpriteURL ? this.getFishSpriteURL(fish.icon) : '';
+    const imgEl = document.getElementById('fc-fish-img');
+    if (imgEl) {
+      imgEl.src = spriteURL;
+      imgEl.alt = fish.name;
+    }
+
+    // Nome, Peso e Valor
+    const nameEl = document.getElementById('fc-fish-name');
+    if (nameEl) nameEl.textContent = fish.name;
+
+    const weightEl = document.getElementById('fc-fish-weight');
+    if (weightEl) weightEl.textContent = `⚖️ ${Number(fish.weight || 1).toFixed(2)}kg`;
+
+    const valueEl = document.getElementById('fc-fish-value');
+    const goldMultiplier = (this.getActiveBuffs ? this.getActiveBuffs().goldMultiplier : 0) || 0;
+    const sellValue = Math.round((fish.baseValue || 100) * (1 + goldMultiplier));
+    if (valueEl) valueEl.textContent = `💰 ${sellValue.toLocaleString('pt-BR')} G`;
+
+    // Buff
+    const buffEl = document.getElementById('fc-fish-buff');
+    const buffsList = this.getFishBuffs ? this.getFishBuffs(fish) : [];
+    if (buffEl) {
+      if (buffsList.length > 0) {
+        buffEl.textContent = `★ ${buffsList.map(b => b.text).join(' | ')}`;
+        buffEl.classList.remove('hidden');
+      } else {
+        buffEl.classList.add('hidden');
+      }
+    }
+
+    // Banner Especial de Desbloqueio de Mecânica (Lendário: Santuário / Mítico: Oferendas)
+    const cardEl = document.getElementById('fc-mechanic-card');
+    const mTitleEl = document.getElementById('fc-mechanic-title');
+    const mDescEl = document.getElementById('fc-mechanic-desc');
+
+    if (cardEl && mTitleEl && mDescEl) {
+      if (rarity === 'LENDARIO') {
+        cardEl.className = 'w-full max-w-sm p-2.5 border-2 text-left space-y-1 shadow-[3px_3px_0_#000] border-cyan-400 bg-cyan-950/90 text-cyan-200';
+        mTitleEl.className = 'flex items-center gap-1.5 font-bold text-[8.5px] sm:text-[9.5px] text-cyan-300 uppercase tracking-wider';
+        mTitleEl.innerHTML = '<span>👁️</span> SANTUÁRIO DOS OLHOS DESBLOQUEADO!';
+        mDescEl.textContent = 'Você pescou um peixe muito raro e conseguiu o olho místico dele (+1 Olho de Peixe concedido)! Agora você liberou o Santuário dos Olhos no Menu para fortalecer seus atributos permanentes.';
+        cardEl.classList.remove('hidden');
+      } else if (rarity === 'MITICO') {
+        cardEl.className = 'w-full max-w-sm p-2.5 border-2 text-left space-y-1 shadow-[3px_3px_0_#000] border-amber-400 bg-amber-950/90 text-amber-200';
+        mTitleEl.className = 'flex items-center gap-1.5 font-bold text-[8.5px] sm:text-[9.5px] text-amber-300 uppercase tracking-wider';
+        mTitleEl.innerHTML = '<span>🏺</span> OFERENDAS DO SANTUÁRIO LIBERADAS!';
+        mDescEl.textContent = 'Você conseguiu um dos peixes mais raros do oceano! Agora você liberou as Oferendas no Santuário dos Olhos: doe um exemplar de cada espécie para conseguir mais Olhos de Peixe!';
+        cardEl.classList.remove('hidden');
+      } else {
+        cardEl.classList.add('hidden');
+      }
+    }
+
+    // Dispara Confetes e Partículas
+    this.spawnCelebrationParticles(cfg.accentColor);
+
+    // Toca som triunfante
+    if (sound.playFirstCatchFanfare) {
+      sound.playFirstCatchFanfare(rarity);
+    } else if (sound.playCatch) {
+      sound.playCatch(rarity);
+    }
+
+    // Cancela timer anterior de fechamento se houver
+    if (this._fcCloseTimer) {
+      clearTimeout(this._fcCloseTimer);
+      this._fcCloseTimer = null;
+    }
+
+    // Cooldown de 2s para fechar a tela (evita fechamento acidental)
+    this._fcCanCloseAt = Date.now() + 2000;
+    if (this._fcCooldownInterval) {
+      clearInterval(this._fcCooldownInterval);
+      this._fcCooldownInterval = null;
+    }
+
+    const btnClose = document.getElementById('btn-fc-close');
+    if (btnClose) {
+      btnClose.disabled = true;
+      btnClose.classList.add('opacity-60', 'cursor-not-allowed');
+      btnClose.classList.remove('cursor-pointer', 'hover:from-amber-400', 'hover:to-yellow-400', 'active:scale-95');
+      
+      const updateCooldownBtn = () => {
+        const remaining = Math.max(0, this._fcCanCloseAt - Date.now());
+        const sec = Math.ceil(remaining / 1000);
+        const btn = document.getElementById('btn-fc-close');
+        if (!btn) return;
+        if (remaining > 0) {
+          btn.disabled = true;
+          btn.innerHTML = `<span>⏳</span> AGUARDE (${sec}s)...`;
+        } else {
+          if (this._fcCooldownInterval) {
+            clearInterval(this._fcCooldownInterval);
+            this._fcCooldownInterval = null;
+          }
+          btn.disabled = false;
+          btn.classList.remove('opacity-60', 'cursor-not-allowed');
+          btn.classList.add('cursor-pointer', 'hover:from-amber-400', 'hover:to-yellow-400', 'active:scale-95');
+          btn.innerHTML = `<span>🎣</span> CONTINUAR PESCARIA`;
+        }
+      };
+      updateCooldownBtn();
+      this._fcCooldownInterval = setInterval(updateCooldownBtn, 100);
+    }
+
+    // Exibe Overlay com animação
+    overlay.classList.remove('hidden');
+    // Força reflow para garantir a transição suave
+    void overlay.offsetWidth;
+    overlay.classList.remove('opacity-0');
+    overlay.classList.add('opacity-100');
+    const box = document.getElementById('fc-content-box');
+    if (box) {
+      box.classList.remove('scale-90', 'opacity-0');
+      box.classList.add('scale-100', 'opacity-100');
+    }
+
+    // Tecla de atalho para fechar (Espaço ou Enter ou Escape) respeitando cooldown de 2s
+    if (this._fcKeyHandler) {
+      window.removeEventListener('keydown', this._fcKeyHandler);
+    }
+    this._fcKeyHandler = (e) => {
+      if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault();
+        if (this._fcCanCloseAt && Date.now() < this._fcCanCloseAt) return;
+        this.closeFirstCatchCelebration();
+      }
+    };
+    window.addEventListener('keydown', this._fcKeyHandler);
+  }
+
+  spawnCelebrationParticles(accentColor) {
+    const container = document.getElementById('fc-particles-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const colors = [accentColor, '#facc15', '#38bdf8', '#f8fafc', '#a855f7', '#fb923c'];
+    const count = 40;
+
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'fc-particle';
+      const size = Math.floor(Math.random() * 8) + 6;
+      p.style.width = `${size}px`;
+      p.style.height = `${size}px`;
+      p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      p.style.boxShadow = `0 0 6px ${p.style.backgroundColor}`;
+
+      // Ângulo aleatório e distância de explosão
+      const angle = Math.random() * Math.PI * 2;
+      const dist = Math.floor(Math.random() * 260) + 120;
+      const tx = Math.cos(angle) * dist;
+      const ty = Math.sin(angle) * dist;
+
+      p.style.setProperty('--tx', `${tx}px`);
+      p.style.setProperty('--ty', `${ty}px`);
+      p.style.animationDelay = `${Math.random() * 0.25}s`;
+
+      container.appendChild(p);
+    }
+  }
+
+  closeFirstCatchCelebration() {
+    // Bloqueia fechamento antes dos 2 segundos
+    if (this._fcCanCloseAt && Date.now() < this._fcCanCloseAt) return;
+
+    if (this._fcCooldownInterval) {
+      clearInterval(this._fcCooldownInterval);
+      this._fcCooldownInterval = null;
+    }
+
+    const overlay = document.getElementById('first-catch-celebration-overlay');
+    if (!overlay) return;
+
+    if (this._fcKeyHandler) {
+      window.removeEventListener('keydown', this._fcKeyHandler);
+      this._fcKeyHandler = null;
+    }
+
+    if (this._fcCloseTimer) {
+      clearTimeout(this._fcCloseTimer);
+      this._fcCloseTimer = null;
+    }
+
+    const box = document.getElementById('fc-content-box');
+    if (box) {
+      box.classList.remove('scale-100', 'opacity-100');
+      box.classList.add('scale-95', 'opacity-0');
+    }
+
+    overlay.classList.remove('opacity-100');
+    overlay.classList.add('opacity-0');
+
+    const cardEl = document.getElementById('fc-mechanic-card');
+    if (cardEl) cardEl.classList.add('hidden');
+
+    this._fcCloseTimer = setTimeout(() => {
+      overlay.classList.add('hidden');
+      this._fcCloseTimer = null;
+    }, 300);
+  }
+
+  // ═══════════════════════════════════════════════
+  // COMANDOS DE TESTE DAS NOVAS IMPLEMENTAÇÕES
+  // ═══════════════════════════════════════════════
+
+  /**
+   * Simula a captura real do 1º peixe de uma raridade específica
+   * Passa pelo fluxo completo de checkFirstRarityCatch (concessão de olho, desbloqueio e tela comemorativa)
+   */
+  simulateFirstCatch(rarity = 'LENDARIO', force = true) {
+    if (!this.firstRarityCatches) {
+      this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
+    }
+    if (force) {
+      this.firstRarityCatches[rarity] = false;
+    }
+    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    let sample = pool.find(f => f.rarity === rarity) || FISH_LIST.find(f => f.rarity === rarity) || FISH_WORLD_2.find(f => f.rarity === rarity);
+    if (!sample) {
+      sample = { id: `test_${rarity.toLowerCase()}`, name: `Peixe ${rarity}`, rarity: rarity, icon: 'celacanto', weight: 150 };
+    }
+    console.log(`%c[TESTE] Capturando 1º peixe da raridade ${rarity}: ${sample.name}`, 'color: #38bdf8; font-weight: bold;');
+    this.checkFirstRarityCatch(sample);
+  }
+
+  /**
+   * Simula pescar um SEGUNDO peixe da mesma raridade
+   * Comprova que a celebração NÃO se repete e não duplica bônus
+   */
+  simulateSecondCatch(rarity = 'LENDARIO') {
+    if (!this.firstRarityCatches) {
+      this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
+    }
+    this.firstRarityCatches[rarity] = true;
+    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    let sample = pool.filter(f => f.rarity === rarity)[1] || pool.find(f => f.rarity === rarity);
+    console.log(`%c[TESTE] Pescando 2º peixe ${rarity} (${sample?.name || rarity})...`, 'color: #f59e0b;');
+    const beforeEyes = this.fishEyesCount || 0;
+    this.checkFirstRarityCatch(sample);
+    console.log(`%c[TESTE] Concluído! Celebração NÃO disparada (já foi capturado anteriormente). Olhos mantidos: ${beforeEyes}`, 'color: #10b981; font-weight: bold;');
+    this.showToast(`[TESTE] 2º peixe ${rarity} pescado: nenhuma celebração duplicada (correto)!`, 'info');
+  }
+
+  /**
+   * Reseta todo o progresso dos Olhos de Peixe e Santuário para o estado inicial
+   */
+  resetEyesProgression() {
+    this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
+    this.fishEyesCount = 0;
+    this.fishEyesTotal = 0;
+    this.renderFishEyesBadge();
+    if (this.currentFishEyesTab === 'offering') {
+      this.renderOfferingContent();
+    }
+    this.renderInventory();
+    this.saveGame();
+    this.showToast('↺ Progresso dos Olhos e Santuário resetado para o início!', 'info');
+    console.log('%c[TESTE] Progresso resetado! Santuário e Oferendas agora estão bloqueados.', 'color: #f59e0b; font-weight: bold;');
+  }
+
+  /**
+   * Força o bloqueio ou desbloqueio manual do Santuário
+   */
+  setSanctuaryUnlocked(unlocked = true) {
+    if (!this.firstRarityCatches) this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
+    this.firstRarityCatches.LENDARIO = Boolean(unlocked);
+    this.renderFishEyesBadge();
+    this.saveGame();
+    const msg = unlocked ? '🔓 Santuário dos Olhos liberado no menu!' : '🔒 Santuário dos Olhos bloqueado/oculto!';
+    this.showToast(msg, 'info');
+    console.log(`[TESTE] ${msg}`);
+  }
+
+  /**
+   * Força o bloqueio ou desbloqueio manual da aba de Oferendas
+   */
+  setOfferingsUnlocked(unlocked = true) {
+    if (!this.firstRarityCatches) this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
+    this.firstRarityCatches.MITICO = Boolean(unlocked);
+    if (this.currentFishEyesTab === 'offering') {
+      this.renderOfferingContent();
+    }
+    this.renderInventory();
+    this.saveGame();
+    const msg = unlocked ? '🔓 Oferendas do Santuário liberadas para doação!' : '🔒 Oferendas do Santuário bloqueadas!';
+    this.showToast(msg, 'info');
+    console.log(`[TESTE] ${msg}`);
+  }
+
+  /**
+   * Equipa uma isca para testar o recolor dinâmico do sprite da bóia e anzol
+   */
+  testEquipBait(nameOrId = 'minhoca') {
+    const aliasMap = {
+      'minhoca': 'minhoca',
+      'camarao': 'camarao',
+      'camarão': 'camarao',
+      'neon': 'isca_brilhante',
+      'brilhante': 'isca_brilhante',
+      'isca_brilhante': 'isca_brilhante',
+      'queijo': 'queijo_mistico',
+      'mistico': 'queijo_mistico',
+      'místico': 'queijo_mistico',
+      'queijo_mistico': 'queijo_mistico',
+      'ouro': 'ouro_liquido',
+      'liquido': 'ouro_liquido',
+      'líquido': 'ouro_liquido',
+      'ouro_liquido': 'ouro_liquido',
+      'vortice': 'essencia_travessia',
+      'vórtice': 'essencia_travessia',
+      'essencia': 'essencia_travessia',
+      'essencia_travessia': 'essencia_travessia',
+      'kraken': 'isca_kraken_ancestral',
+      'ancestral': 'isca_kraken_ancestral',
+      'isca_kraken_ancestral': 'isca_kraken_ancestral'
+    };
+    const key = String(nameOrId).toLowerCase().trim();
+    const targetId = aliasMap[key] || nameOrId;
+    this.selectedBaitId = targetId;
+    updateRodSVG(this.selectedRodId, this.selectedBaitId);
+    this.saveGame();
+    this.showToast(`🪝 Isca de teste equipada: ${targetId}`, 'success');
+    console.log(`%c[TESTE] Anzol atualizado para isca: ${targetId} (sprite: icons/baits/hook_${targetId}.png)`, 'color: #38bdf8;');
+  }
+
+  /**
+   * Simula a animação de puxão/fisgada no anzol
+   */
+  testTug() {
+    const hookContainer = document.getElementById('vertical-fishing-rig');
+    if (hookContainer) {
+      hookContainer.classList.remove('hook-tug-active');
+      void hookContainer.offsetWidth; // trigger reflow
+      hookContainer.classList.add('hook-tug-active');
+      setTimeout(() => hookContainer.classList.remove('hook-tug-active'), 500);
+    }
+    this.showToast('🎣 Fisgada no anzol simulada!', 'info');
+    console.log('[TESTE] Animação física de fisgada disparada.');
+  }
+
+  /**
+   * Exibe o status atual de todos os novos sistemas no console
+   */
+  printStatus() {
+    console.group('%c🎣 [Pescaria Clicker] Status dos Sistemas', 'color: #38bdf8; font-weight: bold; font-size: 13px;');
+    console.table({
+      'Santuário dos Olhos (Menu)': { Status: this.firstRarityCatches?.LENDARIO ? '🔓 Desbloqueado' : '🔒 Bloqueado / Oculto' },
+      'Oferendas de Espécies': { Status: this.firstRarityCatches?.MITICO ? '🔓 Desbloqueadas' : '🔒 Bloqueadas' },
+      '1º Lendário Capturado': { Status: this.firstRarityCatches?.LENDARIO ? '✅ Sim' : '❌ Não' },
+      '1º Mítico Capturado': { Status: this.firstRarityCatches?.MITICO ? '✅ Sim' : '❌ Não' },
+      '1º Secreto Capturado': { Status: this.firstRarityCatches?.SECRETO ? '✅ Sim' : '❌ Não' },
+      'Olhos de Peixe (Disponíveis)': { Status: this.fishEyesCount || 0 },
+      'Olhos de Peixe (Total)': { Status: this.fishEyesTotal || 0 },
+      'Isca Atual (Cor do Anzol)': { Status: this.selectedBaitId || 'minhoca' }
+    });
+    console.groupEnd();
+  }
+
+  /**
+   * Lista todos os comandos de teste disponíveis
+   */
+  printHelp() {
+    console.log(`%c══════════════════════════════════════════════════════════════════
+🎮 COMANDOS DE TESTE DISPONÍVEIS NO CONSOLE
+══════════════════════════════════════════════════════════════════%c
+⭐ PROGRESSÃO & CELEBRAÇÕES (1x PERMANENTE):
+  • testLendario()         -> Captura 1º Lendário (desbloqueia Santuário + 1 Olho + Card Dourado)
+  • testMitico()           -> Captura 1º Mítico (desbloqueia Oferendas + Card Púrpura)
+  • testSecreto()          -> Captura 1º Secreto (Celebração Mística)
+  • testRepetir('LENDARIO')-> Pesca outro peixe da raridade (comprova que NÃO repete a celebração)
+  • resetProgresso()       -> Reseta tudo pro início (bloqueia Santuário e Oferendas para testar do zero)
+
+🔒 TRAVAS MANUAIS (SANTUÁRIO & OFERENDAS):
+  • testLiberarSantuario() / testTravarSantuario()
+  • testLiberarOferendas() / testTravarOferendas()
+
+🪝 ANZOL, BÓIA & ISCA:
+  • testIsca('nome')       -> Troca cor do anzol ('minhoca', 'camarao', 'neon', 'queijo', 'ouro', 'vortice', 'kraken')
+  • testFisgada()          -> Dispara animação física de fisgada/puxão no anzol
+
+📊 INFORMAÇÕES:
+  • testStatus()           -> Exibe tabela completa com status de todos os desbloqueios
+  • testAjuda()            -> Exibe este menu de ajuda
+══════════════════════════════════════════════════════════════════`,
+    'color: #38bdf8; font-weight: bold; font-size: 12px;',
+    'color: #e2e8f0; font-family: monospace; font-size: 11px;'
+    );
+  }
+
+  // Comandos de teste legados preservados
+  testFirstCatchCelebration(rarity = 'LENDARIO') {
+    this.simulateFirstCatch(rarity, true);
+  }
+
+  resetFirstCatchCelebrations() {
+    this.resetEyesProgression();
+  }
 }
 
-window.addEventListener('DOMContentLoaded', () => { window.game = new FishingGame(); });
+function initGame() {
+  if (window.game) return;
+  window.game = new FishingGame();
+  
+  // Aliases globais no window para digitação rápida no console
+  window.testLendario = (force = true) => window.game?.simulateFirstCatch('LENDARIO', force);
+  window.testLegendary = (force = true) => window.game?.simulateFirstCatch('LENDARIO', force);
+  window.testMitico = (force = true) => window.game?.simulateFirstCatch('MITICO', force);
+  window.testMythic = (force = true) => window.game?.simulateFirstCatch('MITICO', force);
+  window.testSecreto = (force = true) => window.game?.simulateFirstCatch('SECRETO', force);
+  window.testSecret = (force = true) => window.game?.simulateFirstCatch('SECRETO', force);
+  window.testCatch = (rarity) => window.game?.simulateFirstCatch(rarity, true);
+  window.testRepetir = (rarity = 'LENDARIO') => window.game?.simulateSecondCatch(rarity);
+
+  window.resetProgresso = () => window.game?.resetEyesProgression();
+  window.resetProgression = () => window.game?.resetEyesProgression();
+  window.resetFirstCatch = () => window.game?.resetEyesProgression();
+  window.resetDonations = () => window.game?.resetDonations();
+
+  window.testTravarSantuario = () => window.game?.setSanctuaryUnlocked(false);
+  window.testLiberarSantuario = () => window.game?.setSanctuaryUnlocked(true);
+  window.testTravarOferendas = () => window.game?.setOfferingsUnlocked(false);
+  window.testLiberarOferendas = () => window.game?.setOfferingsUnlocked(true);
+
+  window.testIsca = (name) => window.game?.testEquipBait(name);
+  window.testFisgada = () => window.game?.testTug();
+
+  window.testStatus = () => window.game?.printStatus();
+  window.testAjuda = () => window.game?.printHelp();
+  window.testHelp = () => window.game?.printHelp();
+  window.testPatchNotes = (withCooldown = true) => window.game?.openPatchNotesModal(withCooldown);
+  window.resetPatchNotes = () => {
+    localStorage.removeItem('fc_last_seen_patch_version');
+    console.log('[Pescaria Clicker] Versão vista resetada! Ao recarregar a página, as notas abrirão com timer de 5s.');
+  };
+
+  // Banner informativo no console
+  setTimeout(() => {
+    console.log('%c[Pescaria Clicker] 🛠️ Comandos de teste ativos! Digite %ctestAjuda()%c no console para ver a lista.', 
+      'color: #38bdf8; font-weight: bold;', 
+      'color: #f59e0b; font-weight: bold; background: #1e293b; padding: 1px 4px; border-radius: 3px;', 
+      'color: #38bdf8; font-weight: bold;'
+    );
+  }, 500);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGame);
+} else {
+  initGame();
+}

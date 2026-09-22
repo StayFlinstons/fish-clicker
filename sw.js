@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fish-clicker-v9';
+const CACHE_NAME = 'fish-clicker-v22';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -9,11 +9,22 @@ const ASSETS_TO_CACHE = [
   './fishData.js',
   './achievementsData.js',
   './magnetData.js',
+  './world2Data.js',
   './pixelArt.js',
   './sound.js',
   './manifest.json',
+  './favicon.ico',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/btn_pescar.png',
+  './icons/fishing_hook.png',
+  './icons/baits/hook_minhoca.png',
+  './icons/baits/hook_camarao.png',
+  './icons/baits/hook_isca_brilhante.png',
+  './icons/baits/hook_queijo_mistico.png',
+  './icons/baits/hook_ouro_liquido.png',
+  './icons/baits/hook_essencia_travessia.png',
+  './icons/baits/hook_isca_kraken_ancestral.png'
 ];
 
 // Instalação: pré-cacheia todos os assets do jogo
