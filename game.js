@@ -34,7 +34,7 @@ import {
 // O jogo detecta automaticamente e abre o modal de Notas de Atualização
 // APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
 // ══════════════════════════════════════════════════════════════════════════════
-export const GAME_VERSION = '1.4.4';
+export const GAME_VERSION = '1.4.5';
 
 class FishingGame {
   constructor() {
@@ -6125,7 +6125,10 @@ class FishingGame {
     const btnClose = document.getElementById('btn-fc-close');
     if (btnClose) {
       btnClose.disabled = true;
-      btnClose.classList.add('opacity-60', 'cursor-not-allowed');
+      btnClose.classList.remove('text-slate-950');
+      btnClose.classList.add('opacity-60', 'cursor-not-allowed', 'text-white');
+      btnClose.style.color = '#ffffff';
+      btnClose.style.textShadow = '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 6px rgba(255,255,255,0.4)';
       btnClose.classList.remove('cursor-pointer', 'hover:from-amber-400', 'hover:to-yellow-400', 'active:scale-95');
       
       const updateCooldownBtn = () => {
@@ -6143,7 +6146,7 @@ class FishingGame {
           }
           btn.disabled = false;
           btn.classList.remove('opacity-60', 'cursor-not-allowed');
-          btn.classList.add('cursor-pointer', 'hover:from-amber-400', 'hover:to-yellow-400', 'active:scale-95');
+          btn.classList.add('cursor-pointer', 'active:scale-95');
           btn.innerHTML = `<span>🎣</span> CONTINUAR PESCARIA`;
         }
       };
