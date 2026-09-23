@@ -34,7 +34,7 @@ import {
 // O jogo detecta automaticamente e abre o modal de Notas de Atualização
 // APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
 // ══════════════════════════════════════════════════════════════════════════════
-export const GAME_VERSION = '1.4.8';
+export const GAME_VERSION = '1.4.9';
 
 class FishingGame {
   constructor() {
@@ -852,41 +852,11 @@ class FishingGame {
   syncGameModeUI() {
     const isPesca = this.gameMode === 'pesca';
 
-    // Barra de alternância: só aparece se magnetUnlocked estiver ativo
+    // Barra de alternância desativada temporariamente para usuários
     const modeBar = document.getElementById('mode-switch-bar');
     if (modeBar) {
-      if (this.magnetUnlocked) {
-        modeBar.classList.remove('hidden');
-        modeBar.classList.add('flex');
-      } else {
-        modeBar.classList.add('hidden');
-        modeBar.classList.remove('flex');
-      }
-    }
-
-    // Botões de alternância no topo do lago
-    const btnPesca = document.getElementById('btn-mode-pesca');
-    const btnIma = document.getElementById('btn-mode-ima');
-
-    if (btnPesca) {
-      if (isPesca) {
-        btnPesca.className = 'inline-flex items-center gap-1.5 px-3 py-1 text-[8.5px] sm:text-[9px] font-bold border transition-all cursor-pointer bg-slate-800 text-cyan-300 border-cyan-400 shadow-[1px_1px_0_#000]';
-      } else {
-        btnPesca.className = 'inline-flex items-center gap-1.5 px-3 py-1 text-[8.5px] sm:text-[9px] font-bold border transition-all cursor-pointer bg-slate-900 text-slate-400 border-transparent hover:text-cyan-300';
-      }
-    }
-
-    if (btnIma) {
-      if (this.magnetUnlocked) {
-        btnIma.classList.remove('hidden');
-      } else {
-        btnIma.classList.add('hidden');
-      }
-      if (!isPesca) {
-        btnIma.className = 'inline-flex items-center gap-1.5 px-3 py-1 text-[8.5px] sm:text-[9px] font-bold border transition-all cursor-pointer bg-slate-800 text-amber-300 border-amber-400 shadow-[1px_1px_0_#000]';
-      } else {
-        btnIma.className = 'inline-flex items-center gap-1.5 px-3 py-1 text-[8.5px] sm:text-[9px] font-bold border transition-all cursor-pointer bg-slate-900 text-slate-400 border-transparent hover:text-amber-300';
-      }
+      modeBar.classList.add('hidden');
+      modeBar.classList.remove('flex');
     }
 
     // Seletor de Cenários do Ímã
@@ -925,22 +895,7 @@ class FishingGame {
     this.magnetTier = tier;
     sound.playRare?.();
     const tData = MAGNET_TIERS.find(t => t.tier === tier) || MAGNET_TIERS[0];
-    this.showToast(`🧲 O Mergulhador Amigo encontrou nas profundezas: ${tData.name}! Use o botão "🧲 ÍMÃ" no centro para alternar os modos!`, 'success');
-
-    const btnIma = document.getElementById('btn-mode-ima');
-    if (btnIma) {
-      btnIma.classList.remove('hidden');
-      btnIma.classList.add('animate-bounce');
-      setTimeout(() => btnIma.classList.remove('animate-bounce'), 5000);
-    }
-
-    const magnetBtn = document.getElementById('btn-open-magnet');
-    if (magnetBtn) {
-      magnetBtn.classList.remove('hidden');
-      magnetBtn.classList.add('animate-bounce');
-      setTimeout(() => magnetBtn.classList.remove('animate-bounce'), 5000);
-    }
-
+    this.showToast(`🧲 Pesca Magnética pronta: ${tData.name}!`, 'success');
     this.renderHeader();
     this.syncGameModeUI();
     this.saveGame();
@@ -4278,26 +4233,6 @@ class FishingGame {
       inv.style.fontFamily = 'var(--font-pixel)';
     }
 
-    const magnetBtn = document.getElementById('btn-open-magnet');
-    const magnetBadge = document.getElementById('magnet-badge');
-    const btnModeIma = document.getElementById('btn-mode-ima');
-    if (magnetBtn) {
-      if (this.magnetUnlocked) {
-        magnetBtn.classList.remove('hidden');
-        if (magnetBadge) {
-          magnetBadge.textContent = `ÍMÃ T${this.magnetTier || 1}`;
-        }
-      } else {
-        magnetBtn.classList.add('hidden');
-      }
-    }
-    if (btnModeIma) {
-      if (this.magnetUnlocked) {
-        btnModeIma.classList.remove('hidden');
-      } else {
-        btnModeIma.classList.add('hidden');
-      }
-    }
   }
 
   renderBuffs() {

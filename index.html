@@ -207,19 +207,6 @@
     <!-- ═══ COLUNA CENTRAL: CENÁRIO DE PESCA / ÍMÃ ═══ -->
     <section class="lg:col-span-6 min-h-0 flex flex-col gap-2 order-1 lg:order-2">
       
-      <!-- Barra Superior de Modos (Exibida dinamicamente apenas quando a Pesca Magnética for ativada/desbloqueada) -->
-      <div id="mode-switch-bar" class="hidden shrink-0 items-center justify-between bg-slate-950 p-1.5 border-2 border-slate-800" style="box-shadow:2px 2px 0 #000;">
-        <div class="flex items-center gap-1.5">
-          <button id="btn-mode-pesca" onclick="window.game.setGameMode('pesca')" class="inline-flex items-center gap-1.5 px-3 py-1 text-[8.5px] sm:text-[9px] font-bold border transition-all cursor-pointer bg-slate-800 text-cyan-300 border-cyan-400 shadow-[1px_1px_0_#000]" style="font-family:var(--font-pixel);">
-            <svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><path d="M2 10 L10 2" stroke="#38bdf8" stroke-width="1.5"/><rect x="1" y="9" width="2" height="2" fill="#b45309"/><rect x="9" y="1" width="2" height="2" fill="#facc15"/></svg>
-            PESCARIA
-          </button>
-          <button id="btn-mode-ima" onclick="window.game.setGameMode('ima')" class="inline-flex items-center gap-1.5 px-3 py-1 text-[8.5px] sm:text-[9px] font-bold border transition-all cursor-pointer bg-slate-900 text-slate-400 border-transparent hover:text-amber-300" style="font-family:var(--font-pixel);">
-            <svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="2" y="1" width="3" height="3" fill="#cbd5e1"/><rect x="7" y="1" width="3" height="3" fill="#38bdf8"/><rect x="2" y="4" width="3" height="4" fill="#dc2626"/><rect x="7" y="4" width="3" height="4" fill="#dc2626"/><rect x="3" y="8" width="6" height="2" fill="#dc2626"/><rect x="4" y="10" width="4" height="1" fill="#991b1b"/></svg>
-            🧲 ÍMÃ
-          </button>
-        </div>
-      </div>
 
       <!-- CENÁRIO 1: PESCARIA TRADICIONAL -->
       <div id="fishing-lake-area" class="water-container scanlines relative flex-1 min-h-[200px] bg-gradient-to-b from-[#0a1628] via-[#0c2040] to-[#0e3a5f] border-4 border-slate-700 p-4 flex flex-col justify-end items-center overflow-hidden" style="box-shadow:4px 4px 0 #000;">
@@ -3704,13 +3691,31 @@
       <!-- Lista de Atualizações com Scroll -->
       <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-[8.5px] text-slate-300" style="font-family:var(--font-pixel);">
 
-        <!-- Cartão Destaque: Versão 1.4.8 -->
-        <div class="bg-gradient-to-r from-teal-950/60 via-cyan-950/50 to-indigo-950/40 border-2 border-teal-400 p-2.5 space-y-1.5" style="box-shadow: 0 0 16px rgba(20,184,166,0.35), 2px 2px 0 #000;">
+        <!-- Cartão Destaque: Versão 1.4.9 -->
+        <div class="bg-gradient-to-r from-amber-950/60 via-slate-950/60 to-cyan-950/50 border-2 border-amber-400 p-2.5 space-y-1.5" style="box-shadow: 0 0 16px rgba(245,158,11,0.35), 2px 2px 0 #000;">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-amber-300 font-bold text-[9.5px]">
+              <span>🧲 POLIMENTO DO MUNDO 1 & DESATIVAÇÃO TEMPORÁRIA DO ÍMÃ</span>
+            </div>
+            <span class="text-[7px] bg-amber-950 border border-amber-400 text-amber-300 px-1 py-0.5 animate-pulse">VERSÃO 1.4.9</span>
+          </div>
+          <p class="text-amber-200 text-[8px] leading-relaxed">
+            Ajustes na interface do Mundo 1 e desativação temporária da Pesca Magnética para jogadores comuns:
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-slate-300 text-[7.5px] leading-normal pl-1">
+            <li><b class="text-amber-300">Remoção do Botão de Ímã no Lago:</b> O botão/barra de alternância do ímã foi totalmente removido da visualização do Mundo 1, mantendo a tela limpa e focada na experiência de pesca clássica enquanto a mecânica é repensada.</li>
+            <li><b class="text-cyan-300">Preservado para Testes via Console:</b> Desenvolvedores e testadores ainda podem testar a pesca magnética a qualquer momento digitando <code class="text-cyan-300 font-mono">ima</code> ou <code class="text-cyan-300 font-mono">magnet</code> no console.</li>
+            <li><b class="text-emerald-300">Botão de Retorno no Minigame:</b> Ao testar o ímã, o botão <b>← VOLTAR À PESCA</b> permanece disponível no topo do lago magnético para sair sem travar a navegação.</li>
+          </ul>
+        </div>
+
+        <!-- Cartão: Versão 1.4.8 -->
+        <div class="bg-gradient-to-r from-teal-950/40 via-cyan-950/30 to-indigo-950/30 border-2 border-teal-400/80 p-2.5 space-y-1.5" style="box-shadow: 2px 2px 0 #000;">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5 text-teal-300 font-bold text-[9.5px]">
               <span>🌐 TRANSIÇÃO BIDIRECIONAL ENTRE MUNDOS & MODOS</span>
             </div>
-            <span class="text-[7px] bg-teal-950 border border-teal-400 text-teal-300 px-1 py-0.5 animate-pulse">VERSÃO 1.4.8</span>
+            <span class="text-[7px] bg-teal-950 border border-teal-400 text-teal-300 px-1 py-0.5">VERSÃO 1.4.8</span>
           </div>
           <p class="text-teal-200 text-[8px] leading-relaxed">
             Correção e destravamento completo das viagens entre dimensões e alternância de modos:
@@ -3718,7 +3723,7 @@
           <ul class="list-disc list-inside space-y-1 text-slate-300 text-[7.5px] leading-normal pl-1">
             <li><b class="text-teal-300">Viagem Bidirecional (Mundo 1 ↔ Mundo 2):</b> Removido o bloqueio rígido que impedia o retorno do Abismo (M2) para a Superfície (M1). O Batiscafo agora preserva e restaura o snapshot completo de equipamentos, peixes e ouro em ambos os sentidos.</li>
             <li><b class="text-cyan-300">Transição Limpa do Modo Ímã:</b> Ao alternar entre mundos ou digitar comandos como <code class="text-cyan-300 font-mono">world 1</code>, <code class="text-cyan-300 font-mono">world 2</code>, <code class="text-cyan-300 font-mono">m1</code> ou <code class="text-cyan-300 font-mono">m2</code>, o jogo restaura o modo de pesca tradicional sem travar no cenário magnético.</li>
-            <li><b class="text-amber-300">Barra de Modos & Botão de Retorno:</b> Ao desbloquear ou testar o ímã, a barra de seleção superior (<code class="text-slate-200">PESCARIA</code> vs <code class="text-slate-200">🧲 ÍMÃ</code>) e o botão direto <b>← VOLTAR À PESCA</b> ficam acessíveis no topo do lago magnético.</li>
+            <li><b class="text-amber-300">Botão de Retorno no Minigame:</b> O botão direto <b>← VOLTAR À PESCA</b> fica acessível no topo do lago magnético ao testar o ímã.</li>
             <li><b class="text-purple-300">Novos Comandos & Atalhos DevTools:</b> Adicionados comandos <code class="text-cyan-300 font-mono">pesca</code>, <code class="text-cyan-300 font-mono">ima</code>, <code class="text-cyan-300 font-mono">m1</code> e <code class="text-cyan-300 font-mono">m2</code>, além de funções globais <code class="text-cyan-300 font-mono">window.world(1)</code>, <code class="text-cyan-300 font-mono">window.m1()</code> e <code class="text-cyan-300 font-mono">window.m2()</code> no console do navegador.</li>
           </ul>
         </div>
@@ -3913,6 +3918,6 @@
     </div>
   </div>
 
-  <script type="module" src="game.js?v=33"></script>
+  <script type="module" src="game.js?v=34"></script>
 </body>
 </html>
