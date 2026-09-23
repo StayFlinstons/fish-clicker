@@ -34,7 +34,7 @@ import {
 // O jogo detecta automaticamente e abre o modal de Notas de Atualização
 // APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
 // ══════════════════════════════════════════════════════════════════════════════
-export const GAME_VERSION = '1.4.7';
+export const GAME_VERSION = '1.4.8';
 
 class FishingGame {
   constructor() {
@@ -851,6 +851,18 @@ class FishingGame {
 
   syncGameModeUI() {
     const isPesca = this.gameMode === 'pesca';
+
+    // Barra de alternância: só aparece se magnetUnlocked estiver ativo
+    const modeBar = document.getElementById('mode-switch-bar');
+    if (modeBar) {
+      if (this.magnetUnlocked) {
+        modeBar.classList.remove('hidden');
+        modeBar.classList.add('flex');
+      } else {
+        modeBar.classList.add('hidden');
+        modeBar.classList.remove('flex');
+      }
+    }
 
     // Botões de alternância no topo do lago
     const btnPesca = document.getElementById('btn-mode-pesca');
@@ -4131,12 +4143,19 @@ class FishingGame {
   }
 
   travelBetweenWorlds(targetWorld) {
-    if (targetWorld === this.currentWorld) return;
+    // Se estava no modo ímã, sempre restaura para o modo de pesca tradicional
+    if (this.gameMode === 'ima') {
+      this.gameMode = 'pesca';
+      this.syncGameModeUI();
+    }
+
+    if (targetWorld === this.currentWorld) {
+      this.renderAll();
+      return;
+    }
     sound.playUpgrade?.();
 
     if (this.currentWorld === 2 && targetWorld === 1) {
-      this.showToast('As correntes do Abismo se fecharam. Seu caminho é sempre em frente rumo ao MUNDO 3!', 'warning');
-      return;
       // Salva snapshot do Mundo 2
       this.world2SavedData = {
         gold: this.gold,
@@ -4149,17 +4168,28 @@ class FishingGame {
         upgradeLevels: { ...this.upgradeLevels },
         activeWorld2Biome: this.activeWorld2Biome
       };
+
       // Restaura dados do Mundo 1
-      if (this.world1Data) {
-        this.gold = this.world1Data.gold || 0;
-        this.inventory = [...(this.world1Data.inventory || [])];
-        this.aquarium = [...(this.world1Data.aquarium || [])];
-        this.selectedRodId = this.world1Data.selectedRodId || 'vara_bambu';
-        this.unlockedRods = [...(this.world1Data.unlockedRods || ['vara_bambu'])];
-        this.selectedBaitId = this.world1Data.selectedBaitId || 'minhoca';
-        this.unlockedBaits = [...(this.world1Data.unlockedBaits || ['minhoca'])];
-        this.upgradeLevels = { ...this.world1Data.upgradeLevels };
+      if (!this.world1Data) {
+        this.world1Data = {
+          gold: 0,
+          inventory: [],
+          aquarium: [],
+          selectedRodId: 'vara_bambu',
+          unlockedRods: ['vara_bambu'],
+          selectedBaitId: 'minhoca',
+          unlockedBaits: ['minhoca'],
+          upgradeLevels: { balde: 0, auto_pescador: 0, boia_sorte: 0, rede_dupla: 0, aquario_cap: 0, auto_vendedor: 0, ima_dourado: 0 }
+        };
       }
+      this.gold = this.world1Data.gold || 0;
+      this.inventory = [...(this.world1Data.inventory || [])];
+      this.aquarium = [...(this.world1Data.aquarium || [])];
+      this.selectedRodId = this.world1Data.selectedRodId || 'vara_bambu';
+      this.unlockedRods = [...(this.world1Data.unlockedRods || ['vara_bambu'])];
+      this.selectedBaitId = this.world1Data.selectedBaitId || 'minhoca';
+      this.unlockedBaits = [...(this.world1Data.unlockedBaits || ['minhoca'])];
+      this.upgradeLevels = { ...this.world1Data.upgradeLevels };
       this.currentWorld = 1;
     } else if (this.currentWorld === 1 && targetWorld === 2) {
       // Salva snapshot do Mundo 1
@@ -4173,6 +4203,7 @@ class FishingGame {
         unlockedBaits: [...this.unlockedBaits],
         upgradeLevels: { ...this.upgradeLevels }
       };
+
       // Restaura ou inicializa dados do Mundo 2
       if (!this.world2SavedData) {
         this.world2SavedData = {
@@ -4183,26 +4214,24 @@ class FishingGame {
           unlockedRods: ['vara_arpao_basico'],
           selectedBaitId: 'isca_plankton_neon',
           unlockedBaits: ['isca_plankton_neon'],
-          upgradeLevels: { balde: 0, auto_pescador: 0, boia_sorte: 0, rede_dupla: 0, aquario_cap: 0, auto_vendedor: 0 },
+          upgradeLevels: { balde: 0, auto_pescador: 0, boia_sorte: 0, rede_dupla: 0, aquario_cap: 0, auto_vendedor: 0, ima_dourado: 0 },
           activeWorld2Biome: 'recife_bioluminescente'
         };
       }
-      if (this.world2SavedData) {
-        this.gold = this.world2SavedData.gold || 0;
-        this.inventory = [...(this.world2SavedData.inventory || [])];
-        this.aquarium = [...(this.world2SavedData.aquarium || [])];
-        this.selectedRodId = this.world2SavedData.selectedRodId || 'vara_arpao_basico';
-        this.unlockedRods = [...(this.world2SavedData.unlockedRods || ['vara_arpao_basico'])];
-        this.selectedBaitId = this.world2SavedData.selectedBaitId || 'isca_plankton_neon';
-        this.unlockedBaits = [...(this.world2SavedData.unlockedBaits || ['isca_plankton_neon'])];
-        this.upgradeLevels = { ...this.world2SavedData.upgradeLevels };
-        this.activeWorld2Biome = this.world2SavedData.activeWorld2Biome || 'recife_bioluminescente';
-      }
+      this.gold = this.world2SavedData.gold || 0;
+      this.inventory = [...(this.world2SavedData.inventory || [])];
+      this.aquarium = [...(this.world2SavedData.aquarium || [])];
+      this.selectedRodId = this.world2SavedData.selectedRodId || 'vara_arpao_basico';
+      this.unlockedRods = [...(this.world2SavedData.unlockedRods || ['vara_arpao_basico'])];
+      this.selectedBaitId = this.world2SavedData.selectedBaitId || 'isca_plankton_neon';
+      this.unlockedBaits = [...(this.world2SavedData.unlockedBaits || ['isca_plankton_neon'])];
+      this.upgradeLevels = { ...this.world2SavedData.upgradeLevels };
+      this.activeWorld2Biome = this.world2SavedData.activeWorld2Biome || 'recife_bioluminescente';
       this.currentWorld = 2;
     }
 
     this.saveGame();
-    this.closeSubmarineModal();
+    this.closeSubmarineModal?.();
     this.showToast(targetWorld === 1 ? '☀️ Você emergiu na superfície! Bem-vindo de volta ao Mundo 1!' : '🌊 O Batiscafo afundou suavemente no Abismo do Mundo 2!', 'special');
     this.updateFisherman();
     this.renderAll();
@@ -5164,13 +5193,15 @@ class FishingGame {
 
         this.consoleLog('🌍 MUNDOS, TEMPO & EVENTOS', headerColor);
         this.consoleLog('  world [1|2]            - Alterna entre Mundo 1 (Lago) e Mundo 2 (Abismo)', cmdColor);
+        this.consoleLog('  m1 / m2                - Atalhos rápidos para viajar entre Mundos', cmdColor);
         this.consoleLog('  time [fase]            - Consulta ou define horário (day/sunset/night)', cmdColor);
         this.consoleLog('  skiptime               - Avança para o próximo horário do dia', cmdColor);
         this.consoleLog('  biome <id>             - Alterna o bioma abissal do Mundo 2', cmdColor);
         this.consoleLog('  eclipse                - Inicia Eclipse e Mar Sangrento por 60s', cmdColor);
 
         this.consoleLog('🧲 PESCA MAGNÉTICA', headerColor);
-        this.consoleLog('  magnet [tier]          - Desbloqueia ou define Tier do Ímã (1 a 5)', cmdColor);
+        this.consoleLog('  magnet [tier]          - Ativa modo Pesca Magnética (ou "ima")', cmdColor);
+        this.consoleLog('  pesca                  - Sai do ímã e volta à pesca tradicional', cmdColor);
         this.consoleLog('  magnetitem <id> [n]    - Adiciona item magnético ao inventário', cmdColor);
 
         this.consoleLog('✨ TESTES & ANIMAÇÕES', headerColor);
@@ -5477,11 +5508,14 @@ class FishingGame {
       case 'w': {
         const target = (arg || '').trim();
         if (target === '1') {
+          if (this.gameMode === 'ima') this.setGameMode('pesca');
           this.travelBetweenWorlds(1);
           this.consoleLog('☀️ Viajou para o Mundo 1 (Superfície)!', '#fbbf24');
         } else if (target === '2') {
+          if (this.gameMode === 'ima') this.setGameMode('pesca');
           if (this.currentWorld === 2) {
             this.consoleLog('Você já está no Mundo 2!', '#06b6d4');
+            this.renderAll();
           } else if (this.world2SavedData) {
             this.travelBetweenWorlds(2);
             this.consoleLog('🌊 Viajou para o Mundo 2 via Batiscafo!', '#06b6d4');
@@ -5490,7 +5524,7 @@ class FishingGame {
             this.consoleLog('🌊 Entrou no Mundo 2 (Reset de Prestígio)!', '#06b6d4');
           }
         } else {
-          this.consoleLog(`Mundo atual: Mundo ${this.currentWorld}. Uso: world 1 ou world 2 (ou m1 / m2)`, '#38bdf8');
+          this.consoleLog(`Mundo atual: Mundo ${this.currentWorld} (Modo: ${this.gameMode}). Uso: world 1 ou world 2 (ou m1 / m2)`, '#38bdf8');
         }
         break;
       }
@@ -5499,6 +5533,7 @@ class FishingGame {
       case 'mundo1':
       case 'm1':
       case 'w1':
+        if (this.gameMode === 'ima') this.setGameMode('pesca');
         this.travelBetweenWorlds(1);
         this.consoleLog('☀️ Retornou ao Mundo 1 via Batiscafo!', '#fbbf24');
         break;
@@ -5507,8 +5542,10 @@ class FishingGame {
       case 'mundo2':
       case 'm2':
       case 'w2':
+        if (this.gameMode === 'ima') this.setGameMode('pesca');
         if (this.currentWorld === 2) {
           this.consoleLog('Você já está no Mundo 2!', '#06b6d4');
+          this.renderAll();
         } else if (this.world2SavedData) {
           this.travelBetweenWorlds(2);
           this.consoleLog('🌊 Retornou ao Mundo 2 via Batiscafo!', '#06b6d4');
@@ -5516,6 +5553,14 @@ class FishingGame {
           this.enterWorld2Reset();
           this.consoleLog('🌊 Entrou no Mundo 2 (Reset de Prestígio com Herança M1)!', '#06b6d4');
         }
+        break;
+
+      case 'pesca':
+      case 'pescaria':
+      case 'normal':
+      case 'modopesca':
+        this.setGameMode('pesca');
+        this.consoleLog(`🎣 Retornou para o modo de Pesca tradicional (Mundo ${this.currentWorld})!`, '#38bdf8');
         break;
 
       case 'skipbiome':
@@ -5611,6 +5656,9 @@ class FishingGame {
       }
 
       case 'magnet':
+      case 'ima':
+      case 'ímã':
+      case 'modoima':
       case 'cheatmagnet': {
         const tier = Math.max(1, Math.min(5, parseInt(arg) || 1));
         this.magnetUnlocked = true;
@@ -6612,6 +6660,30 @@ function initGame() {
   };
   window.testSplash = () => window.game?.execConsoleCmd('testsplash');
   window.testGotas = () => window.game?.execConsoleCmd('testsplash');
+
+  // Navegação entre Mundos & Modos de Jogo
+  window.world = (w) => window.game?.travelBetweenWorlds(Number(w) || 1);
+  window.travelBetweenWorlds = (w) => window.game?.travelBetweenWorlds(Number(w) || 1);
+  window.m1 = () => window.game?.travelBetweenWorlds(1);
+  window.m2 = () => {
+    if (window.game) {
+      if (window.game.gameMode === 'ima') window.game.setGameMode('pesca');
+      if (window.game.currentWorld === 2) {
+        window.game.renderAll();
+      } else if (window.game.world2SavedData) {
+        window.game.travelBetweenWorlds(2);
+      } else {
+        window.game.enterWorld2Reset();
+      }
+    }
+  };
+  window.modoPesca = () => window.game?.setGameMode('pesca');
+  window.modoIma = () => {
+    if (window.game) {
+      window.game.magnetUnlocked = true;
+      window.game.setGameMode('ima');
+    }
+  };
 
   // Banner informativo no console
   setTimeout(() => {
