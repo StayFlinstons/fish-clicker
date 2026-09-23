@@ -34,7 +34,7 @@ import {
 // O jogo detecta automaticamente e abre o modal de Notas de Atualização
 // APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
 // ══════════════════════════════════════════════════════════════════════════════
-export const GAME_VERSION = '1.4.6';
+export const GAME_VERSION = '1.4.7';
 
 class FishingGame {
   constructor() {
@@ -5058,13 +5058,13 @@ class FishingGame {
     // Container
     const div = document.createElement('div');
     div.id = 'dev-console';
-    div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:100;display:none;flex-direction:column;max-height:200px;';
+    div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:100;display:none;flex-direction:column;max-height:360px;box-shadow:0 -4px 20px rgba(0,0,0,0.8);';
     div.innerHTML = `
-      <div id="console-log" style="flex:1;overflow-y:auto;background:rgba(0,0,0,0.92);padding:6px 10px;font-family:monospace;font-size:12px;color:#a0f0a0;max-height:150px;"></div>
-      <div style="display:flex;background:#111;border-top:2px solid #333;">
-        <span style="padding:6px 8px;color:#0f0;font-family:monospace;font-size:12px;">></span>
-        <input id="console-input" type="text" placeholder="help" autocomplete="off"
-          style="flex:1;background:transparent;border:none;outline:none;color:#0f0;font-family:monospace;font-size:12px;padding:6px 4px;">
+      <div id="console-log" style="flex:1;overflow-y:auto;background:rgba(8,12,20,0.96);padding:10px 14px;font-family:monospace;font-size:11.5px;color:#e2e8f0;max-height:300px;line-height:1.45;border-top:2px solid #0284c7;"></div>
+      <div style="display:flex;background:#0f172a;border-top:1px solid #1e293b;">
+        <span style="padding:7px 10px;color:#38bdf8;font-family:monospace;font-size:12px;font-weight:bold;">></span>
+        <input id="console-input" type="text" placeholder="Digite help para ver os comandos..." autocomplete="off"
+          style="flex:1;background:transparent;border:none;outline:none;color:#f8fafc;font-family:monospace;font-size:12px;padding:7px 4px;">
       </div>
     `;
     document.body.appendChild(div);
@@ -5134,45 +5134,67 @@ class FishingGame {
 
     switch (cmd) {
       case 'help':
-        this.consoleLog('=== COMANDOS ===', '#ffd700');
-        this.consoleLog('gold <qtd>     - Adiciona ouro', '#ccc');
-        this.consoleLog('goldset <qtd>  - Define ouro para valor exato (ex: goldset 0)', '#ccc');
-        this.consoleLog('goldenfish     - Spawna peixe dourado', '#ccc');
-        this.consoleLog('bloodfish / spawnblood - Spawna o Peixe da Lua Sangrenta', '#ef4444');
-        this.consoleLog('eclipse / bloodmoon - Inicia o Eclipse Sangrento (60s)', '#f87171');
-        this.consoleLog('catch [n]      - Pesca n peixes (default: 1)', '#ccc');
-        this.consoleLog('catchid <id> [n] - Pesca peixe por ID numérico (1 a ' + FISH_LIST.length + ')', '#ccc');
-        this.consoleLog('catchall       - Captura todos os ' + FISH_LIST.length + ' peixes do jogo', '#34d399');
-        this.consoleLog('maxupgrades    - Maximiza upgrades', '#ccc');
-        this.consoleLog('unlockall      - Desbloqueia varas e iscas', '#ccc');
-        this.consoleLog('clearinv       - Limpa inventário', '#ccc');
-        this.consoleLog('buff <tipo> [s] - Buff temporário (gold/luck/speed/double)', '#ccc');
-        this.consoleLog('offline [minutos] - Simula ausência offline/AFK (default: 60)', '#38bdf8');
-        this.consoleLog('skiptime / skip [phase] - Pula horário do dia (day/sunset/night)', '#ccc');
-        this.consoleLog('world [1|2] / m1 / m2   - Alterna instantaneamente entre Mundo 1 e Mundo 2', '#38bdf8');
-        this.consoleLog('skipbiome / biome <id>  - Controla o ciclo de 5m de biomas do Mundo 2', '#06b6d4');
-        this.consoleLog('time / tod [phase|skip] - Consulta ou define horário do dia', '#ccc');
-        this.consoleLog('fisheye [n]    - Adiciona n Olhos de Peixe (default: 1)', '#ccc');
-        this.consoleLog('midnight       - Simula virada das 00:00 para coletar Olho', '#ccc');
-        this.consoleLog('magnet [tier]  - Desbloqueia ou define Tier da Pesca Magnética (1 a 5)', '#f59e0b');
-        this.consoleLog('magnetitem <id> [n] - Adiciona item magnético ao inventário', '#f59e0b');
-        this.consoleLog('=== TESTES DAS NOVAS MECÂNICAS ===', '#ffd700');
-        this.consoleLog('testlendario   - Simula 1º Lendário (desbloqueia Santuário + 1 Olho)', '#38bdf8');
-        this.consoleLog('testmitico     - Simula 1º Mítico (desbloqueia Oferendas no Santuário)', '#ec4899');
-        this.consoleLog('testsecreto    - Simula 1º Secreto (celebração mística)', '#a855f7');
-        this.consoleLog('testrepetir    - Simula 2º peixe da raridade (comprova que não repete)', '#34d399');
-        this.consoleLog('resetprogresso - Reseta Santuário e Oferendas pro início', '#f59e0b');
-        this.consoleLog('liberarsantuario / travarsantuario - Controla acesso ao Santuário', '#ccc');
-        this.consoleLog('liberaroferendas / travaroferendas - Controla aba e botões de doar', '#ccc');
-        this.consoleLog('isca <nome>    - Troca anzol (minhoca, neon, ouro, kraken...)', '#ccc');
-        this.consoleLog('patchnotes     - Abre Notas de Atualização com timer de 5s', '#38bdf8');
-        this.consoleLog('resetpatchnotes- Reseta versão vista para simular 1ª abertura pós-update', '#a855f7');
-        this.consoleLog('testbuff       - Simula celebração do 1º Peixe com Buff (tutorial Aquário)', '#c084fc');
-        this.consoleLog('resetbuff      - Reseta celebração do 1º Peixe com Buff para simular de novo', '#a855f7');
-        this.consoleLog('testsplash / testgotas - Testa animação de gotas d\'água saindo do peixe no lago', '#38bdf8');
-        this.consoleLog('reset          - Reseta progresso', '#ccc');
-        this.consoleLog('clear          - Limpa console', '#ccc');
+      case 'ajuda':
+      case 'comandos':
+      case '?': {
+        const cmdColor = '#cbd5e1';    // Cor única e nítida para todos os comandos
+        const headerColor = '#38bdf8'; // Destaque para títulos de categorias
+
+        this.consoleLog('══════════════ [ COMANDOS DO CONSOLE ] ══════════════', '#ffd700');
+
+        this.consoleLog('🪙 RECURSOS & ECONOMIA', headerColor);
+        this.consoleLog('  gold <qtd>             - Adiciona ouro (ex: gold 50000)', cmdColor);
+        this.consoleLog('  goldset <qtd>          - Define o ouro exato (ex: goldset 0)', cmdColor);
+        this.consoleLog('  fisheye [n]            - Adiciona n Olhos de Peixe (default: 1)', cmdColor);
+        this.consoleLog('  midnight               - Simula virada das 00:00 (coleta de Olho)', cmdColor);
+
+        this.consoleLog('🎣 PESCA & CAPTURAS', headerColor);
+        this.consoleLog('  catch [n]              - Pesca n peixes aleatórios (default: 1)', cmdColor);
+        this.consoleLog('  catchid <id> [n]       - Pesca peixe por ID (1 a 35) ou nome', cmdColor);
+        this.consoleLog('  catchall               - Captura todos os peixes do mundo atual', cmdColor);
+        this.consoleLog('  goldenfish             - Spawna o peixe dourado especial', cmdColor);
+        this.consoleLog('  bloodfish              - Spawna o peixe da Lua Sangrenta', cmdColor);
+        this.consoleLog('  clearinv               - Limpa todos os peixes do balde', cmdColor);
+
+        this.consoleLog('⭐ PROGRESSÃO & UPGRADES', headerColor);
+        this.consoleLog('  maxupgrades            - Maximiza todas as melhorias da loja', cmdColor);
+        this.consoleLog('  unlockall              - Desbloqueia todas as varas e iscas', cmdColor);
+        this.consoleLog('  buff <tipo> [s]        - Ativa buff temporário (gold/luck/speed/double)', cmdColor);
+        this.consoleLog('  offline [minutos]      - Simula tempo ausente AFK (default: 60 min)', cmdColor);
+
+        this.consoleLog('🌍 MUNDOS, TEMPO & EVENTOS', headerColor);
+        this.consoleLog('  world [1|2]            - Alterna entre Mundo 1 (Lago) e Mundo 2 (Abismo)', cmdColor);
+        this.consoleLog('  time [fase]            - Consulta ou define horário (day/sunset/night)', cmdColor);
+        this.consoleLog('  skiptime               - Avança para o próximo horário do dia', cmdColor);
+        this.consoleLog('  biome <id>             - Alterna o bioma abissal do Mundo 2', cmdColor);
+        this.consoleLog('  eclipse                - Inicia Eclipse e Mar Sangrento por 60s', cmdColor);
+
+        this.consoleLog('🧲 PESCA MAGNÉTICA', headerColor);
+        this.consoleLog('  magnet [tier]          - Desbloqueia ou define Tier do Ímã (1 a 5)', cmdColor);
+        this.consoleLog('  magnetitem <id> [n]    - Adiciona item magnético ao inventário', cmdColor);
+
+        this.consoleLog('✨ TESTES & ANIMAÇÕES', headerColor);
+        this.consoleLog('  testlendario           - Celebração cinematográfica do 1º Lendário', cmdColor);
+        this.consoleLog('  testmitico             - Celebração cinematográfica do 1º Mítico', cmdColor);
+        this.consoleLog('  testsecreto            - Celebração cinematográfica do 1º Secreto', cmdColor);
+        this.consoleLog('  testbuff               - Celebração do 1º Peixe com Buff (Aquário)', cmdColor);
+        this.consoleLog('  testsplash             - Animação de gotas d\'água no lago', cmdColor);
+        this.consoleLog('  testrepetir            - Testa captura repetida (sem duplicate overlay)', cmdColor);
+        this.consoleLog('  isca <nome>            - Troca anzol e isca (minhoca, neon, ouro, kraken)', cmdColor);
+        this.consoleLog('  patchnotes             - Abre Notas de Atualização com timer de 5s', cmdColor);
+
+        this.consoleLog('🔄 RESETS & RESTAURAÇÃO', headerColor);
+        this.consoleLog('  resetprogresso         - Reseta Santuário e Oferendas pro início', cmdColor);
+        this.consoleLog('  resetbuff              - Reseta celebração do 1º Peixe com Buff', cmdColor);
+        this.consoleLog('  resetpatchnotes        - Reseta visualização das Notas de Atualização', cmdColor);
+
+        this.consoleLog('⚙️ SISTEMA', headerColor);
+        this.consoleLog('  clear                  - Limpa o histórico de mensagens deste console', cmdColor);
+        this.consoleLog('  reset                  - Reseta completamente o progresso do jogo', cmdColor);
+
+        this.consoleLog('══════════════════════════════════════════════════════', '#ffd700');
         break;
+      }
 
       case 'gold': {
         const amount = parseInt(arg) || 10000;
@@ -6502,24 +6524,31 @@ class FishingGame {
     console.log(`%c══════════════════════════════════════════════════════════════════
 🎮 COMANDOS DE TESTE DISPONÍVEIS NO CONSOLE
 ══════════════════════════════════════════════════════════════════%c
-⭐ PROGRESSÃO & CELEBRAÇÕES (1x PERMANENTE):
-  • testLendario()         -> Captura 1º Lendário (desbloqueia Santuário + 1 Olho + Card Dourado)
-  • testMitico()           -> Captura 1º Mítico (desbloqueia Oferendas + Card Púrpura)
-  • testSecreto()          -> Captura 1º Secreto (Celebração Mística)
-  • testRepetir('LENDARIO')-> Pesca outro peixe da raridade (comprova que NÃO repete a celebração)
-  • resetProgresso()       -> Reseta tudo pro início (bloqueia Santuário e Oferendas para testar do zero)
+⭐ CELEBRAÇÕES & ANIMAÇÕES:
+  • testLendario()         -> 1º Lendário (desbloqueia Santuário + 1 Olho)
+  • testMitico()           -> 1º Mítico (desbloqueia Oferendas no Santuário)
+  • testSecreto()          -> 1º Secreto (Celebração Mística)
+  • testBuff()             -> 1º Peixe com Buff (tutorial Aquário)
+  • testSplash()           -> Gotas d'água e splash no lago
+  • testRepetir('LENDARIO')-> 2º Peixe (comprova que não duplica overlay)
+  • testPatchNotes()       -> Notas de Atualização com timer
 
-🔒 TRAVAS MANUAIS (SANTUÁRIO & OFERENDAS):
+🔒 TRAVAS & CONTROLE (SANTUÁRIO / OFERENDAS):
   • testLiberarSantuario() / testTravarSantuario()
   • testLiberarOferendas() / testTravarOferendas()
 
 🪝 ANZOL, BÓIA & ISCA:
-  • testIsca('nome')       -> Troca cor do anzol ('minhoca', 'camarao', 'neon', 'queijo', 'ouro', 'vortice', 'kraken')
-  • testFisgada()          -> Dispara animação física de fisgada/puxão no anzol
+  • testIsca('nome')       -> Troca isca ('minhoca', 'neon', 'ouro', 'kraken')
+  • testFisgada()          -> Animação física de puxão no anzol
+
+🔄 RESTAURAÇÃO DE PROGRESSO:
+  • resetProgresso()       -> Reseta Santuário e Oferendas pro início
+  • resetBuff()            -> Reseta celebração do 1º Peixe com Buff
+  • resetPatchNotes()      -> Reseta visualização do patch notes
 
 📊 INFORMAÇÕES:
-  • testStatus()           -> Exibe tabela completa com status de todos os desbloqueios
-  • testAjuda()            -> Exibe este menu de ajuda
+  • testStatus()           -> Exibe tabela com status dos desbloqueios
+  • testAjuda()            -> Exibe esta lista de ajuda
 ══════════════════════════════════════════════════════════════════`,
     'color: #38bdf8; font-weight: bold; font-size: 12px;',
     'color: #e2e8f0; font-family: monospace; font-size: 11px;'
