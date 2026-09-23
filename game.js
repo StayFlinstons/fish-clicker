@@ -34,7 +34,7 @@ import {
 // O jogo detecta automaticamente e abre o modal de Notas de Atualização
 // APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
 // ══════════════════════════════════════════════════════════════════════════════
-export const GAME_VERSION = '1.4.3';
+export const GAME_VERSION = '1.4.4';
 
 class FishingGame {
   constructor() {
@@ -5161,8 +5161,8 @@ class FishingGame {
         this.consoleLog('isca <nome>    - Troca anzol (minhoca, neon, ouro, kraken...)', '#ccc');
         this.consoleLog('patchnotes     - Abre Notas de Atualização com timer de 5s', '#38bdf8');
         this.consoleLog('resetpatchnotes- Reseta versão vista para simular 1ª abertura pós-update', '#a855f7');
-        this.consoleLog('buffnotice     - Testa notificação de 1º peixe com buff', '#38bdf8');
-        this.consoleLog('resetbuffnotice- Reseta aviso de 1º peixe com buff para simular novamente', '#a855f7');
+        this.consoleLog('testbuff       - Simula celebração do 1º Peixe com Buff (tutorial Aquário)', '#c084fc');
+        this.consoleLog('resetbuff      - Reseta celebração do 1º Peixe com Buff para simular de novo', '#a855f7');
         this.consoleLog('reset          - Reseta progresso', '#ccc');
         this.consoleLog('clear          - Limpa console', '#ccc');
         break;
@@ -5254,22 +5254,23 @@ class FishingGame {
         this.consoleLog('Status de versão vista resetado! Ao recarregar a página o modal abrirá automaticamente.', '#a855f7');
         break;
 
+      case 'testbuff':
+      case 'testbufffish':
+      case 'testpeixebuff':
+      case 'buffcelebration':
       case 'buffnotice':
-      case 'testbuffnotice': {
-        const testFish = {
-          name: 'Peixe-Sol Radiante',
-          rarity: 'LENDARIO',
-          icon: 'peixe_sol'
-        };
-        this.showFirstBuffFishNotification(testFish);
-        this.consoleLog('Notificação de 1º peixe com buff exibida na tela!', '#38bdf8');
+      case 'testbuffnotice':
+      case 'buff':
+        this.toggleConsole(false);
+        this.simulateFirstBuffCatch(true);
+        this.consoleLog('🐠 Celebração épica do 1º Peixe com Buff disparada!', '#a855f7');
         break;
-      }
 
+      case 'resetbuff':
       case 'resetbuffnotice':
         this.hasSeenBuffFishNotice = false;
         this.saveGame();
-        this.consoleLog('Status de aviso do 1º peixe com buff resetado!', '#a855f7');
+        this.consoleLog('Status de celebração do 1º peixe com buff resetado!', '#a855f7');
         break;
 
       case 'eclipse':
@@ -5957,12 +5958,21 @@ class FishingGame {
     }, 350);
   }
 
-  triggerFirstCatchCelebration(fish) {
+  triggerFirstCatchCelebration(fish, celebrationType = null) {
     const overlay = document.getElementById('first-catch-celebration-overlay');
     if (!overlay) return;
 
     const rarity = fish.rarity;
     const configMap = {
+      BUFF: {
+        badgeText: '★ ATRIBUTO MÍSTICO DESCOBERTO! ★',
+        mainTitle: 'PARABÉNS! VOCÊ FISGOU SEU PRIMEIRO PEIXE COM BUFF!',
+        accentColor: '#c084fc',
+        borderColor: '#a855f7',
+        haloClass: 'bg-purple-600/50',
+        radialGlow: 'radial-gradient(circle at center, rgba(168, 85, 247, 0.55) 0%, rgba(107, 33, 168, 0.3) 50%, transparent 75%)',
+        badgeClass: 'text-purple-300 bg-purple-950/90 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.7)]'
+      },
       LENDARIO: {
         badgeText: '★ PRIMEIRO PEIXE LENDÁRIO! ★',
         mainTitle: 'PARABÉNS! VOCÊ CAPTUROU SEU PRIMEIRO PEIXE LENDÁRIO!',
@@ -5992,7 +6002,8 @@ class FishingGame {
       }
     };
 
-    const cfg = configMap[rarity] || configMap.LENDARIO;
+    const activeType = celebrationType || rarity;
+    const cfg = configMap[activeType] || configMap.BUFF || configMap.LENDARIO;
 
     // Atualiza Textos
     const badgeEl = document.getElementById('fc-badge-rarity');
@@ -6056,13 +6067,19 @@ class FishingGame {
       }
     }
 
-    // Banner Especial de Desbloqueio de Mecânica (Lendário: Santuário / Mítico: Oferendas)
+    // Banner Especial de Desbloqueio de Mecânica (Lendário: Santuário / Mítico: Oferendas / Buff: Aquário)
     const cardEl = document.getElementById('fc-mechanic-card');
     const mTitleEl = document.getElementById('fc-mechanic-title');
     const mDescEl = document.getElementById('fc-mechanic-desc');
 
     if (cardEl && mTitleEl && mDescEl) {
-      if (rarity === 'LENDARIO') {
+      if (activeType === 'BUFF') {
+        cardEl.className = 'w-full max-w-sm p-2.5 border-2 text-left space-y-1 shadow-[3px_3px_0_#000] border-purple-400 bg-purple-950/90 text-purple-200';
+        mTitleEl.className = 'flex items-center gap-1.5 font-bold text-[8.5px] sm:text-[9.5px] text-purple-300 uppercase tracking-wider';
+        mTitleEl.innerHTML = '<span>🐠</span> BUFFS ATIVOS APENAS NO AQUÁRIO!';
+        mDescEl.innerHTML = 'Peixes no balde <b class="text-amber-300">NÃO</b> ativam bônus (servem para pescar e vender). Para usufruir dos atributos deste peixe, mova-o ao <b class="text-cyan-300">Aquário</b> clicando no botão <b class="text-purple-300 border border-purple-500 px-1 py-0.5 bg-purple-950/80 inline-flex items-center gap-0.5"><span>🐠</span>AQUÁRIO</b>!';
+        cardEl.classList.remove('hidden');
+      } else if (rarity === 'LENDARIO') {
         cardEl.className = 'w-full max-w-sm p-2.5 border-2 text-left space-y-1 shadow-[3px_3px_0_#000] border-cyan-400 bg-cyan-950/90 text-cyan-200';
         mTitleEl.className = 'flex items-center gap-1.5 font-bold text-[8.5px] sm:text-[9.5px] text-cyan-300 uppercase tracking-wider';
         mTitleEl.innerHTML = '<span>👁️</span> SANTUÁRIO DOS OLHOS DESBLOQUEADO!';
@@ -6083,7 +6100,10 @@ class FishingGame {
     this.spawnCelebrationParticles(cfg.accentColor);
 
     // Toca som triunfante
-    if (sound.playFirstCatchFanfare) {
+    if (activeType === 'BUFF') {
+      sound.playUpgrade();
+      if (sound.playFirstCatchFanfare) sound.playFirstCatchFanfare('LENDARIO');
+    } else if (sound.playFirstCatchFanfare) {
       sound.playFirstCatchFanfare(rarity);
     } else if (sound.playCatch) {
       sound.playCatch(rarity);
@@ -6225,10 +6245,17 @@ class FishingGame {
     this._fcCloseTimer = setTimeout(() => {
       overlay.classList.add('hidden');
       this._fcCloseTimer = null;
+      if (this._pendingBuffCelebration) {
+        const pendingFish = this._pendingBuffCelebration;
+        this._pendingBuffCelebration = null;
+        setTimeout(() => {
+          this.triggerFirstCatchCelebration(pendingFish, 'BUFF');
+        }, 350);
+      }
     }, 300);
   }
 
-  // ── NOTIFICAÇÃO DE 1º PEIXE COM BUFF (AVISO: ATIVOS SÓ NO AQUÁRIO) ──
+  // ── CELEBRAÇÃO DO 1º PEIXE COM BUFF (ANIMAÇÃO NO ESTILO TESTLENDARIO) ──
   checkFirstBuffFishCatch(fish) {
     if (!fish) return;
     const buffs = this.getFishBuffs(fish);
@@ -6238,50 +6265,54 @@ class FishingGame {
     this.hasSeenBuffFishNotice = true;
     this.saveGame();
 
-    // Pequeno delay para a notificação de captura inicial aparecer primeiro
-    setTimeout(() => {
-      this.showFirstBuffFishNotification(fish);
-    }, 500);
+    // Se já houver overlay aberto ou celebração de raridade para este mesmo peixe, aguarda o fechamento
+    const overlay = document.getElementById('first-catch-celebration-overlay');
+    const isOverlayActive = overlay && !overlay.classList.contains('hidden');
+    const isTargetRarityFirst = ['LENDARIO', 'MITICO', 'SECRETO'].includes(fish.rarity) &&
+      this.firstRarityCatches && this.firstRarityCatches[fish.rarity];
+
+    if (isOverlayActive || isTargetRarityFirst) {
+      this._pendingBuffCelebration = fish;
+    } else {
+      setTimeout(() => {
+        this.triggerFirstCatchCelebration(fish, 'BUFF');
+      }, 450);
+    }
   }
 
-  showFirstBuffFishNotification(fish) {
-    sound.playUpgrade();
-    const toast = document.createElement('div');
-    toast.className = 'fixed top-4 right-4 z-50 p-3 bg-slate-900/95 border-2 border-purple-400 text-purple-300 flex items-center gap-3 transition-all duration-300 transform translate-y-[-20px] opacity-0';
-    toast.style.fontFamily = 'var(--font-pixel)';
-    toast.style.boxShadow = '4px 4px 0 #000, 0 0 16px rgba(168,85,247,0.35)';
-    toast.style.maxWidth = '340px';
-
-    const fishName = fish?.name || 'Peixe Especial';
-
-    toast.innerHTML = `
-      <div class="w-10 h-10 bg-purple-950/80 border border-purple-500 flex items-center justify-center shrink-0">
-        ${PIXEL_ICONS.aquarium}
-      </div>
-      <div class="min-w-0">
-        <div class="text-[8px] text-purple-400 uppercase tracking-widest font-bold flex items-center gap-1">
-          <span>🐠</span><span>NOVO: ATRIBUTO MÍSTICO!</span>
-        </div>
-        <div class="text-[9.5px] sm:text-[10px] font-bold text-white leading-snug break-words mt-0.5">
-          Buffs Ativos Apenas no Aquário!
-        </div>
-        <div class="text-[8px] text-slate-300 leading-tight break-words mt-0.5">
-          ${fishName} possui bônus passivo! Peixes no balde <span class="text-amber-300 font-bold">não</span> ativam buffs. Mova-o ao <span class="text-purple-300 font-bold">Aquário</span> para ativá-lo!
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(toast);
-    requestAnimationFrame(() => {
-      toast.style.transform = 'translateY(0)';
-      toast.style.opacity = '1';
+  /**
+   * Simula a captura do 1º peixe com buff, disparando a tela de celebração épica
+   */
+  simulateFirstBuffCatch(force = true) {
+    if (force) {
+      this.hasSeenBuffFishNotice = false;
+    }
+    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    let sample = pool.find(f => {
+      const b = this.getFishBuffs(f);
+      return b && b.length > 0;
     });
-
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(-20px)';
-      setTimeout(() => toast.remove(), 300);
-    }, 7000);
+    if (!sample) {
+      sample = {
+        id: 'peixe_lua_crepusculo',
+        name: 'Peixe-Lua Crepúsculo',
+        rarity: 'EPICO',
+        icon: 'peixe_lua',
+        weight: 18.5,
+        baseValue: 800,
+        buffs: [
+          { type: 'gold_multiplier', value: 0.20, text: '+20% Ouro' },
+          { type: 'luck_bonus', value: 0.15, text: '+15% Sorte' }
+        ]
+      };
+    } else {
+      sample = {
+        ...sample,
+        buffs: this.getFishBuffs(sample)
+      };
+    }
+    console.log(`%c[TESTE] Disparando animação do 1º peixe com buff: ${sample.name}`, 'color: #a855f7; font-weight: bold;');
+    this.checkFirstBuffFishCatch(sample);
   }
 
   // ═══════════════════════════════════════════════
@@ -6517,12 +6548,14 @@ function initGame() {
     localStorage.removeItem('fc_last_seen_patch_version');
     console.log('[Pescaria Clicker] Versão vista resetada! Ao recarregar a página, as notas abrirão com timer de 5s.');
   };
-  window.testBuffNotice = (fish) => window.game?.showFirstBuffFishNotification(fish || { name: 'Peixe-Sol Radiante', rarity: 'LENDARIO' });
-  window.resetBuffNotice = () => {
+  window.testBuff = (force = true) => window.game?.simulateFirstBuffCatch(force);
+  window.testBuffFish = (force = true) => window.game?.simulateFirstBuffCatch(force);
+  window.testPeixeBuff = (force = true) => window.game?.simulateFirstBuffCatch(force);
+  window.resetBuff = () => {
     if (window.game) {
       window.game.hasSeenBuffFishNotice = false;
       window.game.saveGame();
-      console.log('[Pescaria Clicker] Aviso do 1º peixe com buff resetado!');
+      console.log('[Pescaria Clicker] Celebração do 1º peixe com buff resetada!');
     }
   };
 
