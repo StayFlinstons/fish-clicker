@@ -34,7 +34,7 @@ import {
 // O jogo detecta automaticamente e abre o modal de Notas de Atualização
 // APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
 // ══════════════════════════════════════════════════════════════════════════════
-export const GAME_VERSION = '1.4.5';
+export const GAME_VERSION = '1.4.6';
 
 class FishingGame {
   constructor() {
@@ -3430,7 +3430,13 @@ class FishingGame {
         if (this.currentWorld === 2) {
           this.checkSubmarinePartDrop(this.activeWorld2Biome || 'recife_bioluminescente');
         }
-        if (this.waterRenderer) this.waterRenderer.addSwimmingFish(fish.icon);
+        if (this.waterRenderer) {
+          if (typeof this.waterRenderer.catchAndSpawnFish === 'function') {
+            this.waterRenderer.catchAndSpawnFish(fish.icon);
+          } else {
+            this.waterRenderer.addSwimmingFish(fish.icon);
+          }
+        }
         this.renderHeader();
         this.renderInventory();
         this.renderStats();
@@ -5163,6 +5169,7 @@ class FishingGame {
         this.consoleLog('resetpatchnotes- Reseta versão vista para simular 1ª abertura pós-update', '#a855f7');
         this.consoleLog('testbuff       - Simula celebração do 1º Peixe com Buff (tutorial Aquário)', '#c084fc');
         this.consoleLog('resetbuff      - Reseta celebração do 1º Peixe com Buff para simular de novo', '#a855f7');
+        this.consoleLog('testsplash / testgotas - Testa animação de gotas d\'água saindo do peixe no lago', '#38bdf8');
         this.consoleLog('reset          - Reseta progresso', '#ccc');
         this.consoleLog('clear          - Limpa console', '#ccc');
         break;
@@ -5271,6 +5278,19 @@ class FishingGame {
         this.hasSeenBuffFishNotice = false;
         this.saveGame();
         this.consoleLog('Status de celebração do 1º peixe com buff resetado!', '#a855f7');
+        break;
+
+      case 'testsplash':
+      case 'testgotas':
+      case 'splash':
+      case 'gotas':
+        if (this.waterRenderer) {
+          this.waterRenderer.catchAndSpawnFish('dourado');
+          this.consoleLog('💧 Animação de gotas e splash disparada no peixinho do lago!', '#38bdf8');
+          this.showToast('💧 Gotas d\'água espirradas no lago!', 'info');
+        } else {
+          this.consoleLog('WaterRenderer não inicializado.', '#f87171');
+        }
         break;
 
       case 'eclipse':
@@ -6561,6 +6581,8 @@ function initGame() {
       console.log('[Pescaria Clicker] Celebração do 1º peixe com buff resetada!');
     }
   };
+  window.testSplash = () => window.game?.execConsoleCmd('testsplash');
+  window.testGotas = () => window.game?.execConsoleCmd('testsplash');
 
   // Banner informativo no console
   setTimeout(() => {

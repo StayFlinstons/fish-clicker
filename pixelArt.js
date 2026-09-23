@@ -1159,6 +1159,9 @@ export class PixelWaterRenderer {
     this.time = 0;
     this.fishSprites = [];
     this.bubbles = [];
+    this.waterDrops = [];
+    this.splashRipples = [];
+    this.vanishingFish = [];
     this.timeOfDay = 'night'; // 'day' | 'sunset' | 'night'
     this.diverActive = false;
     this.diver = {
@@ -1211,6 +1214,144 @@ export class PixelWaterRenderer {
     this.canvas.style.imageRendering = 'pixelated';
   }
 
+  /**
+   * Dispara uma explosão de gotas d'água, ondulações e bolhas quando um peixe é pescado/some
+   */
+  triggerFishSplash(x, y, fish = null) {
+    const W = this.canvas.width;
+    const H = this.canvas.height;
+    if (x < -50 || x > W + 50 || y < -30 || y > H + 50) return;
+
+    const originX = Math.round(x + (fish ? fish.size * 4 : 8));
+    const originY = Math.round(y + (fish ? fish.size * 2 : 5));
+
+    // Animação de flick e desvanecimento do peixinho
+    if (fish) {
+      this.vanishingFish.push({
+        x: fish.x,
+        y: fish.y,
+        dir: fish.dir || -1,
+        pal: fish.pal || PALETTES.lambari,
+        size: fish.size || 2,
+        wobble: fish.wobble || 0,
+        vy: -1.2,
+        frame: 0,
+        maxFrames: 9
+      });
+    }
+
+    // Cores das gotículas de água
+    let dropColors;
+    if (this.bloodMoonActive) {
+      dropColors = ['#ffffff', '#fca5a5', '#ef4444', '#b91c1c', '#fee2e2'];
+    } else if (this.isWorld2) {
+      const biome = this.world2Biome || 'recife_bioluminescente';
+      if (biome === 'fendas_vulcanicas') {
+        dropColors = ['#ffffff', '#fef08a', '#fed7aa', '#f97316', '#ef4444'];
+      } else if (biome === 'cemiterio_naufragios') {
+        dropColors = ['#ffffff', '#d1fae5', '#a7f3d0', '#34d399', '#059669'];
+      } else if (biome === 'zona_hadal') {
+        dropColors = ['#ffffff', '#f3e8ff', '#e9d5ff', '#c084fc', '#9333ea'];
+      } else {
+        dropColors = ['#ffffff', '#cffafe', '#a5f3fc', '#22d3ee', '#0891b2'];
+      }
+    } else if (this.timeOfDay === 'sunset') {
+      dropColors = ['#ffffff', '#fed7aa', '#fb923c', '#f472b6', '#bae6fd'];
+    } else {
+      dropColors = ['#ffffff', '#e0f2fe', '#bae6fd', '#7dd3fc', '#38bdf8', '#0284c7'];
+    }
+
+    // 12 a 18 Gotas d'água espirrando com física de arco parabólico
+    const count = 12 + Math.floor(Math.random() * 6);
+    for (let i = 0; i < count; i++) {
+      const angle = 0.35 + Math.random() * (Math.PI - 0.7);
+      const speed = 2.0 + Math.random() * 3.2;
+      const vx = Math.cos(angle) * (Math.random() > 0.5 ? 1 : -1) * (speed * 0.7);
+      const vy = -Math.sin(angle) * speed;
+      const color = dropColors[Math.floor(Math.random() * dropColors.length)];
+
+      this.waterDrops.push({
+        x: originX + (Math.random() - 0.5) * 8,
+        y: originY + (Math.random() - 0.5) * 6,
+        vx,
+        vy,
+        gravity: 0.16 + Math.random() * 0.04,
+        size: Math.random() < 0.3 ? 3 : 2,
+        color,
+        life: 0,
+        maxLife: 24 + Math.floor(Math.random() * 12),
+        sparkle: Math.random() < 0.4
+      });
+    }
+
+    // Ondulação elíptica de água se expandindo
+    this.splashRipples.push({
+      x: originX,
+      y: originY,
+      r: 3,
+      maxR: 14 + Math.random() * 6,
+      color: dropColors[2] || '#38bdf8',
+      life: 0,
+      maxLife: 20
+    });
+
+    // 2 a 3 Pequenas bolhas de splash
+    for (let i = 0; i < 3; i++) {
+      this.bubbles.push({
+        x: originX + (Math.random() - 0.5) * 12,
+        y: originY + (Math.random() - 0.5) * 8,
+        speed: 0.6 + Math.random() * 0.6,
+        drift: (Math.random() - 0.5) * 0.4
+      });
+    }
+  }
+
+  /**
+   * Pega um peixinho visível no lago, dispara a animação de gotas e adiciona um novo peixe
+   */
+  catchAndSpawnFish(fishIconId) {
+    const W = this.canvas.width;
+    const H = this.canvas.height;
+
+    const visibleIndices = [];
+    this.fishSprites.forEach((f, idx) => {
+      if (f.x > 20 && f.x < W - 20 && f.y > 30 && f.y < H - 30) {
+        visibleIndices.push(idx);
+      }
+    });
+
+    if (visibleIndices.length > 0) {
+      // Prioriza peixinho mais próximo da linha/anzol central (50% x, 40% y)
+      const hookX = W * 0.5;
+      const hookY = H * 0.4;
+      let targetIdx = visibleIndices[0];
+      let bestDist = Infinity;
+
+      for (const idx of visibleIndices) {
+        const f = this.fishSprites[idx];
+        const dist = Math.hypot(f.x - hookX, f.y - hookY);
+        if (dist < bestDist) {
+          bestDist = dist;
+          targetIdx = idx;
+        }
+      }
+
+      const caughtFish = this.fishSprites.splice(targetIdx, 1)[0];
+      if (caughtFish) {
+        this.triggerFishSplash(caughtFish.x, caughtFish.y, caughtFish);
+      }
+    } else if (this.fishSprites.length > 0) {
+      const oldest = this.fishSprites[0];
+      if (oldest && oldest.x > -40 && oldest.x < W + 40) {
+        this.fishSprites.shift();
+        this.triggerFishSplash(oldest.x, oldest.y, oldest);
+      }
+    }
+
+    // Repõe o cardume com um novo peixe vindo da borda
+    this.addSwimmingFish(fishIconId);
+  }
+
   addSwimmingFish(fishIconId) {
     const pal = PALETTES[fishIconId] || PALETTES.lambari;
     this.fishSprites.push({
@@ -1221,7 +1362,14 @@ export class PixelWaterRenderer {
       size: 2 + Math.floor(Math.random() * 2),
       wobble: Math.random() * Math.PI * 2
     });
-    if (this.fishSprites.length > 10) this.fishSprites.shift();
+
+    // Se ultrapassar 10 peixes, remove o mais antigo espirrando gotas caso esteja visível
+    if (this.fishSprites.length > 10) {
+      const removed = this.fishSprites.shift();
+      if (removed && removed.x > -20 && removed.x < this.canvas.width + 20) {
+        this.triggerFishSplash(removed.x, removed.y, removed);
+      }
+    }
   }
 
   update() {
@@ -1301,6 +1449,9 @@ export class PixelWaterRenderer {
       if (f.x < -80) { f.x = W + 30; f.y = 60 + Math.random() * (H - 140); }
       this._drawMinifish(f, Math.sin(f.wobble) * 2);
     });
+
+    // Gotas d'água, ondulações e efeitos de peixe pescado/sumindo
+    this._updateAndDrawSplashEffects(ctx, px);
 
     // Mergulhador Amigo nadando na tela (quando ativado)
     if (this.diverActive) {
@@ -1427,6 +1578,9 @@ export class PixelWaterRenderer {
       }
       this._drawMinifish(f, Math.sin(f.wobble) * 2);
     });
+
+    // Gotas d'água, ondulações e efeitos de peixe pescado/sumindo
+    this._updateAndDrawSplashEffects(ctx, px);
 
     // ── SONDA AUTÔNOMA SUBMARINA (DRONE ROV) PATRULHANDO O ABISMO ──
     if (this.diverActive) {
@@ -1579,6 +1733,78 @@ export class PixelWaterRenderer {
         ctx.fillStyle = cm[m[y][x]] || '#fff';
         ctx.fillRect(Math.round(f.x) + x * s, Math.round(f.y + wy) + y * s, s, s);
       }
+  }
+
+  _updateAndDrawSplashEffects(ctx, px) {
+    // 1. Ondulações (Ripples elípticos de água em perspectiva)
+    this.splashRipples = this.splashRipples.filter(rip => {
+      rip.life++;
+      const progress = rip.life / rip.maxLife;
+      if (progress >= 1) return false;
+      const currentR = rip.r + (rip.maxR - rip.r) * progress;
+      const alpha = (1 - progress) * 0.7;
+
+      ctx.save();
+      ctx.strokeStyle = rip.color;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(Math.round(rip.x), Math.round(rip.y), currentR, currentR * 0.45, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      return true;
+    });
+
+    // 2. Peixes sendo pescados (Flick para cima e Fade out)
+    this.vanishingFish = this.vanishingFish.filter(vf => {
+      vf.frame++;
+      if (vf.frame >= vf.maxFrames) return false;
+      vf.y += vf.vy;
+      vf.wobble += 0.4;
+      const alpha = 1 - (vf.frame / vf.maxFrames);
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, alpha);
+      this._drawMinifish(vf, Math.sin(vf.wobble) * 2);
+      ctx.restore();
+      return true;
+    });
+
+    // 3. Gotas d'Água (Gotículas pixeladas com física de arco parabólico e reflexo)
+    this.waterDrops = this.waterDrops.filter(drop => {
+      drop.life++;
+      if (drop.life >= drop.maxLife) return false;
+      drop.x += drop.vx;
+      drop.y += drop.vy;
+      drop.vy += drop.gravity;
+
+      const alpha = 1 - (drop.life / drop.maxLife);
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, alpha);
+      ctx.fillStyle = drop.color;
+
+      const sx = Math.round(drop.x);
+      const sy = Math.round(drop.y);
+      const s = drop.size;
+
+      // Formato clássico de gota d'água pixelada:
+      if (drop.vy < -0.8 && s >= 2) {
+        // Gota em subida rápida (lágrima vertical com ponta fina de 1px)
+        ctx.fillRect(sx, sy - 1, 1, 1);
+        ctx.fillRect(sx - 1, sy, s, s);
+      } else {
+        // Gota arredondada
+        ctx.fillRect(sx, sy, s, s);
+      }
+
+      // Brilho especular de reflexo solar/luz
+      if (drop.sparkle && alpha > 0.35) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(sx, sy, 1, 1);
+      }
+      ctx.restore();
+      return true;
+    });
   }
 }
 
