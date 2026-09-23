@@ -571,7 +571,7 @@ export const UPGRADES_WORLD_2 = [
     level: 0,
     maxLevel: 10,
     icon: 'aquario_cap',
-    desc: 'Capacidade do aquário submarino. Começa com 3.',
+    desc: 'Aumenta vagas no aquário. Apenas peixes guardados aqui ativam seus buffs (1.5x)!',
     getValue: (lvl) => 3 + lvl * 2
   },
   {

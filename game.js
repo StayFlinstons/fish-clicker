@@ -34,7 +34,7 @@ import {
 // O jogo detecta automaticamente e abre o modal de Notas de Atualização
 // APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
 // ══════════════════════════════════════════════════════════════════════════════
-export const GAME_VERSION = '1.4.1';
+export const GAME_VERSION = '1.4.2';
 
 class FishingGame {
   constructor() {
@@ -3282,12 +3282,9 @@ class FishingGame {
   getActiveBuffs() {
     const out = { goldMultiplier:0, luckBonus:0, fishingSpeedBonus:0, doubleCatchChance:0, autoFishSpeedBonus:0 };
 
-    // Buffs do inventário (1x)
-    this.inventory.forEach(fish => {
-      this.getFishBuffs(fish).forEach(b => this._applyFishBuff(b, 1.0, out));
-    });
-
-    // Buffs do aquário (1.5x!)
+    // Buffs de peixes: ativos EXCLUSIVAMENTE no aquário!
+    // Peixes no balde servem para pescaria e venda de ouro.
+    // Apenas os peixes guardados no aquário ativam seus bônus místicos (com 1.5x de poder).
     this.aquarium.forEach(fish => {
       this.getFishBuffs(fish).forEach(b => this._applyFishBuff(b, 1.5, out));
     });
@@ -3937,7 +3934,7 @@ class FishingGame {
     fish.locked = false;
     this.aquarium.push(fish);
     sound.playUpgrade();
-    this.showToast(fish.name + ' no aquário! Buff 1.5x!', 'success');
+    this.showToast(fish.name + ' no aquário! Buffs ativados (1.5x)!', 'success');
     this.renderAll();
     this.checkAchievements();
   }
@@ -3951,7 +3948,7 @@ class FishingGame {
     this.aquarium.splice(idx, 1);
     this.inventory.unshift(fish);
     sound.playClick();
-    this.showToast(fish.name + ' voltou ao balde.', 'info');
+    this.showToast(fish.name + ' voltou ao balde (buffs desativados).', 'info');
     this.renderAll();
   }
 
@@ -4486,7 +4483,7 @@ class FishingGame {
           <!-- Linha do Meio: Bônus e Atributos (se houver) -->
           ${hasBuff ? `
             <div class="bg-black/35 border border-slate-800/80 px-2 py-1 flex flex-col gap-0.5 text-[7.5px] sm:text-[8px]" style="font-family:var(--font-pixel);">
-              ${buffsList.map(b => `<span class="${isTriple ? 'text-red-300' : 'text-purple-300'} leading-tight whitespace-normal">★ ${b.text}</span>`).join('')}
+              ${buffsList.map(b => `<span class="${isTriple ? 'text-red-300' : 'text-purple-300'} leading-tight whitespace-normal">★ ${b.text} <span class="text-slate-500 text-[7px] font-normal">(Mova ao Aquário p/ ativar)</span></span>`).join('')}
             </div>
           ` : ''}
 
@@ -4500,7 +4497,7 @@ class FishingGame {
             ${canSacrifice && (fish.rarity === 'LENDARIO' || fish.rarity === 'MITICO') ? `
               <button onclick="window.game.sacrificeSpecificFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} title="Sacrificar no Altar das Almas" class="pixel-btn px-2 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-purple-950 border border-rose-500 text-rose-300 hover:bg-rose-900'} text-[7.5px] sm:text-[8px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">SACRIFICAR</button>
             ` : ''}
-            ${hasBuff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário (+50% de bônus)" class="pixel-btn px-2 py-1 text-[10px] bg-purple-950/80 border-purple-600 text-purple-300 hover:bg-purple-900 shrink-0 cursor-pointer">${PIXEL_ICONS.aquarium}</button>` : ''}
+            ${hasBuff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário para ativar os buffs (1.5x)" class="pixel-btn px-2 py-1 text-[7.5px] sm:text-[8px] font-bold bg-purple-950/80 border border-purple-500 text-purple-300 hover:bg-purple-900 shrink-0 cursor-pointer flex items-center gap-1" style="font-family:var(--font-pixel);"><span>🐠</span><span>AQUÁRIO</span></button>` : ''}
             <button onclick="window.game.toggleLockFish('${fish.uid}')" title="${fish.locked ? 'Destravar peixe' : 'Travar peixe'}" class="pixel-btn px-2 py-1 text-[10px] ${fish.locked ? 'bg-amber-950/90 border-amber-500 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'} shrink-0 cursor-pointer">${fish.locked ? PIXEL_ICONS.lockClosed : PIXEL_ICONS.lockOpen}</button>
             <button onclick="window.game.sellFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} class="pixel-btn px-3 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 cursor-not-allowed border-slate-800' : 'bg-emerald-800 text-emerald-200 border-emerald-600 hover:bg-emerald-700'} text-[9px] sm:text-[10px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">SELL</button>
           </div>
@@ -4523,9 +4520,9 @@ class FishingGame {
       c.innerHTML = `
         <div class="h-48 flex flex-col items-center justify-center text-center p-4 border-2 border-dashed border-purple-900/50">
           <div class="w-8 h-8 mb-1 opacity-40 inline-flex items-center justify-center">${PIXEL_ICONS.aquarium}</div>
-          <p class="text-[10px] text-slate-500" style="font-family:var(--font-pixel);">AQUARIO VAZIO</p>
-          <p class="text-[8px] text-slate-600 mt-1" style="font-family:var(--font-pixel);">${maxAq} slots · Buffs 1.5x</p>
-          <p class="text-[7px] text-purple-400 mt-2" style="font-family:var(--font-pixel);">Mova peixes com buff pelo balde</p>
+          <p class="text-[10.5px] text-purple-300 font-bold" style="font-family:var(--font-pixel);">AQUÁRIO VAZIO</p>
+          <p class="text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">${maxAq} vagas · Buffs ativos apenas aqui (1.5x)</p>
+          <p class="text-[7.5px] text-purple-400 mt-2" style="font-family:var(--font-pixel);">Mova seus melhores peixes do balde para ativar seus bônus!</p>
         </div>`;
       return;
     }

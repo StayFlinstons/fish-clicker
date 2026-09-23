@@ -37,7 +37,7 @@ export const UPGRADES = [
     level: 0,
     maxLevel: 15,
     icon: 'balde',
-    desc: 'Aumenta o espaço no balde. Começa com 10.',
+    desc: 'Aumenta o espaço do balde para pescar mais antes de vender.',
     getValue: (lvl) => 10 + lvl * 3 // +3 slots por nível (10 → 55)
   },
   {
@@ -81,7 +81,7 @@ export const UPGRADES = [
     level: 0,
     maxLevel: 12,
     icon: 'aquario_cap',
-    desc: 'Aumenta slots do aquário. Buffs são 1.5x mais fortes lá!',
+    desc: 'Aumenta vagas no aquário. Apenas peixes guardados aqui ativam seus buffs (1.5x)!',
     getValue: (lvl) => 3 + lvl * 2 // 3 → 27 slots
   },
   {
