@@ -34,7 +34,7 @@ import {
 // O jogo detecta automaticamente e abre o modal de Notas de Atualização
 // APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
 // ══════════════════════════════════════════════════════════════════════════════
-export const GAME_VERSION = '1.4.2';
+export const GAME_VERSION = '1.4.3';
 
 class FishingGame {
   constructor() {
@@ -161,6 +161,7 @@ class FishingGame {
 
     // Celebração de primeira captura por raridade (1x por raridade permanentemente)
     this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
+    this.hasSeenBuffFishNotice = false;
 
     // Cache fish sprites data URLs
     this._fishSpriteCache = {};
@@ -3053,6 +3054,7 @@ class FishingGame {
         magnetCatches: this.magnetCatches || 0,
         magnetGoldEarned: this.magnetGoldEarned || 0,
         firstRarityCatches: this.firstRarityCatches || { LENDARIO: false, MITICO: false, SECRETO: false },
+        hasSeenBuffFishNotice: Boolean(this.hasSeenBuffFishNotice),
         settings: this.settings,
         lastActiveTime: Date.now()
       }));
@@ -3123,6 +3125,7 @@ class FishingGame {
         this.firstRarityCatches = (d.firstRarityCatches && typeof d.firstRarityCatches === 'object')
           ? { LENDARIO: Boolean(d.firstRarityCatches.LENDARIO), MITICO: Boolean(d.firstRarityCatches.MITICO), SECRETO: Boolean(d.firstRarityCatches.SECRETO) }
           : { LENDARIO: false, MITICO: false, SECRETO: false };
+        this.hasSeenBuffFishNotice = Boolean(d.hasSeenBuffFishNotice);
 
         // Retro-compatibilidade: se o save antigo não tinha firstRarityCatches ou se peixes dessas raridades já foram descobertos
         if (this.discoveredFish) {
@@ -3284,9 +3287,9 @@ class FishingGame {
 
     // Buffs de peixes: ativos EXCLUSIVAMENTE no aquário!
     // Peixes no balde servem para pescaria e venda de ouro.
-    // Apenas os peixes guardados no aquário ativam seus bônus místicos (com 1.5x de poder).
+    // Apenas os peixes guardados no aquário ativam seus bônus místicos.
     this.aquarium.forEach(fish => {
-      this.getFishBuffs(fish).forEach(b => this._applyFishBuff(b, 1.5, out));
+      this.getFishBuffs(fish).forEach(b => this._applyFishBuff(b, 1.0, out));
     });
 
     if (this.currentWorld === 2) {
@@ -3423,6 +3426,7 @@ class FishingGame {
         this.showCatchNotification(fish);
         this.recordDiscovery(fish);
         this.checkFirstRarityCatch(fish);
+        this.checkFirstBuffFishCatch(fish);
         if (this.currentWorld === 2) {
           this.checkSubmarinePartDrop(this.activeWorld2Biome || 'recife_bioluminescente');
         }
@@ -3934,7 +3938,7 @@ class FishingGame {
     fish.locked = false;
     this.aquarium.push(fish);
     sound.playUpgrade();
-    this.showToast(fish.name + ' no aquário! Buffs ativados (1.5x)!', 'success');
+    this.showToast(fish.name + ' no aquário! Buffs ativados!', 'success');
     this.renderAll();
     this.checkAchievements();
   }
@@ -4497,7 +4501,7 @@ class FishingGame {
             ${canSacrifice && (fish.rarity === 'LENDARIO' || fish.rarity === 'MITICO') ? `
               <button onclick="window.game.sacrificeSpecificFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} title="Sacrificar no Altar das Almas" class="pixel-btn px-2 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-purple-950 border border-rose-500 text-rose-300 hover:bg-rose-900'} text-[7.5px] sm:text-[8px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">SACRIFICAR</button>
             ` : ''}
-            ${hasBuff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário para ativar os buffs (1.5x)" class="pixel-btn px-2 py-1 text-[7.5px] sm:text-[8px] font-bold bg-purple-950/80 border border-purple-500 text-purple-300 hover:bg-purple-900 shrink-0 cursor-pointer flex items-center gap-1" style="font-family:var(--font-pixel);"><span>🐠</span><span>AQUÁRIO</span></button>` : ''}
+            ${hasBuff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário para ativar os buffs" class="pixel-btn px-2 py-1 text-[7.5px] sm:text-[8px] font-bold bg-purple-950/80 border border-purple-500 text-purple-300 hover:bg-purple-900 shrink-0 cursor-pointer flex items-center gap-1" style="font-family:var(--font-pixel);"><span>🐠</span><span>AQUÁRIO</span></button>` : ''}
             <button onclick="window.game.toggleLockFish('${fish.uid}')" title="${fish.locked ? 'Destravar peixe' : 'Travar peixe'}" class="pixel-btn px-2 py-1 text-[10px] ${fish.locked ? 'bg-amber-950/90 border-amber-500 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'} shrink-0 cursor-pointer">${fish.locked ? PIXEL_ICONS.lockClosed : PIXEL_ICONS.lockOpen}</button>
             <button onclick="window.game.sellFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} class="pixel-btn px-3 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 cursor-not-allowed border-slate-800' : 'bg-emerald-800 text-emerald-200 border-emerald-600 hover:bg-emerald-700'} text-[9px] sm:text-[10px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">SELL</button>
           </div>
@@ -4521,7 +4525,7 @@ class FishingGame {
         <div class="h-48 flex flex-col items-center justify-center text-center p-4 border-2 border-dashed border-purple-900/50">
           <div class="w-8 h-8 mb-1 opacity-40 inline-flex items-center justify-center">${PIXEL_ICONS.aquarium}</div>
           <p class="text-[10.5px] text-purple-300 font-bold" style="font-family:var(--font-pixel);">AQUÁRIO VAZIO</p>
-          <p class="text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">${maxAq} vagas · Buffs ativos apenas aqui (1.5x)</p>
+          <p class="text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">${maxAq} vagas · Buffs ativos apenas aqui</p>
           <p class="text-[7.5px] text-purple-400 mt-2" style="font-family:var(--font-pixel);">Mova seus melhores peixes do balde para ativar seus bônus!</p>
         </div>`;
       return;
@@ -4579,13 +4583,13 @@ class FishingGame {
                 <span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
                 ${auraBadge}
                 ${isTriple ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
-                <span class="text-[7px] sm:text-[7.5px] font-bold px-1 py-0.2 border border-purple-500/80 bg-purple-950/80 text-purple-200 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">1.5x BUFF</span>
+                <span class="text-[7px] sm:text-[7.5px] font-bold px-1 py-0.2 border border-purple-500/80 bg-purple-950/80 text-purple-200 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">BUFF ATIVO</span>
               </div>
               <div class="flex items-center gap-1.5 text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">
                 <span>${fish.weight}kg</span>
               </div>
               <div class="flex flex-col gap-0.5 mt-1">
-                ${buffsList.map(b => `<span class="text-[8px] ${isTriple ? 'text-red-300' : 'text-emerald-300'} leading-snug break-words" style="font-family:var(--font-pixel);">★ ${b.text} <span class="${isTriple ? 'text-red-400' : 'text-emerald-400'} font-bold">(1.5x)</span></span>`).join('')}
+                ${buffsList.map(b => `<span class="text-[8px] ${isTriple ? 'text-red-300' : 'text-emerald-300'} leading-snug break-words" style="font-family:var(--font-pixel);">★ ${b.text}</span>`).join('')}
               </div>
             </div>
           </div>
@@ -5157,6 +5161,8 @@ class FishingGame {
         this.consoleLog('isca <nome>    - Troca anzol (minhoca, neon, ouro, kraken...)', '#ccc');
         this.consoleLog('patchnotes     - Abre Notas de Atualização com timer de 5s', '#38bdf8');
         this.consoleLog('resetpatchnotes- Reseta versão vista para simular 1ª abertura pós-update', '#a855f7');
+        this.consoleLog('buffnotice     - Testa notificação de 1º peixe com buff', '#38bdf8');
+        this.consoleLog('resetbuffnotice- Reseta aviso de 1º peixe com buff para simular novamente', '#a855f7');
         this.consoleLog('reset          - Reseta progresso', '#ccc');
         this.consoleLog('clear          - Limpa console', '#ccc');
         break;
@@ -5248,6 +5254,24 @@ class FishingGame {
         this.consoleLog('Status de versão vista resetado! Ao recarregar a página o modal abrirá automaticamente.', '#a855f7');
         break;
 
+      case 'buffnotice':
+      case 'testbuffnotice': {
+        const testFish = {
+          name: 'Peixe-Sol Radiante',
+          rarity: 'LENDARIO',
+          icon: 'peixe_sol'
+        };
+        this.showFirstBuffFishNotification(testFish);
+        this.consoleLog('Notificação de 1º peixe com buff exibida na tela!', '#38bdf8');
+        break;
+      }
+
+      case 'resetbuffnotice':
+        this.hasSeenBuffFishNotice = false;
+        this.saveGame();
+        this.consoleLog('Status de aviso do 1º peixe com buff resetado!', '#a855f7');
+        break;
+
       case 'eclipse':
       case 'bloodmoon':
         this.startBloodMoonEvent(60000);
@@ -5331,6 +5355,7 @@ class FishingGame {
           sound.vibrateCatch(fish.rarity);
           this.showCatchNotification(fish);
           this.recordDiscovery(fish);
+          this.checkFirstBuffFishCatch(fish);
         }
         this.renderAll();
         this.consoleLog(`[#${target.numId}] ${target.name} pescado com sucesso (${toCatch}x)!`, '#38bdf8');
@@ -6203,6 +6228,62 @@ class FishingGame {
     }, 300);
   }
 
+  // ── NOTIFICAÇÃO DE 1º PEIXE COM BUFF (AVISO: ATIVOS SÓ NO AQUÁRIO) ──
+  checkFirstBuffFishCatch(fish) {
+    if (!fish) return;
+    const buffs = this.getFishBuffs(fish);
+    if (!buffs || buffs.length === 0) return;
+
+    if (this.hasSeenBuffFishNotice) return;
+    this.hasSeenBuffFishNotice = true;
+    this.saveGame();
+
+    // Pequeno delay para a notificação de captura inicial aparecer primeiro
+    setTimeout(() => {
+      this.showFirstBuffFishNotification(fish);
+    }, 500);
+  }
+
+  showFirstBuffFishNotification(fish) {
+    sound.playUpgrade();
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 z-50 p-3 bg-slate-900/95 border-2 border-purple-400 text-purple-300 flex items-center gap-3 transition-all duration-300 transform translate-y-[-20px] opacity-0';
+    toast.style.fontFamily = 'var(--font-pixel)';
+    toast.style.boxShadow = '4px 4px 0 #000, 0 0 16px rgba(168,85,247,0.35)';
+    toast.style.maxWidth = '340px';
+
+    const fishName = fish?.name || 'Peixe Especial';
+
+    toast.innerHTML = `
+      <div class="w-10 h-10 bg-purple-950/80 border border-purple-500 flex items-center justify-center shrink-0">
+        ${PIXEL_ICONS.aquarium}
+      </div>
+      <div class="min-w-0">
+        <div class="text-[8px] text-purple-400 uppercase tracking-widest font-bold flex items-center gap-1">
+          <span>🐠</span><span>NOVO: ATRIBUTO MÍSTICO!</span>
+        </div>
+        <div class="text-[9.5px] sm:text-[10px] font-bold text-white leading-snug break-words mt-0.5">
+          Buffs Ativos Apenas no Aquário!
+        </div>
+        <div class="text-[8px] text-slate-300 leading-tight break-words mt-0.5">
+          ${fishName} possui bônus passivo! Peixes no balde <span class="text-amber-300 font-bold">não</span> ativam buffs. Mova-o ao <span class="text-purple-300 font-bold">Aquário</span> para ativá-lo!
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.style.transform = 'translateY(0)';
+      toast.style.opacity = '1';
+    });
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-20px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 7000);
+  }
+
   // ═══════════════════════════════════════════════
   // COMANDOS DE TESTE DAS NOVAS IMPLEMENTAÇÕES
   // ═══════════════════════════════════════════════
@@ -6435,6 +6516,14 @@ function initGame() {
   window.resetPatchNotes = () => {
     localStorage.removeItem('fc_last_seen_patch_version');
     console.log('[Pescaria Clicker] Versão vista resetada! Ao recarregar a página, as notas abrirão com timer de 5s.');
+  };
+  window.testBuffNotice = (fish) => window.game?.showFirstBuffFishNotification(fish || { name: 'Peixe-Sol Radiante', rarity: 'LENDARIO' });
+  window.resetBuffNotice = () => {
+    if (window.game) {
+      window.game.hasSeenBuffFishNotice = false;
+      window.game.saveGame();
+      console.log('[Pescaria Clicker] Aviso do 1º peixe com buff resetado!');
+    }
   };
 
   // Banner informativo no console

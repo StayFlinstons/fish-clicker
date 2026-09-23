@@ -81,7 +81,7 @@ export const UPGRADES = [
     level: 0,
     maxLevel: 12,
     icon: 'aquario_cap',
-    desc: 'Aumenta vagas no aquário. Apenas peixes guardados aqui ativam seus buffs (1.5x)!',
+    desc: 'Aumenta vagas no aquário. Apenas peixes guardados aqui ativam seus buffs!',
     getValue: (lvl) => 3 + lvl * 2 // 3 → 27 slots
   },
   {
