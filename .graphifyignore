@@ -1,0 +1,5 @@
+tailwind.min.js
+*.min.js
+node_modules/
+graphify-out/
+.git/

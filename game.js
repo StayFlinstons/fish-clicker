@@ -34,7 +34,7 @@ import {
 // O jogo detecta automaticamente e abre o modal de Notas de Atualização
 // APENAS na primeira vez que o usuário abrir o jogo após a atualização, com timer de 5s!
 // ══════════════════════════════════════════════════════════════════════════════
-export const GAME_VERSION = '1.4.9';
+export const GAME_VERSION = '1.5.0';
 
 class FishingGame {
   constructor() {
@@ -60,10 +60,13 @@ class FishingGame {
     this.playerHair = 'ruivo'; // 'ruivo' | 'moreno' | 'loiro' | 'preto' | 'rosa'
     this.editingProfile = { name: 'Pescador', gender: 'male', outfit: 'verde', hair: 'ruivo' };
 
-    // Conquistas (Sala de Troféus)
+    // Conquistas (Sala de Troféus) & Estatísticas Gerais
     this.unlockedAchievements = [];
     this.achTab = 'all';
     this.goldenFishCatches = 0;
+    this.bloodMoonFishCatches = 0;
+    this.playTimeSeconds = 0;
+    this.totalBloodMoonCatches = 0;
 
     // Modo de ordenação do balde e filtro do aquário
     this.invSortMode = 'recentes';
@@ -193,6 +196,12 @@ class FishingGame {
     this.renderFishEyesBadge();
     this.initPWA();
     this.checkPatchNotesOnStartup();
+    this.renderMenuQuickStats();
+    setInterval(() => {
+      this.playTimeSeconds = (this.playTimeSeconds || 0) + 1;
+      const ptEl = document.getElementById('menu-quick-playtime');
+      if (ptEl) ptEl.textContent = this.formatPlayTime(this.playTimeSeconds);
+    }, 1000);
     setInterval(() => this.saveGame(), 5000);
     window.addEventListener('beforeunload', () => this.saveGame());
   }
@@ -273,10 +282,6 @@ class FishingGame {
     updateRodSVG(this.selectedRodId, this.selectedBaitId);
     // Posiciona e alinha a linha de pesca descendo verticalmente da superfície até a isca
     updateFishingLine();
-  }
-
-  renderPlayerName() {
-    // Mantido por compatibilidade
   }
 
   // ═══════════════════════════════════════════
@@ -468,6 +473,7 @@ class FishingGame {
     const lakeArea = document.getElementById('fishing-lake-area');
 
     if (this.currentWorld === 2) {
+      document.getElementById('world1-lake-bg')?.classList.add('hidden');
       this.applyWorld2BiomeScenery(this.activeWorld2Biome);
       if (btn) {
         const curBiome = WORLD2_BIOMES.find(b => b.id === this.activeWorld2Biome) || WORLD2_BIOMES[0];
@@ -478,6 +484,7 @@ class FishingGame {
       return;
     } else {
       document.getElementById('world2-lake-scenery')?.classList.add('hidden');
+      document.getElementById('world1-lake-bg')?.classList.remove('hidden');
     }
 
     if (btn) {
@@ -492,12 +499,44 @@ class FishingGame {
       this.waterRenderer.setTimeOfDay(this.timeOfDay);
     }
 
+    // Alterna suavemente os fundos temáticos em pixel art do Mundo 1 (Dia, Pôr do Sol, Noite, Eclipse)
+    const bgDia = document.getElementById('world1-bg-dia');
+    const bgSunset = document.getElementById('world1-bg-sunset');
+    const bgNoite = document.getElementById('world1-bg-noite');
+    const bgEclipse = document.getElementById('world1-bg-eclipse');
+    const isEclipse = Boolean(this.bloodMoonActive || this.bloodMoonEventActive);
+
+    if (bgDia && bgSunset && bgNoite) {
+      if (isEclipse && bgEclipse) {
+        bgDia.style.opacity = '0';
+        bgSunset.style.opacity = '0';
+        bgNoite.style.opacity = '0';
+        bgEclipse.style.opacity = '1';
+      } else {
+        if (bgEclipse) bgEclipse.style.opacity = '0';
+        bgDia.style.opacity = this.timeOfDay === 'day' ? '1' : '0';
+        bgSunset.style.opacity = this.timeOfDay === 'sunset' ? '1' : '0';
+        bgNoite.style.opacity = this.timeOfDay === 'night' ? '1' : '0';
+      }
+    }
+
+    const timeOverlay = document.getElementById('world1-time-overlay');
+    if (timeOverlay) {
+      if (isEclipse) {
+        timeOverlay.style.background = 'rgba(185, 28, 28, 0.08)';
+      } else {
+        timeOverlay.style.background = 'transparent';
+      }
+    }
+
     if (lakeArea) {
       lakeArea.classList.remove('from-[#0a1628]', 'via-[#0c2040]', 'to-[#0e3a5f]',
                                'from-[#38bdf8]', 'via-[#0284c7]', 'to-[#0369a1]',
                                'from-[#ea580c]', 'via-[#9333ea]', 'to-[#1e1b4b]',
                                'bg-gradient-to-b');
-      if (this.timeOfDay === 'day') {
+      if (isEclipse) {
+        lakeArea.style.background = 'linear-gradient(to bottom, #2a0303, #450a0a 40%, #150202)';
+      } else if (this.timeOfDay === 'day') {
         lakeArea.style.background = 'linear-gradient(to bottom, #7dd3fc, #38bdf8 35%, #0284c7 65%, #0369a1)';
       } else if (this.timeOfDay === 'sunset') {
         lakeArea.style.background = 'linear-gradient(to bottom, #fdba74, #f97316 30%, #7e22ce 65%, #1e1b4b)';
@@ -585,13 +624,6 @@ class FishingGame {
       modal.classList.remove('hidden');
     }
   }
-
-  // Métodos de perfil desativados a pedido do usuário
-  openProfile() {}
-  closeProfile() {}
-  renderProfileCustomizationOptions() {}
-  updateProfilePreview() {}
-  saveProfile() {}
 
   // ═══════════════════════════════════════════
   // SISTEMA DE OLHOS DE PEIXE (META-PROGRESSÃO 00:00)
@@ -2003,10 +2035,12 @@ class FishingGame {
 
     if (this.currentWorld !== 2) {
       sceneryContainer.classList.add('hidden');
+      document.getElementById('world1-lake-bg')?.classList.remove('hidden');
       return;
     }
 
     sceneryContainer.classList.remove('hidden');
+    document.getElementById('world1-lake-bg')?.classList.add('hidden');
 
     const sceneryMap = {
       'recife_bioluminescente': 'scenery-recife',
@@ -2141,6 +2175,7 @@ class FishingGame {
     const shouldShow = forceState !== undefined ? forceState : isHidden;
     if (shouldShow) {
       sound.playClick();
+      this.renderMenuQuickStats();
       menu.classList.remove('hidden');
     } else {
       menu.classList.add('hidden');
@@ -2748,6 +2783,371 @@ class FishingGame {
   }
 
   // ═══════════════════════════════════════════
+  // SUMÁRIO DO PESCADOR (ESTATÍSTICAS & RECORDES)
+  // ═══════════════════════════════════════════
+  getTotalBloodMoonCatches() {
+    if (typeof this.totalBloodMoonCatches === 'number' && this.totalBloodMoonCatches > 0) {
+      return this.totalBloodMoonCatches;
+    }
+    let count = 0;
+    if (this.discoveredFish) {
+      Object.values(this.discoveredFish).forEach(d => {
+        if (d && (d.caughtBloodMoon || d.caughtEclipse)) {
+          count += (d.count || 1);
+        }
+      });
+    }
+    return count;
+  }
+
+  formatPlayTime(totalSec) {
+    const sec = Math.max(0, Math.floor(totalSec || 0));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) {
+      return `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+    }
+    return `${m}m ${s.toString().padStart(2, '0')}s`;
+  }
+
+  renderMenuQuickStats() {
+    const catchesEl = document.getElementById('menu-quick-catches');
+    const goldEl = document.getElementById('menu-quick-gold');
+    const goldenEl = document.getElementById('menu-quick-golden');
+    const bloodEl = document.getElementById('menu-quick-bloodmoon');
+    const timeEl = document.getElementById('menu-quick-playtime');
+
+    if (catchesEl) catchesEl.textContent = (this.totalCatches || 0).toLocaleString('pt-BR');
+    if (goldEl) goldEl.textContent = (this.gold || 0).toLocaleString('pt-BR') + 'G';
+    if (goldenEl) goldenEl.textContent = (this.goldenFishCatches || 0).toLocaleString('pt-BR');
+    if (bloodEl) bloodEl.textContent = (this.bloodMoonFishCatches || 0).toLocaleString('pt-BR');
+    if (timeEl) timeEl.textContent = this.formatPlayTime(this.playTimeSeconds);
+  }
+
+  openSummary() {
+    sound.playClick();
+    this.renderSummary();
+    const modal = document.getElementById('summary-modal');
+    modal?.classList.remove('hidden');
+  }
+
+  closeSummary() {
+    sound.playClick();
+    const modal = document.getElementById('summary-modal');
+    modal?.classList.add('hidden');
+  }
+
+  renderSummary() {
+    const container = document.getElementById('summary-content');
+    if (!container) return;
+
+    const timeFooter = document.getElementById('summary-footer-time');
+    if (timeFooter) {
+      timeFooter.textContent = `Tempo de Jornada: ${this.formatPlayTime(this.playTimeSeconds)}`;
+    }
+
+    const allFishList = [...FISH_LIST, ...FISH_WORLD_2];
+    const allFishMap = {};
+    allFishList.forEach(f => { allFishMap[f.id] = f; });
+
+    let biggestFish = null;
+    let mostCaughtFish = null;
+    const rarityCounts = {
+      COMUM: 0,
+      INCOMUM: 0,
+      RARO: 0,
+      EPICO: 0,
+      LENDARIO: 0,
+      MITICO: 0,
+      SECRETO: 0
+    };
+    let totalCatalogedSpecies = 0;
+
+    if (this.discoveredFish) {
+      Object.entries(this.discoveredFish).forEach(([id, data]) => {
+        if (!data) return;
+        const fishDef = allFishMap[id];
+        if (!fishDef) return;
+        totalCatalogedSpecies++;
+        const count = data.count || 1;
+        const maxWeight = data.maxWeight || 0;
+
+        const rKey = fishDef.rarity || 'COMUM';
+        if (rarityCounts[rKey] !== undefined) {
+          rarityCounts[rKey] += count;
+        } else {
+          rarityCounts.COMUM += count;
+        }
+
+        if (!biggestFish || maxWeight > biggestFish.maxWeight) {
+          biggestFish = { def: fishDef, maxWeight };
+        }
+
+        if (!mostCaughtFish || count > mostCaughtFish.count) {
+          mostCaughtFish = { def: fishDef, count };
+        }
+      });
+    }
+
+    const totalSpeciesInGame = allFishList.length;
+    const totalBloodMoon = this.getTotalBloodMoonCatches();
+    const totalAchievements = ACHIEVEMENTS.length || 20;
+    const unlockedAchCount = (this.unlockedAchievements || []).length;
+    const avgGoldPerCatch = Math.round((this.totalGoldEarned || 0) / Math.max(1, this.totalCatches || 0));
+
+    // Nomes de Vara e Isca
+    const allRodsList = [...RODS, ...(typeof RODS_WORLD_2 !== 'undefined' ? RODS_WORLD_2 : [])];
+    const currentRod = allRodsList.find(r => r.id === this.selectedRodId)?.name || this.selectedRodId;
+    const allBaitsList = [...BAITS, ...(typeof BAITS_WORLD_2 !== 'undefined' ? BAITS_WORLD_2 : [])];
+    const currentBait = allBaitsList.find(b => b.id === this.selectedBaitId)?.name || this.selectedBaitId;
+
+    // Bioma / Horário
+    let locationDetail = '';
+    if (this.currentWorld === 2) {
+      const bInfo = WORLD2_BIOMES?.find(b => b.id === this.activeWorld2Biome);
+      locationDetail = bInfo ? `${bInfo.name}` : 'Mundo 2: Abismo';
+    } else {
+      const timeNames = { day: 'Dia Claro', sunset: 'Pôr do Sol', night: 'Noite' };
+      locationDetail = `Mundo 1: Lago Sagrado (${timeNames[this.timeOfDay] || 'Dia'})`;
+    }
+
+    // Ícones Pixel Art para o Sumário
+    const pxlRod = `<svg class="w-4 h-4 inline-block" viewBox="0 0 16 16" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="2" y="13" width="2" height="2" fill="#78350f"/><rect x="3" y="12" width="2" height="2" fill="#92400e"/><rect x="4" y="11" width="2" height="2" fill="#b45309"/><rect x="2" y="11" width="2" height="2" fill="#cbd5e1"/><rect x="5" y="10" width="2" height="2" fill="#0284c7"/><rect x="6" y="9" width="2" height="2" fill="#0284c7"/><rect x="7" y="8" width="2" height="2" fill="#38bdf8"/><rect x="8" y="7" width="2" height="2" fill="#38bdf8"/><rect x="9" y="6" width="2" height="2" fill="#38bdf8"/><rect x="10" y="5" width="2" height="2" fill="#7dd3fc"/><rect x="11" y="4" width="2" height="2" fill="#7dd3fc"/><rect x="12" y="3" width="2" height="2" fill="#bae6fd"/><rect x="13" y="2" width="1" height="2" fill="#ffffff"/><rect x="13" y="4" width="1" height="6" fill="#94a3b8"/><rect x="12" y="10" width="2" height="1" fill="#facc15"/><rect x="11" y="9" width="1" height="2" fill="#facc15"/></svg>`;
+    const pxlCoin = `<svg class="w-4 h-4 inline-block" viewBox="0 0 14 14" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="4" y="1" width="6" height="1" fill="#78350f"/><rect x="2" y="2" width="2" height="2" fill="#78350f"/><rect x="10" y="2" width="2" height="2" fill="#78350f"/><rect x="1" y="4" width="1" height="6" fill="#78350f"/><rect x="12" y="4" width="1" height="6" fill="#78350f"/><rect x="2" y="10" width="2" height="2" fill="#78350f"/><rect x="10" y="10" width="2" height="2" fill="#78350f"/><rect x="4" y="12" width="6" height="1" fill="#78350f"/><rect x="4" y="2" width="6" height="1" fill="#fde047"/><rect x="2" y="4" width="10" height="6" fill="#facc15"/><rect x="4" y="10" width="6" height="2" fill="#ca8a04"/><rect x="3" y="3" width="2" height="2" fill="#fef08a"/><rect x="6" y="4" width="2" height="6" fill="#92400e"/><rect x="5" y="5" width="4" height="1.5" fill="#92400e"/><rect x="5" y="7.5" width="4" height="1.5" fill="#92400e"/></svg>`;
+    const pxlSparkle = `<svg class="w-4 h-4 inline-block" viewBox="0 0 14 14" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="6" y="1" width="2" height="12" fill="#facc15"/><rect x="1" y="6" width="12" height="2" fill="#facc15"/><rect x="5" y="3" width="4" height="8" fill="#fde047"/><rect x="3" y="5" width="8" height="4" fill="#fde047"/><rect x="6" y="5" width="2" height="4" fill="#ffffff"/><rect x="5" y="6" width="4" height="2" fill="#ffffff"/><rect x="2" y="2" width="2" height="2" fill="#fef08a"/><rect x="10" y="2" width="2" height="2" fill="#fef08a"/><rect x="2" y="10" width="2" height="2" fill="#fef08a"/><rect x="10" y="10" width="2" height="2" fill="#fef08a"/></svg>`;
+    const pxlBloodFish = `<svg class="w-4 h-4 inline-block" viewBox="0 0 16 16" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="3" y="5" width="9" height="6" fill="#dc2626"/><rect x="4" y="4" width="7" height="8" fill="#b91c1c"/><rect x="11" y="7" width="2" height="2" fill="#ef4444"/><rect x="13" y="6" width="2" height="4" fill="#991b1b"/><rect x="2" y="7" width="2" height="2" fill="#ef4444"/><rect x="4" y="6" width="2" height="2" fill="#fef08a"/><rect x="5" y="6.5" width="1" height="1" fill="#7f1d1d"/><rect x="7" y="3" width="2" height="2" fill="#991b1b"/><rect x="7" y="11" width="2" height="2" fill="#991b1b"/><rect x="5" y="5" width="4" height="1" fill="#f87171"/></svg>`;
+    const pxlFish = `<svg class="w-3.5 h-3.5 inline-block shrink-0" viewBox="0 0 14 14" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="3" y="5" width="7" height="4" fill="#38bdf8"/><rect x="5" y="4" width="4" height="6" fill="#0284c7"/><rect x="10" y="6" width="2" height="2" fill="#38bdf8"/><rect x="1" y="4" width="2" height="2" fill="#0284c7"/><rect x="1" y="8" width="2" height="2" fill="#0284c7"/><rect x="8" y="5" width="1.5" height="1.5" fill="#ffffff"/><rect x="8.5" y="5.5" width="1" height="1" fill="#0f172a"/></svg>`;
+    const pxlChart = `<svg class="w-3.5 h-3.5 inline-block shrink-0" viewBox="0 0 14 14" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="1" y="12" width="12" height="1.5" fill="#475569"/><rect x="2" y="8" width="2" height="4" fill="#06b6d4"/><rect x="2" y="8" width="2" height="1" fill="#67e8f9"/><rect x="5" y="5" width="2" height="7" fill="#10b981"/><rect x="5" y="5" width="2" height="1" fill="#6ee7b7"/><rect x="8" y="3" width="2" height="9" fill="#f59e0b"/><rect x="8" y="3" width="2" height="1" fill="#fde68a"/><rect x="11" y="1" width="2" height="11" fill="#ec4899"/><rect x="11" y="1" width="2" height="1" fill="#fbcfe8"/></svg>`;
+    const pxlFinances = `<svg class="w-3.5 h-3.5 inline-block shrink-0" viewBox="0 0 14 14" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="3" y="2" width="8" height="10" fill="#15803d"/><rect x="4" y="3" width="6" height="8" fill="#22c55e"/><rect x="6" y="5" width="2" height="4" fill="#fef08a"/><rect x="2" y="4" width="10" height="1" fill="#166534"/><rect x="2" y="9" width="10" height="1" fill="#166534"/></svg>`;
+    const pxlTrophy = `<svg class="w-3.5 h-3.5 inline-block shrink-0" viewBox="0 0 14 14" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="3" y="2" width="8" height="2" fill="#facc15"/><rect x="4" y="4" width="6" height="3" fill="#eab308"/><rect x="5" y="7" width="4" height="2" fill="#ca8a04"/><rect x="1" y="3" width="2" height="3" fill="#ca8a04"/><rect x="11" y="3" width="2" height="3" fill="#ca8a04"/><rect x="6" y="9" width="2" height="2" fill="#a16207"/><rect x="4" y="11" width="6" height="2" fill="#713f12"/><rect x="4" y="3" width="2" height="2" fill="#fef08a"/><rect x="5" y="11" width="4" height="1" fill="#eab308"/></svg>`;
+    const pxlCompass = `<svg class="w-3.5 h-3.5 inline-block shrink-0" viewBox="0 0 14 14" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="4" y="1" width="6" height="1" fill="#0284c7"/><rect x="2" y="2" width="2" height="2" fill="#0284c7"/><rect x="10" y="2" width="2" height="2" fill="#0284c7"/><rect x="1" y="4" width="1" height="6" fill="#0284c7"/><rect x="12" y="4" width="1" height="6" fill="#0284c7"/><rect x="2" y="10" width="2" height="2" fill="#0284c7"/><rect x="10" y="10" width="2" height="2" fill="#0284c7"/><rect x="4" y="12" width="6" height="1" fill="#0284c7"/><rect x="6" y="3" width="2" height="4" fill="#ef4444"/><rect x="6" y="7" width="2" height="4" fill="#f1f5f9"/><rect x="6" y="6" width="2" height="2" fill="#facc15"/></svg>`;
+    const pxlHook = `<svg class="w-3.5 h-3.5 inline-block shrink-0" viewBox="0 0 14 14" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="6" y="1" width="2" height="2" fill="#94a3b8"/><rect x="7" y="3" width="1.5" height="6" fill="#cbd5e1"/><rect x="4" y="9" width="4.5" height="1.5" fill="#e2e8f0"/><rect x="3" y="6" width="1.5" height="4" fill="#e2e8f0"/><rect x="4" y="6" width="1.5" height="1.5" fill="#f59e0b"/></svg>`;
+
+    container.innerHTML = `
+      <!-- TOP KPI CARDS -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="bg-cyan-950/40 border-2 border-cyan-500/80 p-2 shadow-[2px_2px_0_#000] flex flex-col justify-between">
+          <div class="flex items-center justify-between text-cyan-400">
+            <span class="text-[7.5px] font-bold" style="font-family:var(--font-pixel);">TOTAL PESCADO</span>
+            ${pxlRod}
+          </div>
+          <div class="text-base sm:text-lg font-bold text-white font-mono my-1 tracking-tight">
+            ${(this.totalCatches || 0).toLocaleString('pt-BR')}
+          </div>
+          <div class="text-[6.5px] text-cyan-300/80" style="font-family:var(--font-pixel);">
+            ${totalCatalogedSpecies}/${totalSpeciesInGame} espécies descobertas
+          </div>
+        </div>
+
+        <div class="bg-amber-950/40 border-2 border-amber-500/80 p-2 shadow-[2px_2px_0_#000] flex flex-col justify-between">
+          <div class="flex items-center justify-between text-amber-400">
+            <span class="text-[7.5px] font-bold" style="font-family:var(--font-pixel);">OURO TOTAL</span>
+            ${pxlCoin}
+          </div>
+          <div class="text-base sm:text-lg font-bold text-amber-300 font-mono my-1 tracking-tight">
+            ${(this.totalGoldEarned || 0).toLocaleString('pt-BR')}G
+          </div>
+          <div class="text-[6.5px] text-amber-200/80" style="font-family:var(--font-pixel);">
+            No bolso: ${(this.gold || 0).toLocaleString('pt-BR')}G
+          </div>
+        </div>
+
+        <div class="bg-yellow-950/40 border-2 border-yellow-500/80 p-2 shadow-[2px_2px_0_#000] flex flex-col justify-between">
+          <div class="flex items-center justify-between text-yellow-400">
+            <span class="text-[7.5px] font-bold" style="font-family:var(--font-pixel);">PEIXES DOURADOS</span>
+            ${pxlSparkle}
+          </div>
+          <div class="text-base sm:text-lg font-bold text-yellow-300 font-mono my-1 tracking-tight">
+            ${(this.goldenFishCatches || 0).toLocaleString('pt-BR')}
+          </div>
+          <div class="text-[6.5px] text-yellow-200/80" style="font-family:var(--font-pixel);">
+            Frenesis de ouro ativados
+          </div>
+        </div>
+
+        <div class="bg-red-950/40 border-2 border-red-500/80 p-2 shadow-[2px_2px_0_#000] flex flex-col justify-between">
+          <div class="flex items-center justify-between text-red-400">
+            <span class="text-[7.5px] font-bold" style="font-family:var(--font-pixel);">LUA SANGRENTA</span>
+            ${pxlBloodFish}
+          </div>
+          <div class="text-base sm:text-lg font-bold text-red-400 font-mono my-1 tracking-tight">
+            ${(this.bloodMoonFishCatches || 0).toLocaleString('pt-BR')}
+          </div>
+          <div class="text-[6.5px] text-red-300/80" style="font-family:var(--font-pixel);">
+            Peixes da Lua Sangrenta fisgados
+          </div>
+        </div>
+      </div>
+
+      <!-- SEÇÃO 1: RECORDES & CAPTURAS NOTÁVEIS -->
+      <div class="bg-slate-950/80 border-2 border-slate-700 p-2.5 space-y-2" style="box-shadow:2px 2px 0 #000;">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-[8.5px] font-bold text-cyan-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+            ${pxlFish} RECORDES DE CAPTURA
+          </span>
+          <span class="text-[7px] text-slate-400" style="font-family:var(--font-pixel);">Maior peso e espécies mais pescadas</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <!-- Card Maior Peixe -->
+          <div class="bg-slate-900 border border-slate-800 p-2 flex items-center gap-2.5">
+            <div class="w-12 h-12 bg-slate-950 border border-slate-700 flex items-center justify-center shrink-0">
+              ${biggestFish ? `<img src="${this.getFishSpriteURL(biggestFish.def.icon)}" class="w-10 h-10 object-contain" style="image-rendering:pixelated;" alt="${biggestFish.def.name}">` : '<span class="text-slate-600 text-lg">?</span>'}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-[6.5px] text-slate-400 uppercase tracking-wider" style="font-family:var(--font-pixel);">MAIOR PEIXE FISGADO</div>
+              <div class="text-[8.5px] font-bold text-slate-200 truncate" style="font-family:var(--font-pixel);">
+                ${biggestFish ? biggestFish.def.name : 'Nenhum peixe ainda'}
+              </div>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[8.5px] font-mono font-bold text-amber-300">${biggestFish ? biggestFish.maxWeight.toFixed(2) + ' kg' : '0.00 kg'}</span>
+                ${biggestFish ? `<span class="text-[6.5px] font-bold px-1 py-0.2" style="font-family:var(--font-pixel); background-color:${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).color}22; color:${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).color}; border:1px solid ${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).color}66;">${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).label}</span>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Peixe Mais Pescado -->
+          <div class="bg-slate-900 border border-slate-800 p-2 flex items-center gap-2.5">
+            <div class="w-12 h-12 bg-slate-950 border border-slate-700 flex items-center justify-center shrink-0">
+              ${mostCaughtFish ? `<img src="${this.getFishSpriteURL(mostCaughtFish.def.icon)}" class="w-10 h-10 object-contain" style="image-rendering:pixelated;" alt="${mostCaughtFish.def.name}">` : '<span class="text-slate-600 text-lg">?</span>'}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-[6.5px] text-slate-400 uppercase tracking-wider" style="font-family:var(--font-pixel);">ESPÉCIE MAIS FREQUENTE</div>
+              <div class="text-[8.5px] font-bold text-slate-200 truncate" style="font-family:var(--font-pixel);">
+                ${mostCaughtFish ? mostCaughtFish.def.name : 'Nenhum peixe ainda'}
+              </div>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[8.5px] font-mono font-bold text-cyan-300">${mostCaughtFish ? mostCaughtFish.count.toLocaleString('pt-BR') + ' capturas' : '0'}</span>
+                ${mostCaughtFish ? `<span class="text-[6.5px] font-bold px-1 py-0.2" style="font-family:var(--font-pixel); background-color:${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).color}22; color:${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).color}; border:1px solid ${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).color}66;">${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).label}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Capacidade de Armazenamento -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 border-t border-slate-800/80 text-[7.5px]" style="font-family:var(--font-pixel);">
+          <div class="bg-slate-900/60 p-1.5 border border-slate-800 flex items-center justify-between">
+            <span class="text-slate-400">Balde Atual:</span>
+            <span class="font-mono text-cyan-300 font-bold">${this.inventory.length} / ${this.getMaxInventory()}</span>
+          </div>
+          <div class="bg-slate-900/60 p-1.5 border border-slate-800 flex items-center justify-between">
+            <span class="text-slate-400">Aquário:</span>
+            <span class="font-mono text-cyan-300 font-bold">${this.aquarium.length} / ${this.getMaxAquarium()}</span>
+          </div>
+          <div class="col-span-2 sm:col-span-1 bg-slate-900/60 p-1.5 border border-slate-800 flex items-center justify-between">
+            <span class="text-slate-400">Progresso Álbum:</span>
+            <span class="font-mono text-emerald-400 font-bold">${Math.round((totalCatalogedSpecies / totalSpeciesInGame) * 100)}%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEÇÃO 2: PEIXES POR RARIDADE -->
+      <div class="bg-slate-950/80 border-2 border-slate-700 p-2.5 space-y-2" style="box-shadow:2px 2px 0 #000;">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-[8.5px] font-bold text-amber-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+            ${pxlChart} DISTRIBUIÇÃO POR RARIDADE
+          </span>
+          <span class="text-[7px] text-slate-400" style="font-family:var(--font-pixel);">Total de capturas por escalão</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
+          ${Object.entries(RARITIES).map(([key, r]) => {
+            const count = rarityCounts[key] || 0;
+            return `
+              <div class="bg-slate-900 border p-1.5 flex flex-col justify-between" style="border-color:${r.color}55;">
+                <div class="text-[6.5px] font-bold uppercase truncate" style="font-family:var(--font-pixel); color:${r.color};">
+                  ${r.label}
+                </div>
+                <div class="text-[10px] font-mono font-bold text-white my-0.5">
+                  ${count.toLocaleString('pt-BR')}
+                </div>
+                <div class="text-[6px] text-slate-500" style="font-family:var(--font-pixel);">
+                  ${this.totalCatches > 0 ? Math.round((count / this.totalCatches) * 100) : 0}% do total
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- SEÇÃO 3: ECONOMIA & METAS -->
+      <div class="bg-slate-950/80 border-2 border-slate-700 p-2.5 space-y-2" style="box-shadow:2px 2px 0 #000;">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-[8.5px] font-bold text-emerald-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+            ${pxlFinances} RENDIMENTO & FINANÇAS
+          </span>
+          <span class="text-[7px] text-slate-400" style="font-family:var(--font-pixel);">Fluxo de caixa e automações</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[8px]" style="font-family:var(--font-pixel);">
+          <div class="bg-slate-900 border border-slate-800 p-2">
+            <div class="text-slate-400 text-[7px]">MÉDIA POR CAPTURA</div>
+            <div class="text-[11px] font-mono font-bold text-amber-300 mt-1">${avgGoldPerCatch.toLocaleString('pt-BR')}G</div>
+            <div class="text-[6.5px] text-slate-500 mt-0.5">Considerando bônus & auras</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-2">
+            <div class="text-slate-400 text-[7px]">PESCA AUTOMÁTICA</div>
+            <div class="text-[10px] font-bold ${this.autoFisherEnabled ? 'text-emerald-400' : 'text-red-400'} mt-1">
+              ${this.autoFisherEnabled ? '● HABILITADA' : '○ DESATIVADA'}
+            </div>
+            <div class="text-[6.5px] text-slate-500 mt-0.5">Nível ${this.upgradeLevels?.auto_pescador || 0}</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-2">
+            <div class="text-slate-400 text-[7px]">VENDA AUTOMÁTICA</div>
+            <div class="text-[10px] font-bold ${this.autoSellerEnabled ? 'text-emerald-400' : 'text-red-400'} mt-1">
+              ${this.autoSellerEnabled ? '● HABILITADA' : '○ DESATIVADA'}
+            </div>
+            <div class="text-[6.5px] text-slate-500 mt-0.5">${(this.autoSellFilter || []).join(', ') || 'Nenhum'}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEÇÃO 4: PROGRESSÃO, SANTUÁRIO & EXPEDIÇÃO -->
+      <div class="bg-slate-950/80 border-2 border-slate-700 p-2.5 space-y-2" style="box-shadow:2px 2px 0 #000;">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-[8.5px] font-bold text-purple-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+            ${pxlTrophy} PROGRESSÃO & SANTUÁRIO MÍSTICO
+          </span>
+          <span class="text-[7px] text-slate-400" style="font-family:var(--font-pixel);">Metas permanentes</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[7.5px]" style="font-family:var(--font-pixel);">
+          <div class="bg-slate-900 border border-slate-800 p-2">
+            <div class="text-slate-400 text-[6.5px]">SALA DE TROFÉUS</div>
+            <div class="text-[10px] font-mono font-bold text-amber-300 mt-0.5">${unlockedAchCount} / ${totalAchievements}</div>
+            <div class="text-[6.5px] text-slate-500">${Math.round((unlockedAchCount / totalAchievements) * 100)}% concluído</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-2">
+            <div class="text-slate-400 text-[6.5px]">OLHOS DE PEIXE</div>
+            <div class="text-[10px] font-mono font-bold text-cyan-300 mt-0.5">${this.fishEyesCount || 0} / ${this.fishEyesTotal || 0}</div>
+            <div class="text-[6.5px] text-slate-500">Disponíveis / Despertados</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-2">
+            <div class="text-slate-400 text-[6.5px]">OFERENDAS SANTUÁRIO</div>
+            <div class="text-[10px] font-mono font-bold text-purple-300 mt-0.5">Ciclo ${this.offeringCycle || 1}</div>
+            <div class="text-[6.5px] text-slate-500">${Object.keys(this.speciesDonations || {}).length} espécies doadas</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-2">
+            <div class="text-slate-400 text-[6.5px]">ALTAR DAS ALMAS</div>
+            <div class="text-[10px] font-mono font-bold text-red-400 mt-0.5">${this.sacrificedFishCount || 0} / 15</div>
+            <div class="text-[6.5px] text-slate-500">${this.chapter1Completed ? 'Portal Ativado!' : 'Em andamento'}</div>
+          </div>
+        </div>
+
+        <!-- Linha de Expedição Atual -->
+        <div class="bg-slate-900/90 border border-slate-800 p-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[7.5px]" style="font-family:var(--font-pixel);">
+          <div class="flex items-center gap-2">
+            <span class="text-cyan-400 flex items-center gap-1">${pxlCompass} LOCALIZAÇÃO:</span>
+            <span class="text-slate-200">${locationDetail}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-amber-400 flex items-center gap-1">${pxlHook} EQUIPE:</span>
+            <span class="text-slate-300 truncate">${currentRod} & ${currentBait}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ═══════════════════════════════════════════
   // ÁLBUM DE PEIXES (ENCICLOPÉDIA)
   // ═══════════════════════════════════════════
   openAlbum() {
@@ -2987,6 +3387,9 @@ class FishingGame {
         playerHair: this.playerHair,
         unlockedAchievements: this.unlockedAchievements,
         goldenFishCatches: this.goldenFishCatches,
+        bloodMoonFishCatches: this.bloodMoonFishCatches || 0,
+        playTimeSeconds: this.playTimeSeconds || 0,
+        totalBloodMoonCatches: this.getTotalBloodMoonCatches(),
         chapter1Completed: this.chapter1Completed,
         sacrificedFishCount: this.sacrificedFishCount || 0,
         currentWorld: this.currentWorld || 1,
@@ -3053,6 +3456,9 @@ class FishingGame {
         this.playerHair = d.playerHair || 'ruivo';
         this.unlockedAchievements = Array.isArray(d.unlockedAchievements) ? d.unlockedAchievements : [];
         this.goldenFishCatches = d.goldenFishCatches || 0;
+        this.bloodMoonFishCatches = typeof d.bloodMoonFishCatches === 'number' ? d.bloodMoonFishCatches : 0;
+        this.playTimeSeconds = typeof d.playTimeSeconds === 'number' ? d.playTimeSeconds : 0;
+        this.totalBloodMoonCatches = typeof d.totalBloodMoonCatches === 'number' ? d.totalBloodMoonCatches : 0;
         this.chapter1Completed = Boolean(d.chapter1Completed);
         this.sacrificedFishCount = typeof d.sacrificedFishCount === 'number' ? d.sacrificedFishCount : 0;
         this.currentWorld = typeof d.currentWorld === 'number' ? d.currentWorld : 1;
@@ -3448,6 +3854,9 @@ class FishingGame {
         this.discoveredFish[fish.id].caughtEclipse = true;
       }
     }
+    if (fish.specialAura === 'lua_sangrenta' || fish.specialAura === 'eclipse' || this.bloodMoonEventActive) {
+      this.totalBloodMoonCatches = (this.totalBloodMoonCatches || 0) + 1;
+    }
     this.checkAchievements();
   }
 
@@ -3490,7 +3899,26 @@ class FishingGame {
       template = pool[Math.floor(Math.random() * pool.length)] || FISH_LIST.find(f => f.rarity === selectedRarity) || FISH_LIST[0];
     }
 
-    let weight = +(template.minWeight + Math.random() * (template.maxWeight - template.minWeight)).toFixed(2);
+    // Influência do PWR da vara no peso do peixe (viés suave para espécimes maiores)
+    const equippedRod = this.currentWorld === 2
+      ? RODS_WORLD_2.find(r => r.id === this.selectedRodId)
+      : RODS.find(r => r.id === this.selectedRodId);
+
+    let rodPower = 1.0;
+    if (equippedRod) {
+      if (typeof equippedRod.power === 'number') {
+        rodPower = equippedRod.power;
+      } else if (typeof equippedRod.tier === 'number') {
+        rodPower = 1.0 + (equippedRod.tier - 1) * 2.0; // T1=1.0, T2=3.0, T3=5.0, T4=7.0
+      }
+    }
+
+    // Viés sutil na distribuição aleatória e leve multiplicador final (+1% a +12% no topo)
+    const rollExponent = 1 / (1 + (rodPower - 1) * 0.05);
+    const weightRoll = Math.pow(Math.random(), rollExponent);
+    const powerWeightMultiplier = 1 + Math.min(0.12, (rodPower - 1) * 0.015);
+
+    let weight = +((template.minWeight + weightRoll * (template.maxWeight - template.minWeight)) * powerWeightMultiplier).toFixed(2);
     if (this.forgeUpgrades && this.forgeUpgrades['linha_reforcada']) {
       weight = +(weight * 1.15).toFixed(2);
     }
@@ -3568,10 +3996,6 @@ class FishingGame {
     sound.playCoin();
     this.showFloatingText('+' + finalGold, '#fbbf24');
     this.renderAll();
-  }
-
-  sellAll() {
-    this.sellManual();
   }
 
   sellManual() {
@@ -3979,27 +4403,6 @@ class FishingGame {
     }
   }
 
-  renderWorld2BiomesTabs() {
-    const container = document.getElementById('world2-biomes-tabs');
-    if (!container) return;
-
-    container.innerHTML = WORLD2_BIOMES.map(b => {
-      const isActive = this.activeWorld2Biome === b.id;
-      return `
-        <button onclick="window.game.switchWorld2Biome('${b.id}')" 
-          title="${b.name} (${b.depth} · ${b.pressure})\n${b.desc}" 
-          class="pixel-btn px-2 py-1 text-[7px] sm:text-[7.5px] font-bold border transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
-            isActive 
-              ? 'bg-cyan-950/90 text-cyan-200 border-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.6)]' 
-              : 'bg-slate-900/80 text-slate-400 border-slate-700 hover:text-slate-200'
-          }" style="font-family:var(--font-pixel);">
-          <span>${b.icon}</span>
-          <span>${b.shortName}</span>
-        </button>
-      `;
-    }).join('');
-  }
-
   checkSubmarinePartDrop(biomeId) {
     const part = ASCENSION_PARTS.find(p => p.biome === biomeId);
     if (!part || this.ascensionParts[part.id]) return;
@@ -4277,7 +4680,7 @@ class FishingGame {
                 </div>
                 <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${rod.desc}</p>
                 <div class="flex flex-wrap gap-1.5 mt-1.5">
-                  <span class="text-[8px] text-cyan-400" style="font-family:var(--font-pixel);">PWR:${powerDisplay}</span>
+                  <span class="text-[8px] text-cyan-400" title="Poder da vara: atrai espécimes mais pesados e favorece novos recordes de peso" style="font-family:var(--font-pixel); cursor:help;">PWR:${powerDisplay}</span>
                   ${rod.luckBonus > 0 ? `<span class="text-[8px] text-purple-400" style="font-family:var(--font-pixel);">+${Math.round(rod.luckBonus*100)}%SRT</span>` : ''}
                   ${(rod.fishingSpeedBonus || rod.speedBonus) > 0 ? `<span class="text-[8px] text-cyan-300" style="font-family:var(--font-pixel);">+${Math.round((rod.fishingSpeedBonus || rod.speedBonus)*100)}%VEL</span>` : ''}
                   ${rod.doubleCatchChance > 0 ? `<span class="text-[8px] text-emerald-400" style="font-family:var(--font-pixel);">+${Math.round(rod.doubleCatchChance*100)}%DUP</span>` : ''}
@@ -4881,6 +5284,7 @@ class FishingGame {
       console.warn('Erro ao tocar efeito sonoro:', e);
     }
     this.goldenFishCatches = (this.goldenFishCatches || 0) + 1;
+    this.bloodMoonFishCatches = (this.bloodMoonFishCatches || 0) + 1;
     this.checkAchievements();
 
     this.showBloodMoonEclipseModal();
@@ -4930,8 +5334,15 @@ class FishingGame {
 
     const skyEl = document.getElementById('blood-eclipse-sky');
     if (skyEl) {
-      skyEl.classList.remove('hidden');
-      skyEl.style.display = 'flex';
+      // Com o novo fundo pixel art dedicado do Eclipse com o sol negro centralizado, oculta o sol procedural extra
+      const hasEclipseBg = !!document.getElementById('world1-bg-eclipse');
+      if (hasEclipseBg) {
+        skyEl.classList.add('hidden');
+        skyEl.style.display = 'none';
+      } else {
+        skyEl.classList.remove('hidden');
+        skyEl.style.display = 'flex';
+      }
     }
 
     const bannerEl = document.getElementById('blood-eclipse-banner');
@@ -4952,6 +5363,7 @@ class FishingGame {
       }
     }, 500);
 
+    this.applyTimeOfDay();
     this.showToast('🌑 O Eclipse Vermelho começou! O Mar Sangrento despertou por 60s!', 'error');
   }
 
@@ -4979,6 +5391,7 @@ class FishingGame {
       bannerEl.style.display = 'none';
     }
 
+    this.applyTimeOfDay();
     this.showToast('O Eclipse Vermelho se dissipou e o mar voltou ao normal.', 'info');
   }
 
@@ -5107,6 +5520,7 @@ class FishingGame {
         this.consoleLog('══════════════ [ COMANDOS DO CONSOLE ] ══════════════', '#ffd700');
 
         this.consoleLog('🪙 RECURSOS & ECONOMIA', headerColor);
+        this.consoleLog('  sumario / stats        - Abre o Sumário completo com estatísticas e recordes', cmdColor);
         this.consoleLog('  gold <qtd>             - Adiciona ouro (ex: gold 50000)', cmdColor);
         this.consoleLog('  goldset <qtd>          - Define o ouro exato (ex: goldset 0)', cmdColor);
         this.consoleLog('  fisheye [n]            - Adiciona n Olhos de Peixe (default: 1)', cmdColor);
@@ -5237,6 +5651,15 @@ class FishingGame {
           this.consoleLog('Peixe da Lua Sangrenta spawnado!', '#ef4444');
         }
         break;
+
+      case 'sumario':
+      case 'summary':
+      case 'stats':
+      case 'relatorio': {
+        this.openSummary();
+        this.consoleLog('Sumário do Pescador aberto na tela!', '#38bdf8');
+        break;
+      }
 
       case 'patchnotes':
       case 'testpatchnotes':
@@ -5917,7 +6340,7 @@ class FishingGame {
     });
 
     // Fechar modais ao clicar fora (backdrop click) e via tecla Escape
-    const allModals = ['sell-filter-modal', 'album-modal', 'offline-modal', 'achievements-modal', 'chapter1-modal', 'settings-modal', 'fish-eyes-modal', 'patch-notes-modal'];
+    const allModals = ['sell-filter-modal', 'album-modal', 'offline-modal', 'achievements-modal', 'chapter1-modal', 'settings-modal', 'fish-eyes-modal', 'patch-notes-modal', 'summary-modal'];
     allModals.forEach(id => {
       const m = document.getElementById(id);
       if (m) {
@@ -6595,6 +7018,8 @@ function initGame() {
   };
   window.testSplash = () => window.game?.execConsoleCmd('testsplash');
   window.testGotas = () => window.game?.execConsoleCmd('testsplash');
+  window.sumario = () => window.game?.openSummary();
+  window.summary = () => window.game?.openSummary();
 
   // Navegação entre Mundos & Modos de Jogo
   window.world = (w) => window.game?.travelBetweenWorlds(Number(w) || 1);

@@ -1144,7 +1144,16 @@ export function updateRodSVG(rodId, baitId) {
   const hookImg = document.getElementById('hook-bait-img');
   if (hookImg) {
     const validBait = baitId || 'minhoca';
-    hookImg.src = `icons/baits/hook_${validBait}.png`;
+    const baitHookMap = {
+      'minhoca': 'icons/baits/anzol_minhoca.png',
+      'camarao': 'icons/baits/anzol_camarao.png',
+      'isca_brilhante': 'icons/baits/anzol_glow_neon.png',
+      'queijo_mistico': 'icons/baits/anzol_massa_mistica.png',
+      'ouro_liquido': 'icons/baits/anzol_gota_eter_divino.png',
+      'essencia_travessia': 'icons/baits/anzol_vortice_dimensional.png',
+      'isca_kraken_ancestral': 'icons/baits/anzol_kraken.png'
+    };
+    hookImg.src = baitHookMap[validBait] || `icons/baits/hook_${validBait}.png`;
   }
 }
 
@@ -1416,8 +1425,14 @@ export class PixelWaterRenderer {
       waveColor2 = 'rgba(56, 189, 248, 0.35)';
     }
 
-    const bH = Math.ceil(H / wc.length);
-    wc.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(0, i * bH, W, bH); });
+    // Fundo do Mundo 1: se houver fundo customizado no DOM, preserva a transparência
+    const customBg = document.getElementById('world1-lake-bg');
+    const hasCustomBg = customBg && !customBg.classList.contains('hidden');
+
+    if (!hasCustomBg) {
+      const bH = Math.ceil(H / wc.length);
+      wc.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(0, i * bH, W, bH); });
+    }
 
     // Raios de luz
     ctx.save(); ctx.globalAlpha = lightAlpha;
@@ -1428,19 +1443,21 @@ export class PixelWaterRenderer {
     }
     ctx.restore();
 
-    // Ondas superficiais
-    for (let x = 0; x < W; x += px) {
-      const w1 = Math.sin(x * 0.02 + this.time * 2) * 5;
-      const w2 = Math.sin(x * 0.04 + this.time * 3) * 3;
-      ctx.fillStyle = waveColor1; ctx.fillRect(x, w1 + 2, px, px);
-      ctx.fillStyle = waveColor2; ctx.fillRect(x, w1 + w2 + 6, px, px);
-    }
+    if (!hasCustomBg) {
+      // Ondas superficiais
+      for (let x = 0; x < W; x += px) {
+        const w1 = Math.sin(x * 0.02 + this.time * 2) * 5;
+        const w2 = Math.sin(x * 0.04 + this.time * 3) * 3;
+        ctx.fillStyle = waveColor1; ctx.fillRect(x, w1 + 2, px, px);
+        ctx.fillStyle = waveColor2; ctx.fillRect(x, w1 + w2 + 6, px, px);
+      }
 
-    // Algas
-    for (let i = 0; i < 8; i++) {
-      const ax = 40 + i * (W / 8), ah = 15 + Math.sin(this.time * 1.5 + i * 2) * 5;
-      ctx.fillStyle = '#166534'; ctx.fillRect(ax, H - ah, px, ah); ctx.fillRect(ax + px, H - ah + 4, px, ah - 4);
-      ctx.fillStyle = '#15803d'; ctx.fillRect(ax - px, H - ah + 8, px, ah - 8);
+      // Algas
+      for (let i = 0; i < 8; i++) {
+        const ax = 40 + i * (W / 8), ah = 15 + Math.sin(this.time * 1.5 + i * 2) * 5;
+        ctx.fillStyle = '#166534'; ctx.fillRect(ax, H - ah, px, ah); ctx.fillRect(ax + px, H - ah + 4, px, ah - 4);
+        ctx.fillStyle = '#15803d'; ctx.fillRect(ax - px, H - ah + 8, px, ah - 8);
+      }
     }
 
     // Peixes
@@ -1726,7 +1743,19 @@ export class PixelWaterRenderer {
   _drawMinifish(f, wy) {
     const { ctx } = this; const s = f.size;
     const m = [[0,0,1,1,1,0,0,0],[0,1,2,2,2,1,0,0],[1,5,2,4,2,2,1,1],[0,1,3,3,2,2,1,1],[0,0,1,1,1,1,0,0]];
-    const cm = { 1: f.pal.outline, 2: f.pal.body, 3: f.pal.belly, 4: f.pal.eye, 5: f.pal.fin };
+    let cm;
+    if (this.bloodMoonActive) {
+      // Peixinhos vermelhos brilhantes durante o Eclipse / Lua Sangrenta
+      cm = {
+        1: '#450a0a', // contorno vermelho escuro
+        2: '#ef4444', // corpo vermelho carmesim vibrante
+        3: '#991b1b', // ventre carmesim escuro
+        4: '#fef08a', // olho dourado místico
+        5: '#f87171'  // nadadeiras vermelho vivo
+      };
+    } else {
+      cm = { 1: f.pal.outline, 2: f.pal.body, 3: f.pal.belly, 4: f.pal.eye, 5: f.pal.fin };
+    }
     for (let y = 0; y < m.length; y++)
       for (let x = 0; x < m[y].length; x++) {
         if (!m[y][x]) continue;

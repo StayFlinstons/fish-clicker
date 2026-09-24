@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fish-clicker-v31';
+const CACHE_NAME = 'fish-clicker-v34';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -18,13 +18,24 @@ const ASSETS_TO_CACHE = [
   './icons/icon-512.png',
   './icons/btn_pescar.png',
   './icons/fishing_hook.png',
+  './fundo-lago-dia.png',
+  './fundo-lago-sunset.png',
+  './fundo-lago-noite.png',
+  './fundo-lago-eclipse.png',
   './icons/baits/hook_minhoca.png',
   './icons/baits/hook_camarao.png',
   './icons/baits/hook_isca_brilhante.png',
   './icons/baits/hook_queijo_mistico.png',
   './icons/baits/hook_ouro_liquido.png',
   './icons/baits/hook_essencia_travessia.png',
-  './icons/baits/hook_isca_kraken_ancestral.png'
+  './icons/baits/hook_isca_kraken_ancestral.png',
+  './icons/baits/anzol_minhoca.png',
+  './icons/baits/anzol_camarao.png',
+  './icons/baits/anzol_glow_neon.png',
+  './icons/baits/anzol_massa_mistica.png',
+  './icons/baits/anzol_gota_eter_divino.png',
+  './icons/baits/anzol_vortice_dimensional.png',
+  './icons/baits/anzol_kraken.png'
 ];
 
 // Instalação: pré-cacheia todos os assets do jogo
