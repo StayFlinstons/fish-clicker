@@ -5,7 +5,7 @@
 import { GAME_VERSION } from '../core/constants.js';
 
 // Código do site criado em goatcounter.com. Vazio = estatísticas desligadas.
-export const GOATCOUNTER_CODE = '';
+export const GOATCOUNTER_CODE = 'stayflinstons';
 
 export class AnalyticsMethods {
   analyticsEnabled() {
