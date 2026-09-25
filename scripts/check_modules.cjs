@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8').replace(/\r\n/g, '\n');
 const problems = [];
 
 const modules = ['core', 'systems', 'ui', 'dev'].flatMap((dir) =>
@@ -24,15 +24,17 @@ for (const m of modules) {
 
 const game = read('game.js');
 const mixinList = (game.match(/applyMixins\(FishingGame, \[([\s\S]*?)\]\)/) || [])[1] || '';
-const owner = {};
+const mixinNames = new Set(mixinList.match(/\w+/g) || []);
+const owner = new Map();
 for (const m of modules) {
   const src = read(m);
-  for (const [, cls] of src.matchAll(/^export class (\w+Methods)\b/gm)) {
-    if (!new RegExp(`\\b${cls}\\b`).test(mixinList)) problems.push(`game.js: ${cls} (${m}) não está no applyMixins`);
-  }
-  for (const [, name] of src.matchAll(/^  (?:async )?([A-Za-z_]\w*)\(.*\)\s*\{\s*$/gm)) {
-    if (owner[name]) problems.push(`método "${name}" definido em ${owner[name]} e em ${m}`);
-    owner[name] = m;
+  // Só as classes *Methods viram métodos do FishingGame; outras classes (ex.: LakeBackgroundAnimator) não
+  for (const [block, cls] of src.matchAll(/^export class (\w+Methods) \{[\s\S]*?^\}/gm)) {
+    if (!mixinNames.has(cls)) problems.push(`game.js: ${cls} (${m}) não está no applyMixins`);
+    for (const [, name] of block.matchAll(/^ {2}(?:async )?([A-Za-z_]\w*)\(.*\)\s*\{\s*$/gm)) {
+      if (owner.has(name)) problems.push(`método "${name}" definido em ${owner.get(name)} e em ${m}`);
+      owner.set(name, m);
+    }
   }
 }
 
@@ -53,4 +55,4 @@ if (problems.length) {
   console.error(`✗ ${problems.length} problema(s):\n  - ` + problems.join('\n  - '));
   process.exit(1);
 }
-console.log(`✓ ${modules.length} módulos no sw.js e no applyMixins, ${Object.keys(owner).length} métodos sem duplicata, versão ${assetVersion} consistente.`);
+console.log(`✓ ${modules.length} módulos no sw.js e no applyMixins, ${owner.size} métodos sem duplicata, versão ${assetVersion} consistente.`);

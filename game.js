@@ -4,6 +4,7 @@
 // Ao criar um módulo novo: importe-o aqui, inclua-o no applyMixins e no ASSETS_TO_CACHE do
 // sw.js, e confira com: node scripts/check_modules.cjs
 import { PixelWaterRenderer, updateFishingLine, updateRodSVG } from './pixelArt.js';
+import { LakeBackgroundAnimator } from './ui/lakeBackground.js';
 import { sound } from './sound.js';
 import { GAME_VERSION } from './core/constants.js';
 import { applyMixins } from './core/mixins.js';
@@ -268,9 +269,16 @@ class FishingGame {
       this.waterRenderer.setTimeOfDay(this.timeOfDay);
       ['lambari','carpa','truta','robalo'].forEach(f => this.waterRenderer.addSwimmingFish(f));
       this.updateDiverVisual();
+      // Superfície e plantas do fundo pixel art se mexendo (desliga junto com as partículas)
+      const bgAnimCanvas = document.getElementById('world1-bg-anim');
+      if (bgAnimCanvas) {
+        this.lakeBgAnimator = new LakeBackgroundAnimator(bgAnimCanvas);
+        this.lakeBgAnimator.setEnabled(this.settings.waterParticles);
+      }
       const animLoop = () => {
         if (this.gameMode !== 'ima' && this.waterRenderer) {
           this.waterRenderer.update();
+          this.lakeBgAnimator?.update();
         }
         requestAnimationFrame(animLoop);
       };

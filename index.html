@@ -272,6 +272,8 @@
           <img id="world1-bg-sunset" src="fundo-lago-sunset.png" alt="Fundo Pôr do Sol" class="absolute inset-0 w-full h-full object-cover object-bottom transition-opacity duration-700 pointer-events-none" style="image-rendering: pixelated; opacity: 0;">
           <img id="world1-bg-noite" src="fundo-lago-noite.png" alt="Fundo Noite" class="absolute inset-0 w-full h-full object-cover object-bottom transition-opacity duration-700 pointer-events-none" style="image-rendering: pixelated; opacity: 0;">
           <img id="world1-bg-eclipse" src="fundo-lago-eclipse.png" alt="Fundo Eclipse" class="absolute inset-0 w-full h-full object-cover object-bottom transition-opacity duration-700 pointer-events-none" style="image-rendering: pixelated; opacity: 0;">
+          <!-- Faixas animadas do fundo (superfície e plantas): ui/lakeBackground.js -->
+          <canvas id="world1-bg-anim" class="absolute inset-0 w-full h-full pointer-events-none" style="image-rendering: pixelated;"></canvas>
           <!-- Overlay de iluminação dinâmica (Efeitos extras / Eclipse) -->
           <div id="world1-time-overlay" class="absolute inset-0 pointer-events-none transition-colors duration-700"></div>
         </div>
@@ -4087,42 +4089,43 @@
        import maps ignoram o mapa e carregam os arquivos sem ?v= (funciona igual). -->
   <script>
     (function () {
-      var ASSET_VERSION = '45';
+      var ASSET_VERSION = '46';
       var MODULES = [
-      'game.js',
-      'fishData.js',
-      'itemsData.js',
-      'magnetData.js',
-      'achievementsData.js',
-      'pixelArt.js',
-      'sound.js',
-      'world2Data.js',
-      'core/constants.js',
-      'core/economy.js',
-      'core/mixins.js',
-      'core/save.js',
-      'core/timeCycle.js',
-      'dev/devConsole.js',
-      'dev/testCommands.js',
-      'systems/achievements.js',
-      'systems/automation.js',
-      'systems/chapter1.js',
-      'systems/events.js',
-      'systems/fishEyes.js',
-      'systems/fishing.js',
-      'systems/magnet.js',
-      'systems/offline.js',
-      'systems/shop.js',
-      'systems/world2.js',
-      'ui/album.js',
-      'ui/celebrations.js',
-      'ui/effects.js',
-      'ui/mobileNav.js',
-      'ui/patchNotes.js',
-      'ui/render.js',
-      'ui/settings.js',
-      'ui/sprites.js',
-      'ui/summary.js'
+        'game.js',
+        'fishData.js',
+        'itemsData.js',
+        'magnetData.js',
+        'achievementsData.js',
+        'pixelArt.js',
+        'sound.js',
+        'world2Data.js',
+        'core/constants.js',
+        'core/economy.js',
+        'core/mixins.js',
+        'core/save.js',
+        'core/timeCycle.js',
+        'dev/devConsole.js',
+        'dev/testCommands.js',
+        'systems/achievements.js',
+        'systems/automation.js',
+        'systems/chapter1.js',
+        'systems/events.js',
+        'systems/fishEyes.js',
+        'systems/fishing.js',
+        'systems/magnet.js',
+        'systems/offline.js',
+        'systems/shop.js',
+        'systems/world2.js',
+        'ui/album.js',
+        'ui/celebrations.js',
+        'ui/effects.js',
+        'ui/lakeBackground.js',
+        'ui/mobileNav.js',
+        'ui/patchNotes.js',
+        'ui/render.js',
+        'ui/settings.js',
+        'ui/sprites.js',
+        'ui/summary.js'
       ];
       var imports = {};
       MODULES.forEach(function (m) {

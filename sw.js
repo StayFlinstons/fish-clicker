@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fish-clicker-v45';
+const CACHE_NAME = 'fish-clicker-v46';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -25,6 +25,7 @@ const ASSETS_TO_CACHE = [
   './ui/album.js',
   './ui/celebrations.js',
   './ui/effects.js',
+  './ui/lakeBackground.js',
   './ui/mobileNav.js',
   './ui/patchNotes.js',
   './ui/render.js',

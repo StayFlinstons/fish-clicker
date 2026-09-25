@@ -57,6 +57,7 @@ export class SettingsMethods {
     if (waterCanvas) {
       waterCanvas.style.display = this.settings.waterParticles ? 'block' : 'none';
     }
+    this.lakeBgAnimator?.setEnabled(this.settings.waterParticles);
 
     // Scanlines
     const lakeArea = document.getElementById('fishing-lake-area');
