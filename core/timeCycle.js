@@ -2,7 +2,7 @@
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
 import { PIXEL_ICONS } from '../pixelArt.js';
 import { sound } from '../sound.js';
-import { WORLD2_BIOMES } from '../world2Data.js';
+import { formatDepth, getDepthLayer } from '../depthData.js';
 
 export class TimeCycleMethods {
   getRawMsRemaining() {
@@ -55,13 +55,9 @@ export class TimeCycleMethods {
 
   showTimeOfDayStatus() {
     sound.playClick?.();
-    if (this.currentWorld === 2) {
-      const curBiome = WORLD2_BIOMES.find(b => b.id === this.activeWorld2Biome) || WORLD2_BIOMES[0];
-      const rem = this.getWorld2BiomeRemaining();
-      const biomeIds = ['recife_bioluminescente', 'fendas_vulcanicas', 'cemiterio_naufragios', 'zona_hadal'];
-      const nextIdx = (biomeIds.indexOf(this.activeWorld2Biome) + 1) % biomeIds.length;
-      const nextBiome = WORLD2_BIOMES.find(b => b.id === biomeIds[nextIdx]) || WORLD2_BIOMES[0];
-      this.showToast(`Região: ${curBiome.icon} ${curBiome.name} (${curBiome.depth} · ${curBiome.pressure}) | Muda para ${nextBiome.name} em ${rem.text} (5m)`, 'info');
+    const layer = getDepthLayer(this.getCurrentLayer());
+    if (!layer.sunlit) {
+      this.showToast(`${layer.icon} ${layer.name} (${formatDepth(layer.minDepth)} a ${formatDepth(layer.maxDepth)}): a luz do sol não chega aqui, o horário não muda os peixes.`, 'info');
       return;
     }
     const rem = this.getTimeRemainingInPhase();
@@ -150,7 +146,6 @@ export class TimeCycleMethods {
 
     // Checa a cada segundo se o horário deve virar
     this._timeCycleTimer = setInterval(() => {
-      if (this.currentWorld === 2) return;
       const newTime = this.getCycleTimeOfDay();
       const remaining = this.getTimeRemainingInPhase();
       this.updateTimeIndicatorTooltip(remaining);
@@ -158,13 +153,16 @@ export class TimeCycleMethods {
       if (newTime !== this.timeOfDay) {
         this.timeOfDay = newTime;
         this.applyTimeOfDay();
+        this.resetSonar();
         this.saveGame();
         const msgs = {
           day: 'O sol nasceu! Agora é DIA ☀️',
           sunset: 'O entardecer chegou! Agora é PÔR DO SOL 🌅',
           night: 'A noite caiu! Agora é NOITE 🌙'
         };
-        this.showToast(msgs[newTime] || `Horário: ${newTime.toUpperCase()}`, 'info');
+        if (getDepthLayer(this.getCurrentLayer()).sunlit) {
+          this.showToast(msgs[newTime] || `Horário: ${newTime.toUpperCase()}`, 'info');
+        }
       }
     }, 1000);
 
@@ -173,7 +171,7 @@ export class TimeCycleMethods {
 
   updateTimeIndicatorTooltip(remaining) {
     const btn = document.getElementById('btn-toggle-time');
-    if (!btn) return;
+    if (!btn || !getDepthLayer(this.getCurrentLayer()).sunlit) return;
     const names = { day: 'DIA', sunset: 'PÔR DO SOL', night: 'NOITE' };
     const nextNames = { day: 'Pôr do Sol', sunset: 'Noite', night: 'Dia' };
     const currName = names[this.timeOfDay] || this.timeOfDay;
@@ -185,19 +183,21 @@ export class TimeCycleMethods {
     const btn = document.getElementById('btn-toggle-time');
     const lakeArea = document.getElementById('fishing-lake-area');
 
-    if (this.currentWorld === 2) {
-      document.getElementById('world1-lake-bg')?.classList.add('hidden');
-      this.applyWorld2BiomeScenery(this.activeWorld2Biome);
+    // Camadas do mar usam o cenário próprio; o horário só aparece onde há sol
+    if (this.applyLayerScenery()) {
+      const layer = getDepthLayer(this.getCurrentLayer());
       if (btn) {
-        const curBiome = WORLD2_BIOMES.find(b => b.id === this.activeWorld2Biome) || WORLD2_BIOMES[0];
-        btn.innerHTML = `<span class="text-sm select-none" style="image-rendering:pixelated;">${curBiome.icon || '🌊'}</span>`;
-        const rem = this.getWorld2BiomeRemaining();
-        btn.title = `Região Atual: ${curBiome.name} (${curBiome.depth} · ${curBiome.pressure})\nPróxima região em ${rem.text} (Ciclo de 5 min)`;
+        if (layer.sunlit) {
+          btn.innerHTML = this.timeOfDay === 'day' ? (PIXEL_ICONS.day || PIXEL_ICONS.sun) :
+                          this.timeOfDay === 'sunset' ? PIXEL_ICONS.sunset : (PIXEL_ICONS.night || PIXEL_ICONS.moon);
+          this.updateTimeIndicatorTooltip(this.getTimeRemainingInPhase());
+        } else {
+          btn.innerHTML = `<span class="text-sm select-none">${layer.icon}</span>`;
+          btn.title = `${layer.name}: sem luz do sol`;
+        }
       }
+      this.waterRenderer?.setTimeOfDay(this.timeOfDay);
       return;
-    } else {
-      document.getElementById('world2-lake-scenery')?.classList.add('hidden');
-      document.getElementById('world1-lake-bg')?.classList.remove('hidden');
     }
 
     if (btn) {

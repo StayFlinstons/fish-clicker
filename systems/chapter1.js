@@ -353,7 +353,7 @@ export class Chapter1Methods {
       }
     }, 4600);
 
-    // 4. Botão de entrar no Mundo 2 disponível e totalmente desobstruído
+    // 4. Botão para puxar o Kraken: ele vai para o balde (fora do limite de peso da vara)
     setTimeout(() => {
       if (btnEnterWorld2) {
         btnEnterWorld2.classList.remove('hidden');
@@ -361,47 +361,23 @@ export class Chapter1Methods {
           sound.playClick();
           overlay.classList.add('hidden');
           overlay.style.pointerEvents = 'none';
-          this.enterWorld2Reset();
-          this.showToast('🌊 Você abriu os olhos na escuridão do leito abissal... Bem-vindo ao Mundo 2!', 'special');
+          this.landKrakenReward();
         };
       }
     }, 5800);
   }
 
-  enterWorld2Reset() {
-    // Salva o snapshot definitivo do progresso do Mundo 1 para restauração posterior pelo Batiscafo
-    if (!this.world1Data) {
-      this.world1Data = {
-        gold: this.gold,
-        inventory: [...this.inventory],
-        aquarium: [...this.aquarium],
-        selectedRodId: this.selectedRodId,
-        unlockedRods: [...this.unlockedRods],
-        selectedBaitId: this.selectedBaitId,
-        unlockedBaits: [...this.unlockedBaits],
-        upgradeLevels: { ...this.upgradeLevels }
-      };
-    }
-
-    // Reset de Prestígio do Mundo 2:
-    // Começa com 0 ouro, inventário e aquário vazios, novos upgrades em 0
-    // Progressão limpa e autêntica no Abismo com novos equipamentos e biomas
-    this.currentWorld = 2;
-    this.trackAnalyticsOnce('mundo-2');
-    this.gold = 0;
-    this.inventory = [];
-    this.aquarium = [];
-    this.unlockedRods = ['vara_arpao_basico'];
-    this.selectedRodId = 'vara_arpao_basico';
-    this.unlockedBaits = ['isca_plankton_neon'];
-    this.selectedBaitId = 'isca_plankton_neon';
-    this.upgradeLevels = { balde: 0, auto_pescador: 0, boia_sorte: 0, rede_dupla: 0, aquario_cap: 0, auto_vendedor: 0, ima_dourado: 0 };
-    this.activeWorld2Biome = 'recife_bioluminescente';
-    this.ascensionParts = { bateria_neon: false, casco_titanio: false, helice_galeao: false, sistema_lastro_hadal: false };
-    this.submarineAssembled = false;
-
+  landKrakenReward() {
+    if (this.krakenCinematicSeen) return;
+    this.krakenCinematicSeen = true;
+    const kraken = this.rollFish(this.getActiveBuffs(), { rarity: 'MITICO', layer: 3 });
+    this.inventory.unshift(kraken);
+    this.totalCatches++;
+    this.recordDiscovery(kraken);
+    sound.playCatch?.(kraken.rarity);
+    this.showCatchNotification?.(kraken);
+    this.showToast(`🐙 VOCÊ FISGOU O ${kraken.name.toUpperCase()}! (${kraken.weight.toLocaleString('pt-BR')}kg)`, 'legendary');
     this.saveGame();
-    this.updateFisherman();
     this.renderAll();
   }
 

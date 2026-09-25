@@ -2,17 +2,71 @@
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
 import { FISH_LIST, RARITIES, formatBuffText, generateFishBuffs } from '../fishData.js';
 import { BAITS, RODS, UPGRADES } from '../itemsData.js';
-import { BAITS_WORLD_2, FISH_WORLD_2, RODS_WORLD_2, UPGRADES_WORLD_2 } from '../world2Data.js';
+import { DEPTH_LAYERS, getDepthLayer } from '../depthData.js';
 
 export class EconomyMethods {
+  // Catálogos do jogo (um só mundo, dividido em camadas de profundidade).
+  getFishCatalog() {
+    return FISH_LIST;
+  }
+
+  getRodCatalog() {
+    return RODS;
+  }
+
+  getBaitCatalog() {
+    return BAITS;
+  }
+
+  getUpgradeCatalog() {
+    return UPGRADES;
+  }
+
+  // Camada mais funda liberada: a da vara mais funda que o jogador tem.
+  getMaxLayer() {
+    let max = 1;
+    (this.unlockedRods || []).forEach(id => {
+      const rod = RODS.find(r => r.id === id);
+      if (rod && rod.depthLayer > max) max = rod.depthLayer;
+    });
+    return Math.min(max, DEPTH_LAYERS.length);
+  }
+
+  // Camada onde o jogador está pescando agora (nunca abaixo da liberada).
+  getCurrentLayer() {
+    const layer = Math.floor(this.currentLayer || 1);
+    return Math.max(1, Math.min(layer, this.getMaxLayer()));
+  }
+
+  getEquippedRod() {
+    return RODS.find(r => r.id === this.selectedRodId) || RODS[0];
+  }
+
+  // Kg que a vara equipada aguenta sem risco.
+  getRodMaxWeight() {
+    return this.getEquippedRod().maxWeight || 5;
+  }
+
+  // Chance (0–1) de tirar da água um peixe desse peso. Acima do limite da vara
+  // a linha pode arrebentar: quanto mais pesado, menor a chance. A Carretilha segura
+  // uma parte dos que escapariam.
+  getLandChance(weight) {
+    const limit = this.getRodMaxWeight();
+    if (weight <= limit) return 1;
+    const base = Math.max(0.02, Math.pow(limit / weight, 1.5));
+    const reel = UPGRADES.find(u => u.id === 'carretilha');
+    const hold = reel ? reel.getValue(this.upgradeLevels.carretilha || 0) : 0;
+    return base + (1 - base) * hold;
+  }
+
   getMaxInventory() {
-    const list = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+    const list = this.getUpgradeCatalog();
     const u = list.find(u => u.id === 'balde');
     return u ? u.getValue(this.upgradeLevels.balde || 0) : 10;
   }
 
   getMaxAquarium() {
-    const list = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+    const list = this.getUpgradeCatalog();
     const u = list.find(u => u.id === 'aquario_cap');
     return u ? u.getValue(this.upgradeLevels.aquario_cap || 0) : 3;
   }
@@ -66,6 +120,18 @@ export class EconomyMethods {
     }
   }
 
+  // Limites base dos atributos (sem Olhos de Peixe). Camada 1: 200% ouro/sorte, 60% vel./dupla;
+  // camada 6: 250% ouro/sorte, 85% vel., 100% dupla.
+  getBuffCaps() {
+    const step = this.getMaxLayer() - 1;
+    return {
+      gold: 2.00 + step * 0.10,
+      luck: 2.00 + step * 0.10,
+      speed: 0.60 + step * 0.05,
+      double: 0.60 + step * 0.08
+    };
+  }
+
   getActiveBuffs() {
     const out = { goldMultiplier:0, luckBonus:0, fishingSpeedBonus:0, doubleCatchChance:0, autoFishSpeedBonus:0 };
 
@@ -76,39 +142,12 @@ export class EconomyMethods {
       this.getFishBuffs(fish).forEach(b => this._applyFishBuff(b, 1.0, out));
     });
 
-    if (this.currentWorld === 2) {
-      // Mundo 2: Progressão limpa baseada em equipamentos e upgrades abissais
-      const rod = RODS_WORLD_2.find(r => r.id === this.selectedRodId);
-      if (rod) {
-        out.luckBonus += rod.luckBonus || 0;
-        out.fishingSpeedBonus += rod.fishingSpeedBonus || 0;
-        out.doubleCatchChance += rod.doubleCatchChance || 0;
-      }
-
-      const bait = BAITS_WORLD_2.find(b => b.id === this.selectedBaitId);
-      if (bait) {
-        out.luckBonus += (bait.luckMultiplier - 1.0) * 0.20;
-        out.doubleCatchChance += bait.doubleCatchBonus || 0;
-      }
-
-      const boia = UPGRADES_WORLD_2.find(u => u.id === 'boia_sorte');
-      if (boia) out.luckBonus += boia.getValue(this.upgradeLevels.boia_sorte || 0);
-      const rede = UPGRADES_WORLD_2.find(u => u.id === 'rede_dupla');
-      if (rede) out.doubleCatchChance += rede.getValue(this.upgradeLevels.rede_dupla || 0);
-    } else {
-      const rod = RODS.find(r => r.id === this.selectedRodId);
-      if (rod) { out.luckBonus += rod.luckBonus || 0; out.fishingSpeedBonus += rod.speedBonus || 0; }
-
-      const bait = BAITS.find(b => b.id === this.selectedBaitId);
-      if (bait) {
-        out.luckBonus += (bait.luckMultiplier - 1.0) * 0.15;
-        out.doubleCatchChance += bait.doubleCatchBonus || 0;
-      }
-
-      const boia = UPGRADES.find(u => u.id === 'boia_sorte');
-      if (boia) out.luckBonus += boia.getValue(this.upgradeLevels.boia_sorte || 0);
-      const rede = UPGRADES.find(u => u.id === 'rede_dupla');
-      if (rede) out.doubleCatchChance += rede.getValue(this.upgradeLevels.rede_dupla || 0);
+    // Equipamento: todos os buffs vêm da isca (a vara só dá profundidade e força)
+    const bait = BAITS.find(b => b.id === this.selectedBaitId);
+    if (bait) {
+      out.luckBonus += bait.luckBonus || 0;
+      out.fishingSpeedBonus += bait.speedBonus || 0;
+      out.doubleCatchChance += bait.doubleCatchBonus || 0;
     }
 
     // Buffs temporários do Peixe Dourado: somados DEPOIS dos limites (ver return), para
@@ -143,12 +182,12 @@ export class EconomyMethods {
       out.doubleCatchChance += 0.15;
     }
 
-    // Caps dinâmicos: Mundo 2 limite de ouro e sorte fixado em 250% (2.50) + meta-olhos
-    const isW2 = this.currentWorld === 2;
-    const goldCap = (isW2 ? 2.50 : 2.00) + (fe.gold || 0) * 0.01;
-    const luckCap = (isW2 ? 2.50 : 2.00) + (fe.luck || 0) * 0.01;
-    const speedCap = Math.min(0.95, (isW2 ? 0.85 : 0.60) + (fe.speed || 0) * 0.01);
-    const doubleCap = Math.min(1.00, (isW2 ? 1.00 : 0.60) + (fe.double || 0) * 0.01);
+    // Limites sobem com a camada mais funda liberada + Olhos de Peixe
+    const caps = this.getBuffCaps();
+    const goldCap = caps.gold + (fe.gold || 0) * 0.01;
+    const luckCap = caps.luck + (fe.luck || 0) * 0.01;
+    const speedCap = Math.min(0.95, caps.speed + (fe.speed || 0) * 0.01);
+    const doubleCap = Math.min(1.00, caps.double + (fe.double || 0) * 0.01);
 
     return {
       goldMultiplier: Math.min(out.goldMultiplier, goldCap) + golden.gold,
@@ -177,42 +216,39 @@ export class EconomyMethods {
     return chances;
   }
 
-  // Espécies possíveis para uma raridade no mundo/bioma/horário atual (nunca vazio).
-  getFishPoolForRarity(rarity, timeOfDay = this.timeOfDay) {
-    if (this.currentWorld === 2) {
-      const activeBiome = this.activeWorld2Biome || 'recife_bioluminescente';
-      const biomeFish = FISH_WORLD_2.filter(f => f.biome === activeBiome);
-      const pool = biomeFish.filter(f => f.rarity === rarity);
-      if (pool.length) return pool;
-      return biomeFish.length ? biomeFish : [FISH_WORLD_2[0]];
-    }
-    const pool = FISH_LIST.filter(f => {
-      if (f.rarity !== rarity) return false;
-      // Peixes exclusivos de horário só podem ser pescados em seu período do dia
-      if (f.timeExclusive && f.timeExclusive !== timeOfDay) return false;
-      return true;
+  // Espécies possíveis numa camada. Horários só valem nas camadas com sol; à noite
+  // alguns bichos da Zona do Crepúsculo sobem para a Zona do Sol (migração vertical).
+  getLayerFish(layer = this.getCurrentLayer(), timeOfDay = this.timeOfDay) {
+    const info = getDepthLayer(layer);
+    return FISH_LIST.filter(f => {
+      if (f.layer === layer) {
+        if (f.timeExclusive && info.sunlit && f.timeExclusive !== timeOfDay) return false;
+        return true;
+      }
+      return layer === 2 && timeOfDay === 'night' && f.layer === 3 && f.migratesUp;
     });
-    if (pool.length) return pool;
-    return [FISH_LIST.find(f => f.rarity === rarity) || FISH_LIST[0]];
   }
 
-  getEquippedRodPower() {
-    const equippedRod = this.currentWorld === 2
-      ? RODS_WORLD_2.find(r => r.id === this.selectedRodId)
-      : RODS.find(r => r.id === this.selectedRodId);
-    if (!equippedRod) return 1.0;
-    if (typeof equippedRod.power === 'number') return equippedRod.power;
-    if (typeof equippedRod.tier === 'number') return 1.0 + (equippedRod.tier - 1) * 2.0; // T1=1.0, T2=3.0, T3=5.0, T4=7.0
-    return 1.0;
+  // Espécies possíveis para uma raridade na camada/horário atual (nunca vazio).
+  // Se a camada não tem a raridade, usa a mais próxima abaixo (ou acima).
+  getFishPoolForRarity(rarity, timeOfDay = this.timeOfDay, layer = this.getCurrentLayer()) {
+    const layerFish = this.getLayerFish(layer, timeOfDay);
+    const order = ['COMUM', 'INCOMUM', 'RARO', 'EPICO', 'LENDARIO', 'MITICO', 'SECRETO'];
+    const idx = order.indexOf(rarity);
+    for (let d = 0; d < order.length; d++) {
+      for (const i of [idx - d, idx + d]) {
+        if (i < 0 || i >= order.length) continue;
+        const pool = layerFish.filter(f => f.rarity === order[i]);
+        if (pool.length) return pool;
+      }
+    }
+    return [FISH_LIST[0]];
   }
 
-  // Peso a partir de um sorteio uniforme u ∈ [0,1). Influência do PWR da vara:
-  // viés sutil na distribuição e leve multiplicador final (+1% a +12% no topo).
-  computeFishWeight(template, u, rodPower = this.getEquippedRodPower()) {
-    const rollExponent = 1 / (1 + (rodPower - 1) * 0.05);
-    const weightRoll = Math.pow(u, rollExponent);
-    const powerWeightMultiplier = 1 + Math.min(0.12, (rodPower - 1) * 0.015);
-    let weight = +((template.minWeight + weightRoll * (template.maxWeight - template.minWeight)) * powerWeightMultiplier).toFixed(2);
+  // Peso (kg) a partir de um sorteio uniforme u ∈ [0,1).
+  computeFishWeight(template, u) {
+    let weight = +(template.minWeight + u * (template.maxWeight - template.minWeight)).toFixed(2);
+    if (weight <= 0) weight = 0.01;
     if (this.forgeUpgrades && this.forgeUpgrades['linha_reforcada']) {
       weight = +(weight * 1.15).toFixed(2);
     }
@@ -224,13 +260,15 @@ export class EconomyMethods {
     return Math.round(template.baseValue * Math.pow(weightFactor, 0.7));
   }
 
-  // Valor base médio de uma espécie (integração numérica do peso, sem aleatoriedade).
-  getExpectedFishValue(template, rodPower) {
+  // Valor base médio de uma espécie já contando os que escapam pela força da vara
+  // (integração numérica do peso, sem aleatoriedade).
+  getExpectedFishValue(template) {
     const STEPS = 32;
     let sum = 0;
     for (let i = 0; i < STEPS; i++) {
       const u = (i + 0.5) / STEPS;
-      sum += this.computeFishValue(template, this.computeFishWeight(template, u, rodPower));
+      const w = this.computeFishWeight(template, u);
+      sum += this.computeFishValue(template, w) * this.getLandChance(w);
     }
     return sum / STEPS;
   }
@@ -248,18 +286,15 @@ export class EconomyMethods {
       }
     }
 
-    const pool = this.getFishPoolForRarity(selectedRarity, opts.timeOfDay || this.timeOfDay);
+    const layer = opts.layer || this.getCurrentLayer();
+    const pool = this.getFishPoolForRarity(selectedRarity, opts.timeOfDay || this.timeOfDay, layer);
     const template = pool[Math.floor(Math.random() * pool.length)];
 
     const weight = this.computeFishWeight(template, Math.random());
     const rawValue = this.computeFishValue(template, weight);
 
-    let generatedBuffs = [];
-    if (this.currentWorld === 2) {
-      generatedBuffs = template.buff ? [template.buff] : [];
-    } else {
-      generatedBuffs = generateFishBuffs(template.id, template.rarity);
-    }
+    // Buffs sorteados; peixes de camadas mais fundas dão buffs mais fortes (+15% por camada)
+    const generatedBuffs = generateFishBuffs(template.id, template.rarity, 1 + (template.layer - 1) * 0.15);
 
     let specialAura = null;
     if (this.bloodMoonEventActive) {
@@ -288,6 +323,7 @@ export class EconomyMethods {
       id: template.id,
       numId: template.numId,
       name: template.name,
+      layer: template.layer,
       rarity: template.rarity,
       icon: template.icon,
       weight,

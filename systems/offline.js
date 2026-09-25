@@ -1,8 +1,7 @@
 // Progresso offline (recompensa AFK por valor esperado).
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
-import { UPGRADES } from '../itemsData.js';
+import { getDepthLayer } from '../depthData.js';
 import { sound } from '../sound.js';
-import { UPGRADES_WORLD_2 } from '../world2Data.js';
 
 export class OfflineMethods {
   // Simula a ausência de forma determinística (valor esperado), sem sortear centenas de peixes.
@@ -17,7 +16,7 @@ export class OfflineMethods {
     // Mínimo de 60 segundos de ausência para disparar recompensa
     if (diffSec < 60) return;
 
-    const upgradeList = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+    const upgradeList = this.getUpgradeCatalog();
     const buffs = this.getActiveBuffs();
 
     let intervalSec = 45;
@@ -29,25 +28,28 @@ export class OfflineMethods {
       sourceText = 'Seu Mergulhador Amigo pescou no fundo do lago enquanto você esteve fora!';
     }
 
-    const maxOfflineSec = 8 * 3600; // Máximo de 8 horas AFK
+    // Limite de horas AFK: 8h, até 24h com a Rede de Espera
+    const netUpgrade = upgradeList.find(u => u.id === 'rede_espera');
+    const maxHours = netUpgrade ? netUpgrade.getValue(this.upgradeLevels.rede_espera || 0) : 8;
+    const maxOfflineSec = maxHours * 3600;
     const effectiveSec = Math.min(diffSec, maxOfflineSec);
     const casts = Math.floor(effectiveSec / intervalSec);
     const catches = Math.floor(casts * (1 + buffs.doubleCatchChance));
     if (catches <= 0) return;
 
     // Ausências de 15 min+ atravessam o ciclo inteiro: exclusivos de cada horário entram na média
-    const phases = (this.currentWorld !== 2 && effectiveSec >= 15 * 60)
+    const layer = this.getCurrentLayer();
+    const phases = (getDepthLayer(layer).sunlit && effectiveSec >= 15 * 60)
       ? ['day', 'sunset', 'night']
       : [this.timeOfDay];
 
     const chances = this.getRarityChances(buffs);
-    const rodPower = this.getEquippedRodPower();
     let avgValue = 0;
     Object.keys(chances).forEach(rarity => {
       let sum = 0;
       phases.forEach(phase => {
-        const pool = this.getFishPoolForRarity(rarity, phase);
-        sum += pool.reduce((acc, t) => acc + this.getExpectedFishValue(t, rodPower), 0) / pool.length;
+        const pool = this.getFishPoolForRarity(rarity, phase, layer);
+        sum += pool.reduce((acc, t) => acc + this.getExpectedFishValue(t), 0) / pool.length;
       });
       avgValue += chances[rarity] * (sum / phases.length);
     });
@@ -59,7 +61,7 @@ export class OfflineMethods {
     let timeStr = '';
     if (hours > 0) timeStr += `${hours}h `;
     timeStr += `${Math.max(1, minutes)}m`;
-    if (diffSec > maxOfflineSec) timeStr += ' (máx. 8h)';
+    if (diffSec > maxOfflineSec) timeStr += ` (máx. ${maxHours}h)`;
 
     // Atualizar e exibir modal
     const modal = document.getElementById('offline-modal');

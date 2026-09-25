@@ -1,8 +1,7 @@
 // Olhos de Peixe (meta-progressão diária à meia-noite), Santuário e Oferenda de Espécies.
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
-import { BUFF_LABELS, FISH_LIST, RARITIES } from '../fishData.js';
+import { BUFF_LABELS, RARITIES } from '../fishData.js';
 import { sound } from '../sound.js';
-import { FISH_WORLD_2 } from '../world2Data.js';
 
 export class FishEyesMethods {
   getLocalDateKey(d = new Date()) {
@@ -131,9 +130,9 @@ export class FishEyesMethods {
 
     const alloc = this.fishEyesAllocated || { gold: 0, luck: 0, speed: 0, double: 0 };
 
-    // Ouro: Base cap 200% no Mundo 1 e 250% no Mundo 2 + 1% por olho investido
-    const isW2 = this.currentWorld === 2;
-    const baseGold = isW2 ? 250 : 200;
+    // Limites base sobem com a camada mais funda liberada (getBuffCaps) + 1% por olho investido
+    const caps = this.getBuffCaps();
+    const baseGold = Math.round(caps.gold * 100);
     const goldLvl = alloc.gold || 0;
     const goldBonus = goldLvl * 1;
     const goldCap = baseGold + goldBonus;
@@ -146,8 +145,7 @@ export class FishEyesMethods {
     const baseGoldEl = document.getElementById('fe-base-gold-label');
     if (baseGoldEl) baseGoldEl.textContent = `(Base: ${baseGold}%)`;
 
-    // Sorte: Base cap 200% no Mundo 1 e 250% no Mundo 2 + 1% por olho investido
-    const baseLuck = isW2 ? 250 : 200;
+    const baseLuck = Math.round(caps.luck * 100);
     const luckLvl = alloc.luck || 0;
     const luckBonus = luckLvl * 1;
     const luckCap = baseLuck + luckBonus;
@@ -160,10 +158,9 @@ export class FishEyesMethods {
     const baseLuckEl = document.getElementById('fe-base-luck-label');
     if (baseLuckEl) baseLuckEl.textContent = `(Base: ${baseLuck}%)`;
 
-    // Velocidade: Base cap 60% + 1% por olho
     const speedLvl = alloc.speed || 0;
     const speedBonus = speedLvl * 1;
-    const speedCap = Math.min(85, 60 + speedBonus);
+    const speedCap = Math.min(95, Math.round(caps.speed * 100) + speedBonus);
     const lvlSpeed = document.getElementById('fe-lvl-speed');
     if (lvlSpeed) lvlSpeed.textContent = `${speedLvl} Olho(s)`;
     const bonusSpeed = document.getElementById('fe-bonus-speed');
@@ -171,10 +168,9 @@ export class FishEyesMethods {
     const capSpeed = document.getElementById('fe-cap-speed');
     if (capSpeed) capSpeed.textContent = `${speedCap}%`;
 
-    // Dupla: Base cap 60% + 1% por olho
     const doubleLvl = alloc.double || 0;
     const doubleBonus = doubleLvl * 1;
-    const doubleCap = Math.min(90, 60 + doubleBonus);
+    const doubleCap = Math.min(100, Math.round(caps.double * 100) + doubleBonus);
     const lvlDouble = document.getElementById('fe-lvl-double');
     if (lvlDouble) lvlDouble.textContent = `${doubleLvl} Olho(s)`;
     const bonusDouble = document.getElementById('fe-bonus-double');
@@ -215,7 +211,7 @@ export class FishEyesMethods {
   }
 
   renderOfferingContent() {
-    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const pool = this.getFishCatalog();
     const total = pool.length;
     const donatedCount = pool.filter(f => (this.speciesDonations && this.speciesDonations[f.id]) || (this.donatedSpeciesHistory && this.donatedSpeciesHistory[f.id])).length;
 
@@ -326,7 +322,7 @@ export class FishEyesMethods {
       return;
     }
 
-    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const pool = this.getFishCatalog();
     const targetFish = pool.find(f => f.id === fishId);
     if (!targetFish) return;
 
@@ -391,7 +387,7 @@ export class FishEyesMethods {
       return;
     }
 
-    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const pool = this.getFishCatalog();
     if (!this.speciesDonations) this.speciesDonations = {};
     let donatedCount = 0;
 

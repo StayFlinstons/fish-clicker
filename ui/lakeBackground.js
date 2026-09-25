@@ -1,4 +1,4 @@
-// Animação do fundo pixel art do Mundo 1 sem arte nova: redesenha faixas horizontais da imagem
+// Animação do fundo pixel art do rio (camada 1) sem arte nova: redesenha faixas horizontais da imagem
 // visível deslocadas em "blocos" da arte (o truque de raster dos jogos 16-bit para água e calor).
 // A superfície ondula e as plantas balançam mais nas pontas do que no chão. Desenha num canvas
 // próprio (#world1-bg-anim), entre as <img> de fundo e o overlay de iluminação, e só nas faixas
@@ -45,7 +45,7 @@ export class LakeBackgroundAnimator {
   update() {
     const { canvas, ctx } = this;
     const W = canvas.clientWidth, H = canvas.clientHeight;
-    if (!this.enabled || this.reducedMotion || !W || !H) return; // painel oculto, Mundo 2 ou desligado
+    if (!this.enabled || this.reducedMotion || !W || !H) return; // painel oculto, camada do mar ou desligado
     if (canvas.width !== W || canvas.height !== H) {
       canvas.width = W;
       canvas.height = H;

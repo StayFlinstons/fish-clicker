@@ -6,8 +6,8 @@ export class FishingMethods {
   fish(isAuto = false) {
     if (this.isFishing && !isAuto) return;
 
-    // Se estiver usando a Isca do Kraken Ancestral, dispara o evento cinemático de transição
-    if (this.selectedBaitId === 'isca_kraken_ancestral' && !isAuto) {
+    // Primeira pescada com a Isca do Kraken Ancestral: cinemática que termina com o Kraken fisgado
+    if (this.selectedBaitId === 'isca_kraken_ancestral' && !isAuto && !this.krakenCinematicSeen) {
       this.triggerKrakenCinematic();
       return;
     }
@@ -39,14 +39,29 @@ export class FishingMethods {
 
     const buffs = this.getActiveBuffs();
     const caught = [];
-    caught.push(this.rollFish(buffs));
+    // Arremesso manual com Sonar: sai o peixe que o Sonar mostrou
+    caught.push(!isAuto && this.getSonarLevel() > 0 ? this.takeSonarFish() : this.rollFish(buffs));
 
     if (Math.random() < buffs.doubleCatchChance && this.inventory.length + caught.length < maxInv) {
       caught.push(this.rollFish(buffs));
       this.showFloatingText('DUPLA!', '#38bdf8', 100);
     }
 
-    caught.forEach((fish, idx) => {
+    // Peixe mais pesado que o limite da vara pode arrebentar a linha
+    const landed = caught.filter(fish => Math.random() < this.getLandChance(fish.weight));
+    const escaped = caught.filter(fish => !landed.includes(fish));
+    if (escaped.length) {
+      const big = escaped[0];
+      sound.playWaterSplash?.();
+      this.showFloatingText(`ESCAPOU! ${big.weight.toLocaleString('pt-BR')}kg`, '#f87171', 60);
+      if (!isAuto) {
+        this.showToast(`🎣 A linha arrebentou! ${big.name} pesado demais para sua vara (aguenta ${this.getRodMaxWeight().toLocaleString('pt-BR')}kg).`, 'warning');
+      }
+    }
+
+    if (!isAuto) this.peekSonar();
+
+    landed.forEach((fish, idx) => {
       setTimeout(() => {
         this.inventory.unshift(fish);
         this.totalCatches++;
@@ -56,9 +71,6 @@ export class FishingMethods {
         this.recordDiscovery(fish);
         this.checkFirstRarityCatch(fish);
         this.checkFirstBuffFishCatch(fish);
-        if (this.currentWorld === 2) {
-          this.checkSubmarinePartDrop(this.activeWorld2Biome || 'recife_bioluminescente');
-        }
         if (this.waterRenderer) {
           if (typeof this.waterRenderer.catchAndSpawnFish === 'function') {
             this.waterRenderer.catchAndSpawnFish(fish.icon);

@@ -1,15 +1,14 @@
 // Loja: compra e equipamento de varas, iscas e melhorias.
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
-import { BAITS, RODS, UPGRADES } from '../itemsData.js';
 import { sound } from '../sound.js';
-import { BAITS_WORLD_2, RODS_WORLD_2, UPGRADES_WORLD_2 } from '../world2Data.js';
 
 export class ShopMethods {
   buyRod(rodId) {
-    const rodList = this.currentWorld === 2 ? RODS_WORLD_2 : RODS;
+    const rodList = this.getRodCatalog();
     const rod = rodList.find(r => r.id === rodId);
     if (!rod || this.unlockedRods.includes(rodId)) return;
     if (this.gold < rod.price) { this.showToast('OURO INSUFICIENTE!', 'error'); return; }
+    const prevMaxLayer = this.getMaxLayer();
     this.gold -= rod.price;
     this.unlockedRods.push(rodId);
     this.selectedRodId = rodId;
@@ -19,16 +18,18 @@ export class ShopMethods {
     this.renderAll();
     this.checkAchievements();
     this.checkChapter1Completion(true);
+    this.onRodUnlocked(prevMaxLayer);
+    this.resetSonar();
   }
 
   equipRod(rodId) {
     if (this.unlockedRods.includes(rodId)) {
-      this.selectedRodId = rodId; sound.playClick(); this.updateFisherman(); this.renderAll();
+      this.selectedRodId = rodId; sound.playClick(); this.updateFisherman(); this.resetSonar(); this.renderAll();
     }
   }
 
   buyBait(baitId) {
-    const baitList = this.currentWorld === 2 ? BAITS_WORLD_2 : BAITS;
+    const baitList = this.getBaitCatalog();
     const bait = baitList.find(b => b.id === baitId);
     if (!bait || bait.unbuyable || this.unlockedBaits.includes(baitId)) return;
     if (this.gold < bait.price) { this.showToast('OURO INSUFICIENTE!', 'error'); return; }
@@ -38,6 +39,7 @@ export class ShopMethods {
     sound.playUpgrade();
     this.showToast('COMPROU: ' + bait.name, 'success');
     this.updateFisherman();
+    this.resetSonar();
     this.renderAll();
     this.checkAchievements();
     this.checkChapter1Completion(true);
@@ -45,12 +47,12 @@ export class ShopMethods {
 
   equipBait(baitId) {
     if (this.unlockedBaits.includes(baitId)) {
-      this.selectedBaitId = baitId; sound.playClick(); this.updateFisherman(); this.renderAll();
+      this.selectedBaitId = baitId; sound.playClick(); this.updateFisherman(); this.resetSonar(); this.renderAll();
     }
   }
 
   buyUpgrade(upgradeId) {
-    const upgradeList = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+    const upgradeList = this.getUpgradeCatalog();
     const u = upgradeList.find(u => u.id === upgradeId);
     if (!u) return;
     const lvl = this.upgradeLevels[upgradeId] || 0;
@@ -71,6 +73,9 @@ export class ShopMethods {
       this.nextAutoSellTime = Date.now() + newIntervalMs;
       document.getElementById('auto-sell-bar')?.classList.remove('hidden');
     }
+
+    if (upgradeId === 'sonar' || upgradeId === 'carretilha') this.resetSonar();
+    if (upgradeId === 'encomendas') this.ensureOrders();
 
     sound.playUpgrade();
     this.showToast(u.name + ' Nv.' + (lvl + 1), 'success');

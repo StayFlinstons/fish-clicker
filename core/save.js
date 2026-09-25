@@ -1,8 +1,8 @@
 // Persistência: save/load no localStorage, reset e backup (exportar/importar em Base64).
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
 import { FISH_LIST } from '../fishData.js';
+import { BAITS, RODS, UPGRADES } from '../itemsData.js';
 import { sound } from '../sound.js';
-import { FISH_WORLD_2 } from '../world2Data.js';
 import { SAVE_KEY } from './constants.js';
 
 export class SaveMethods {
@@ -33,12 +33,11 @@ export class SaveMethods {
       totalBloodMoonCatches: this.getTotalBloodMoonCatches(),
       chapter1Completed: this.chapter1Completed,
       sacrificedFishCount: this.sacrificedFishCount || 0,
-      currentWorld: this.currentWorld || 1,
-      world1Data: this.world1Data || null,
-      world2SavedData: this.world2SavedData || null,
-      activeWorld2Biome: this.activeWorld2Biome || 'recife_bioluminescente',
-      ascensionParts: this.ascensionParts || { bateria_neon: false, casco_titanio: false, helice_galeao: false, sistema_lastro_hadal: false },
-      submarineAssembled: Boolean(this.submarineAssembled),
+      depthLayersVersion: 1,
+      currentLayer: this.getCurrentLayer(),
+      krakenCinematicSeen: Boolean(this.krakenCinematicSeen),
+      orders: Array.isArray(this.orders) ? this.orders : [],
+      ordersCompleted: this.ordersCompleted || 0,
       timeOfDay: this.timeOfDay,
       timeOffsetMs: this.timeOffsetMs || 0,
       phaseMsRemaining: this.getRawMsRemaining(),
@@ -47,7 +46,6 @@ export class SaveMethods {
       donatedSpeciesHistory: this.donatedSpeciesHistory || {},
       offeringCycle: this.offeringCycle || 1,
       activeFishEyesTab: this.activeFishEyesTab || 'attributes',
-      world2BiomeOffsetMs: this.world2BiomeOffsetMs || 0,
       fishEyesCount: this.fishEyesCount || 0,
       fishEyesTotal: this.fishEyesTotal || 0,
       fishEyesAllocated: this.fishEyesAllocated || { gold: 0, luck: 0, speed: 0, double: 0 },
@@ -110,12 +108,10 @@ export class SaveMethods {
         this.totalBloodMoonCatches = typeof d.totalBloodMoonCatches === 'number' ? d.totalBloodMoonCatches : 0;
         this.chapter1Completed = Boolean(d.chapter1Completed);
         this.sacrificedFishCount = typeof d.sacrificedFishCount === 'number' ? d.sacrificedFishCount : 0;
-        this.currentWorld = typeof d.currentWorld === 'number' ? d.currentWorld : 1;
-        this.world1Data = d.world1Data || null;
-        this.world2SavedData = d.world2SavedData || null;
-        this.activeWorld2Biome = d.activeWorld2Biome || 'recife_bioluminescente';
-        this.ascensionParts = d.ascensionParts || { bateria_neon: false, casco_titanio: false, helice_galeao: false, sistema_lastro_hadal: false };
-        this.submarineAssembled = Boolean(d.submarineAssembled);
+        this.currentLayer = typeof d.currentLayer === 'number' ? d.currentLayer : 1;
+        this.krakenCinematicSeen = Boolean(d.krakenCinematicSeen);
+        this.orders = Array.isArray(d.orders) ? d.orders.filter(o => o && o.fishId && o.count > 0) : [];
+        this.ordersCompleted = typeof d.ordersCompleted === 'number' ? d.ordersCompleted : 0;
         this.timeOfDay = d.timeOfDay || 'day';
         this.timeOffsetMs = d.timeOffsetMs || 0;
         this.savedPhaseMsRemaining = typeof d.phaseMsRemaining === 'number' ? d.phaseMsRemaining : null;
@@ -125,7 +121,6 @@ export class SaveMethods {
         Object.keys(this.speciesDonations).forEach(k => { if (this.speciesDonations[k]) this.donatedSpeciesHistory[k] = true; });
         this.offeringCycle = typeof d.offeringCycle === 'number' ? d.offeringCycle : 1;
         this.activeFishEyesTab = d.activeFishEyesTab || 'attributes';
-        this.world2BiomeOffsetMs = typeof d.world2BiomeOffsetMs === 'number' ? d.world2BiomeOffsetMs : 0;
         this.fishEyesCount = typeof d.fishEyesCount === 'number' ? d.fishEyesCount : 0;
         this.fishEyesTotal = typeof d.fishEyesTotal === 'number' ? d.fishEyesTotal : 0;
         this.fishEyesAllocated = d.fishEyesAllocated && typeof d.fishEyesAllocated === 'object'
@@ -153,8 +148,7 @@ export class SaveMethods {
         // Retro-compatibilidade: se o save antigo não tinha firstRarityCatches ou se peixes dessas raridades já foram descobertos
         if (this.discoveredFish) {
           try {
-            const allFishDefs = [...(typeof FISH_LIST !== 'undefined' ? FISH_LIST : []), ...(typeof FISH_WORLD_2 !== 'undefined' ? FISH_WORLD_2 : [])];
-            allFishDefs.forEach(f => {
+            FISH_LIST.forEach(f => {
               if (['LENDARIO', 'MITICO', 'SECRETO'].includes(f.rarity) && this.discoveredFish[f.id]) {
                 this.firstRarityCatches[f.rarity] = true;
               }
@@ -174,6 +168,9 @@ export class SaveMethods {
           this.settings = { ...this.settings, ...d.settings };
         }
         this.lastActiveTime = d.lastActiveTime || Date.now();
+
+        // Saves de antes das camadas de profundidade (Mundo 1/Mundo 2 separados)
+        if (d.depthLayersVersion !== 1) this.migrateToDepthLayers(d);
 
         // Limpeza de chaves de versões legadas para liberar espaço do localStorage
         ['pescaria_clicker_save_v3', 'pescaria_clicker_save_v2', 'pescaria_clicker_save_v1'].forEach(k => {
@@ -280,5 +277,84 @@ export class SaveMethods {
       return;
     }
     location.reload();
+  }
+
+  // Migração para as camadas de profundidade (v1.7): junta o Mundo 1 e o Mundo 2 num só
+  // progresso, devolve o ouro da Bóia Trevo e da Rede Dupla (removidas) e atualiza nome,
+  // raridade e camada dos peixes guardados. Monta o aviso único mostrado após o carregamento.
+  // d: o save antigo (currentWorld, world1Data e world2SavedData só existem lá).
+  migrateToDepthLayers(d) {
+    const notes = [];
+    const liveIsW2 = d.currentWorld === 2;
+    const other = liveIsW2 ? d.world1Data : d.world2SavedData;
+
+    // Preços antigos dos upgrades removidos, por mundo (base, multiplicador)
+    const REMOVED = {
+      w1: { boia_sorte: [350, 1.75], rede_dupla: [600, 2.0] },
+      w2: { boia_sorte: [1800, 1.85], rede_dupla: [3200, 2.10] }
+    };
+    const refundFor = (levels, world) => Object.entries(REMOVED[world]).reduce((sum, [id, [base, mult]]) => {
+      const lvl = (levels && levels[id]) || 0;
+      for (let i = 0; i < lvl; i++) sum += Math.round(base * Math.pow(mult, i));
+      return sum;
+    }, 0);
+
+    let refund = refundFor(this.upgradeLevels, liveIsW2 ? 'w2' : 'w1');
+    if (other) {
+      refund += refundFor(other.upgradeLevels, liveIsW2 ? 'w1' : 'w2');
+      this.gold = (this.gold || 0) + (other.gold || 0);
+      this.inventory = [...this.inventory, ...(other.inventory || [])];
+      this.aquarium = [...this.aquarium, ...(other.aquarium || [])];
+      this.unlockedRods = [...new Set([...this.unlockedRods, ...(other.unlockedRods || [])])];
+      this.unlockedBaits = [...new Set([...this.unlockedBaits, ...(other.unlockedBaits || [])])];
+      Object.entries(other.upgradeLevels || {}).forEach(([id, lvl]) => {
+        this.upgradeLevels[id] = Math.max(this.upgradeLevels[id] || 0, lvl || 0);
+      });
+      notes.push('o ouro, os peixes, as varas, as iscas e os upgrades dos dois mundos foram juntados');
+    }
+    delete this.upgradeLevels.boia_sorte;
+    delete this.upgradeLevels.rede_dupla;
+    UPGRADES.forEach(u => {
+      if ((this.upgradeLevels[u.id] || 0) > u.maxLevel) this.upgradeLevels[u.id] = u.maxLevel;
+    });
+    if (refund > 0) {
+      this.gold += refund;
+      notes.push(`${refund.toLocaleString('pt-BR')}G devolvidos pela Bóia Trevo e pela Rede Dupla, que saíram do jogo`);
+    }
+
+    // Só itens que ainda existem; equipa a vara mais funda e a melhor isca
+    this.unlockedRods = RODS.filter(r => r.id === 'vara_bambu' || this.unlockedRods.includes(r.id)).map(r => r.id);
+    this.unlockedBaits = BAITS.filter(b => b.id === 'minhoca' || this.unlockedBaits.includes(b.id)).map(b => b.id);
+    if (other || !this.unlockedRods.includes(this.selectedRodId)) {
+      this.selectedRodId = this.unlockedRods[this.unlockedRods.length - 1];
+    }
+    if (other || !this.unlockedBaits.includes(this.selectedBaitId)) {
+      const best = BAITS.filter(b => !b.unbuyable && this.unlockedBaits.includes(b.id)).pop();
+      this.selectedBaitId = best ? best.id : 'minhoca';
+    }
+
+    // Peixes guardados: nome, raridade, camada e ícone do catálogo novo
+    [...this.inventory, ...this.aquarium].forEach(f => {
+      const t = FISH_LIST.find(x => x.id === f?.id);
+      if (!t) return;
+      f.name = t.name;
+      f.rarity = t.rarity;
+      f.layer = t.layer;
+      f.icon = t.icon;
+    });
+
+    // Aquário acima do limite: o excedente vai para o balde
+    const maxAq = this.getMaxAquarium();
+    if (this.aquarium.length > maxAq) {
+      const extra = this.aquarium.splice(maxAq);
+      this.inventory = [...extra, ...this.inventory];
+      notes.push(`${extra.length} peixe(s) que não cabiam no aquário foram para o balde`);
+    }
+
+    this.currentLayer = this.getMaxLayer();
+    if (liveIsW2 || other) {
+      notes.unshift(`o Abismo agora são as camadas mais fundas do mesmo mundo; você está na camada ${this.currentLayer}`);
+    }
+    this.depthMigrationNotes = notes;
   }
 }

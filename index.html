@@ -58,10 +58,6 @@
           <span class="text-[8px] font-bold text-purple-200 hidden sm:inline" style="font-family:var(--font-pixel);">PORTAL</span>
         </button>
 
-        <!-- Botão do Batiscafo no Header (Mundo 2: Ascensão ao Mundo 3) -->
-        <!-- Botão do Batiscafo no Header (Ocultado a pedido do usuário) -->
-        <button id="btn-open-submarine" style="display:none !important;" class="hidden"></button>
-
         <!-- Indicador de Horário (Sol / Pôr / Lua) -->
         <button id="btn-toggle-time" onclick="window.game.showTimeOfDayStatus()" title="Horário do Jogo (Clique para consultar o tempo restante)" class="h-8 sm:h-9 w-8 sm:w-9 bg-slate-900 border-2 border-slate-700 flex items-center justify-center text-amber-300 shrink-0 cursor-pointer hover:border-amber-400 pixel-btn select-none" style="box-shadow:2px 2px 0 #000;">
           <svg class="w-4 h-4 inline-block" viewBox="0 0 8 8" style="image-rendering:pixelated;"><path d="M2 1 A3 3 0 0 0 6 7 A4 4 0 1 1 2 1 Z" fill="#fef08a"/></svg>
@@ -266,6 +262,18 @@
       <!-- CENÁRIO 1: PESCARIA TRADICIONAL -->
       <div id="fishing-lake-area" class="water-container scanlines relative flex-1 min-h-[200px] bg-gradient-to-b from-[#0a1628] via-[#0c2040] to-[#0e3a5f] border-4 border-slate-700 p-4 flex flex-col justify-end items-center overflow-hidden" style="box-shadow:4px 4px 0 #000;">
         
+        <!-- Seletor de profundidade (camadas liberadas pelas varas): systems/depth.js -->
+        <div id="depth-selector" class="absolute top-2 left-2 z-20 flex items-stretch gap-1 select-none" style="font-family:var(--font-pixel);">
+          <button id="btn-depth-up" onclick="window.game.changeLayer(-1)" title="Subir uma camada" class="pixel-btn w-7 bg-slate-900/90 border-2 border-slate-600 text-slate-200 text-[10px] disabled:opacity-40 disabled:cursor-default" style="box-shadow:2px 2px 0 #000;">▲</button>
+          <button onclick="window.game.showLayerInfo()" title="Sobre esta camada" class="bg-slate-950/85 border-2 border-slate-600 px-2 py-1 text-left leading-tight" style="box-shadow:2px 2px 0 #000;">
+            <span id="depth-label-name" class="block text-[9px] font-bold text-sky-300 whitespace-nowrap">🏞️ Rio e Lagoa</span>
+            <span id="depth-label-range" class="block text-[8px] text-slate-400 whitespace-nowrap mt-0.5">0 m–20 m · 1/6</span>
+          </button>
+          <button id="btn-depth-down" onclick="window.game.changeLayer(1)" title="Descer uma camada" class="pixel-btn w-7 bg-slate-900/90 border-2 border-slate-600 text-slate-200 text-[10px] disabled:opacity-40 disabled:cursor-default" style="box-shadow:2px 2px 0 #000;">▼</button>
+        </div>
+        <!-- Leitura do Sonar de Pesca (próxima mordida): systems/tools.js -->
+        <div id="sonar-readout" class="hidden absolute top-2 right-2 z-20 max-w-[55%] bg-slate-950/85 border-2 border-slate-600 px-2 py-1 text-[8px] text-slate-200 leading-tight select-none pointer-events-none" style="font-family:var(--font-pixel); box-shadow:2px 2px 0 #000;"></div>
+
         <!-- CENÁRIO DO MUNDO 1 (Fundos Pixel Art Submersos: Dia, Pôr do Sol, Noite) -->
         <div id="world1-lake-bg" class="absolute inset-0 pointer-events-none z-0 overflow-hidden select-none">
           <img id="world1-bg-dia" src="fundo-lago-dia.png" alt="Fundo Dia" class="absolute inset-0 w-full h-full object-cover object-bottom transition-opacity duration-700 pointer-events-none" style="image-rendering: pixelated; opacity: 1;">
@@ -278,7 +286,7 @@
           <div id="world1-time-overlay" class="absolute inset-0 pointer-events-none transition-colors duration-700"></div>
         </div>
 
-        <!-- CENÁRIOS RETRÔ DO MUNDO 2 (Recife, Fendas Vulcânicas, Naufrágios, Zona Hadal) -->
+        <!-- CENÁRIOS DO MAR (Recife, Naufrágios, Fendas Vulcânicas, Zona Hadal): usados pelas camadas 2 a 6, ver depthData.js -->
         <div id="world2-lake-scenery" class="absolute inset-0 pointer-events-none z-0 overflow-hidden hidden">
           <!-- Bioma 1: Recife Bioluminescente (100% Pure Pixel Art) -->
           <div id="scenery-recife" class="scenery-biome-layer absolute inset-0 hidden transition-opacity duration-500 pointer-events-none">
@@ -2937,7 +2945,7 @@
     </div>
   </div>
 
-  <!-- ═══════════ CINEMÁTICA: O DESPERTAR DO KRAKEN (TRANSIÇÃO MUNDO 2) ═══════════ -->
+  <!-- ═══════════ CINEMÁTICA: O DESPERTAR DO KRAKEN (1º uso da Isca do Kraken) ═══════════ -->
   <div id="kraken-cinematic-overlay" class="fixed inset-0 z-[100] pointer-events-none hidden flex flex-col items-center justify-center overflow-hidden">
     <!-- Céu de tempestade e vortex abissal -->
     <div id="kraken-sky-fx" class="absolute inset-0 bg-slate-950/95 transition-opacity duration-1000"></div>
@@ -3238,25 +3246,25 @@
           🐙 O KRAKEN ANCESTRAL DESPERTOU! 🐙
         </h3>
         <p id="kraken-cinematic-text" class="text-[8px] sm:text-[9px] text-slate-200 leading-relaxed" style="font-family:var(--font-pixel);">
-          A força do monstro é avassaladora! A linha se partiu e o píer se despedaçou... Tentáculos colossais te puxam para as profundezas!
+          A força do monstro é avassaladora! O píer se despedaça e tentáculos colossais agarram sua linha... Segure firme!
         </p>
       </div>
 
     </div>
 
-    <!-- Tela de Fade Out Preto com Bolhas e Entrada no Mundo 2 (Fase 3 - Sempre acima de tudo z-30) -->
+    <!-- Tela final: o Kraken foi fisgado (Fase 3 - Sempre acima de tudo z-30) -->
     <div id="kraken-abyss-fade" class="absolute inset-0 z-30 bg-slate-950 opacity-0 pointer-events-auto transition-opacity duration-1000 flex flex-col items-center justify-center text-center p-6 space-y-4">
       <div class="w-12 h-12 rounded-full border-4 border-cyan-400/50 border-t-cyan-300 animate-spin"></div>
       <div class="space-y-1.5">
         <div class="text-xs sm:text-sm font-bold text-cyan-300 tracking-widest animate-pulse" style="font-family:var(--font-pixel);">
-          DESCENDO PARA O ABISMO OCEANICO...
+          A LINHA AGUENTOU!
         </div>
         <p class="text-[8px] sm:text-[9px] text-slate-400 max-w-xs mx-auto leading-relaxed" style="font-family:var(--font-pixel);">
-          O mundo da superfície ficou para trás. A pressão e as trevas te acolhem no Mundo 2...
+          Depois de uma luta épica, o Kraken foi fisgado. Ele volta a morder sempre que você usar a isca na Zona do Crepúsculo.
         </p>
       </div>
       <button id="btn-enter-world2" class="pixel-btn px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] sm:text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(6,182,212,0.8)] hidden cursor-pointer" style="font-family:var(--font-pixel); color: #ffffff !important; text-shadow: 1px 1px 0 #000;">
-        ABRIR OS OLHOS NO FUNDO DO MAR
+        PUXAR O KRAKEN
       </button>
     </div>
   </div>
@@ -3341,43 +3349,6 @@
     </div>
   </div>
 
-
-  <!-- ═══════════ MODAL DO BATISCAFO DE ASCENSÃO (MUNDO 2) ═══════════ -->
-  <div id="submarine-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 hidden">
-    <div class="bg-slate-900 border-4 border-indigo-500 p-4 max-w-lg w-full space-y-3 max-h-[88vh] flex flex-col overflow-y-auto" style="box-shadow: 0 0 25px rgba(99,102,241,0.5), 4px 4px 0 #000;">
-      <!-- Header -->
-      <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2 shrink-0">
-        <h3 class="text-[11px] font-bold text-indigo-300 flex items-center gap-2" style="font-family:var(--font-pixel);">
-          <span>🚀</span>
-          <span>BATISCAFO DE ASCENSÃO AO MUNDO 3</span>
-        </h3>
-        <button onclick="window.game.closeSubmarineModal()" class="text-slate-400 hover:text-white text-lg leading-none cursor-pointer">✕</button>
-      </div>
-
-      <div class="space-y-3 flex-1 min-h-0">
-        <div class="bg-slate-950/80 border-2 border-slate-800 p-3 text-center space-y-1.5">
-          <p class="text-[8.5px] text-slate-300 leading-relaxed" style="font-family:var(--font-pixel);">
-            Para romper as correntes do Abismo e avançar para o <span class="text-amber-300 font-bold">MUNDO 3</span>, resgate as <b class="text-cyan-300">4 Peças Perdidas</b> espalhadas pelos 4 biomas das profundezas!
-          </p>
-          <div id="submarine-parts-progress" class="text-[9px] font-bold text-cyan-300 pt-1" style="font-family:var(--font-pixel);">
-            PEÇAS COLETADAS: 0 / 4
-          </div>
-        </div>
-
-        <!-- Grid das 4 Peças -->
-        <div id="submarine-parts-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <!-- Renderizado dinamicamente via JS -->
-        </div>
-
-        <!-- Ação de Montagem / Teletransporte -->
-        <div id="submarine-assemble-section" class="pt-2 text-center">
-          <button id="btn-assemble-submarine" onclick="window.game.assembleSubmarine()" disabled class="pixel-btn w-full py-2.5 bg-slate-800 text-slate-500 font-bold text-[9px] border border-slate-700 cursor-not-allowed" style="font-family:var(--font-pixel);">
-            COLETE TODAS AS 4 PEÇAS
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ═══════════ MODAL DE CONFIGURAÇÕES ═══════════ -->
   <div id="settings-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 hidden">
@@ -3772,13 +3743,34 @@
       <!-- Lista de Atualizações com Scroll -->
       <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-[8.5px] text-slate-300" style="font-family:var(--font-pixel);">
 
-        <!-- Cartão Destaque: Versão 1.6.2 -->
+        <!-- Cartão Destaque: Versão 1.7.0 -->
+        <div class="bg-gradient-to-r from-cyan-950/70 via-slate-950/70 to-blue-950/60 border-2 border-cyan-400 p-2.5 space-y-1.5" style="box-shadow: 0 0 16px rgba(34,211,238,0.4), 2px 2px 0 #000;">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 text-cyan-300 font-bold text-[9.5px]">
+              <span>🌊 DO RIO ATÉ A FOSSA DAS MARIANAS</span>
+            </div>
+            <span class="text-[8px] bg-cyan-950 border border-cyan-400 text-cyan-300 px-1 py-0.5 animate-pulse shrink-0">VERSÃO 1.7.0</span>
+          </div>
+          <p class="text-cyan-200 text-[8px] leading-relaxed">
+            O Mundo 2 virou parte de uma descida só, em 6 camadas de profundidade:
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-slate-300 text-[8px] leading-normal pl-1">
+            <li><b class="text-cyan-300">Camadas de Profundidade:</b> Rio e Lagoa, Zona do Sol, Zona do Crepúsculo, Zona da Meia-Noite, Planície Abissal e Fossa Hadal. Troque de camada com as setas ▲ ▼ no lago. Cada vara nova pode liberar uma camada mais funda.</li>
+            <li><b class="text-sky-300">Varas e Iscas:</b> A vara define a profundidade e o PWR, que é o peso máximo em kg. Peixes mais pesados que o PWR podem escapar. Os buffs de Sorte, Velocidade e Pesca Dupla agora vêm da isca.</li>
+            <li><b class="text-emerald-300">20 Peixes Reais Novos:</b> Traíra, Atum-Rabilho, Peixe-Lua, Celacanto, Peixe-Bolha, Polvo-Dumbo, Peixe-Tripé e outros, cada um na sua zona real do oceano. Quanto mais rara, mais fantástica a criatura.</li>
+            <li><b class="text-indigo-300">Migração Noturna:</b> À noite, alguns peixes do Crepúsculo sobem para a Zona do Sol, como acontece no oceano de verdade.</li>
+            <li><b class="text-amber-300">Upgrades Novos:</b> <i>Carretilha</i> (segura peixes pesados), <i>Sonar</i> (mostra o próximo peixe), <i>Quadro de Encomendas</i> (pedidos que pagam bem mais que a peixaria) e <i>Rede de Espera</i> (mais horas de pesca offline). A Bóia da Sorte e a Rede Dupla saíram e o ouro gasto nelas foi devolvido.</li>
+            <li><b class="text-purple-300">Saves Antigos:</b> Tudo do Mundo 1 e do Mundo 2 foi juntado num save só (ouro, balde, aquário, varas, iscas e upgrades). O Batiscafo saiu e o Kraken agora vive na Zona do Crepúsculo.</li>
+          </ul>
+        </div>
+
+        <!-- Cartão: Versão 1.6.2 -->
         <div class="bg-gradient-to-r from-violet-950/70 via-slate-950/70 to-indigo-950/60 border-2 border-violet-400 p-2.5 space-y-1.5" style="box-shadow: 0 0 16px rgba(167,139,250,0.4), 2px 2px 0 #000;">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-1.5 text-violet-300 font-bold text-[9.5px]">
               <span>📊 QUANTOS PESCADORES NO LAGO?</span>
             </div>
-            <span class="text-[8px] bg-violet-950 border border-violet-400 text-violet-300 px-1 py-0.5 animate-pulse shrink-0">VERSÃO 1.6.2</span>
+            <span class="text-[8px] bg-violet-950 border border-violet-400 text-violet-300 px-1 py-0.5 shrink-0">VERSÃO 1.6.2</span>
           </div>
           <ul class="list-disc list-inside space-y-1 text-slate-300 text-[8px] leading-normal pl-1">
             <li><b class="text-violet-300">Estatísticas Anônimas:</b> O jogo agora conta quantas pessoas jogam e até onde chegam (começar um save, chegar ao Mundo 2, montar o Batiscafo), para ajudar a decidir as próximas atualizações.</li>
@@ -4122,12 +4114,12 @@
       var MODULES = [
         'game.js',
         'fishData.js',
+        'depthData.js',
         'itemsData.js',
         'magnetData.js',
         'achievementsData.js',
         'pixelArt.js',
         'sound.js',
-        'world2Data.js',
         'core/constants.js',
         'core/economy.js',
         'core/mixins.js',
@@ -4145,7 +4137,8 @@
         'systems/magnet.js',
         'systems/offline.js',
         'systems/shop.js',
-        'systems/world2.js',
+        'systems/depth.js',
+        'systems/tools.js',
         'ui/album.js',
         'ui/celebrations.js',
         'ui/effects.js',

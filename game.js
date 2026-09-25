@@ -19,7 +19,8 @@ import { AutomationMethods } from './systems/automation.js';
 import { OfflineMethods } from './systems/offline.js';
 import { FishEyesMethods } from './systems/fishEyes.js';
 import { MagnetMethods } from './systems/magnet.js';
-import { World2Methods } from './systems/world2.js';
+import { DepthMethods } from './systems/depth.js';
+import { ToolMethods } from './systems/tools.js';
 import { Chapter1Methods } from './systems/chapter1.js';
 import { AnalyticsMethods } from './systems/analytics.js';
 import { AchievementMethods } from './systems/achievements.js';
@@ -51,7 +52,7 @@ class FishingGame {
     this.unlockedRods = ['vara_bambu'];
     this.selectedBaitId = 'minhoca';
     this.unlockedBaits = ['minhoca'];
-    this.upgradeLevels = { balde:0, auto_pescador:0, boia_sorte:0, rede_dupla:0, aquario_cap:0, auto_vendedor:0, ima_dourado:0 };
+    this.upgradeLevels = { balde:0, auto_pescador:0, aquario_cap:0, auto_vendedor:0, ima_dourado:0 };
 
     // Perfil e Customização do Pescador
     this.playerName = 'Pescador';
@@ -121,19 +122,15 @@ class FishingGame {
     this.chapter1Completed = false;
     this.sacrificedFishCount = 0;
 
-    // Mundos (1 = Superfície/Neo-Píer, 2 = O Abismo), biomas do Mundo 2 e Batiscafo
-    this.currentWorld = 1;
-    this.activeWorld2Biome = 'recife_bioluminescente';
-    this.world2BiomeOffsetMs = 0;
-    this.ascensionParts = {
-      bateria_neon: false,
-      casco_titanio: false,
-      helice_galeao: false,
-      sistema_lastro_hadal: false
-    };
-    this.submarineAssembled = false;
-    this.world1Data = null; // snapshot do Mundo 1 para voltar a ele
-    this.world2SavedData = null; // snapshot do Mundo 2 para voltar a ele
+    // Camada de profundidade onde o jogador pesca (1 = Rio ... 6 = Fossa Hadal)
+    this.currentLayer = 1;
+    this.krakenCinematicSeen = false; // a Isca do Kraken só dispara a cinemática uma vez
+
+    // Sonar (peixe do próximo arremesso) e Quadro de Encomendas
+    this.sonarNext = null;
+    this.orders = [];
+    this.ordersCompleted = 0;
+
 
     // Estado de execução (não salvo): pesca manual/automática, abas abertas e renderizador do lago
     this.isResetting = false; // true bloqueia o autosave (reset/import em andamento)
@@ -186,9 +183,10 @@ class FishingGame {
     this.applySettings();
     this.initPixelArt();
     this.initTimeOfDay();
-    this.initWorld2BiomeCycle();
     this.setupEventListeners();
     this.renderAll();
+    this.peekSonar();
+    this.showMigrationNotice();
     this.startAutoFisher();
     this.startAutoSeller();
     this.initGoldenFish();
@@ -450,7 +448,8 @@ applyMixins(FishingGame, [
   OfflineMethods,
   FishEyesMethods,
   MagnetMethods,
-  World2Methods,
+  DepthMethods,
+  ToolMethods,
   Chapter1Methods,
   AchievementMethods,
   AnalyticsMethods,

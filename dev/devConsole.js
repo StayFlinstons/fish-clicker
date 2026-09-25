@@ -1,10 +1,10 @@
 // Console de desenvolvedor dentro do jogo (Ctrl+Shift+' ou a tecla ` / ~) e seus comandos.
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
+import { DEPTH_LAYERS } from '../depthData.js';
 import { FISH_LIST, generateFishBuffs } from '../fishData.js';
 import { BAITS, RODS, UPGRADES } from '../itemsData.js';
 import { FORGE_RECIPES, MAGNET_ITEMS, MAGNET_TIERS } from '../magnetData.js';
 import { sound } from '../sound.js';
-import { FISH_WORLD_2 } from '../world2Data.js';
 
 export class DevConsoleMethods {
   initConsole() {
@@ -105,7 +105,7 @@ export class DevConsoleMethods {
         this.consoleLog('🎣 PESCA & CAPTURAS', headerColor);
         this.consoleLog('  catch [n]              - Pesca n peixes aleatórios (default: 1)', cmdColor);
         this.consoleLog('  catchid <id> [n]       - Pesca peixe por ID (1 a 35) ou nome', cmdColor);
-        this.consoleLog('  catchall               - Captura todos os peixes do mundo atual', cmdColor);
+        this.consoleLog('  catchall               - Captura um de cada peixe do jogo', cmdColor);
         this.consoleLog('  goldenfish             - Spawna o peixe dourado especial', cmdColor);
         this.consoleLog('  bloodfish              - Spawna o peixe da Lua Sangrenta', cmdColor);
         this.consoleLog('  clearinv               - Limpa todos os peixes do balde', cmdColor);
@@ -116,12 +116,10 @@ export class DevConsoleMethods {
         this.consoleLog('  buff <tipo> [s]        - Ativa buff temporário (gold/luck/speed/double)', cmdColor);
         this.consoleLog('  offline [minutos]      - Simula tempo ausente AFK (default: 60 min)', cmdColor);
 
-        this.consoleLog('🌍 MUNDOS, TEMPO & EVENTOS', headerColor);
-        this.consoleLog('  world [1|2]            - Alterna entre Mundo 1 (Lago) e Mundo 2 (Abismo)', cmdColor);
-        this.consoleLog('  m1 / m2                - Atalhos rápidos para viajar entre Mundos', cmdColor);
+        this.consoleLog('🌍 CAMADAS, TEMPO & EVENTOS', headerColor);
+        this.consoleLog('  camada <1-6>           - Desce/sobe até a camada (libera as varas)', cmdColor);
         this.consoleLog('  time [fase]            - Consulta ou define horário (day/sunset/night)', cmdColor);
         this.consoleLog('  skiptime               - Avança para o próximo horário do dia', cmdColor);
-        this.consoleLog('  biome <id>             - Alterna o bioma abissal do Mundo 2', cmdColor);
         this.consoleLog('  eclipse                - Inicia Eclipse e Mar Sangrento por 60s', cmdColor);
 
         this.consoleLog('🧲 PESCA MAGNÉTICA', headerColor);
@@ -387,7 +385,7 @@ export class DevConsoleMethods {
 
       case 'catchall': {
         let count = 0;
-        const targetList = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+        const targetList = this.getFishCatalog();
         targetList.forEach(target => {
           const weight = +(target.minWeight + Math.random() * (target.maxWeight - target.minWeight)).toFixed(2);
           const weightFactor = weight / target.minWeight;
@@ -436,112 +434,34 @@ export class DevConsoleMethods {
         this.renderAll();
         break;
 
-      case 'world':
-      case 'mundo':
-      case 'm':
-      case 'w': {
-        const target = (arg || '').trim();
-        if (target === '1') {
-          if (this.gameMode === 'ima') this.setGameMode('pesca');
-          this.travelBetweenWorlds(1);
-          this.consoleLog('☀️ Viajou para o Mundo 1 (Superfície)!', '#fbbf24');
-        } else if (target === '2') {
-          if (this.gameMode === 'ima') this.setGameMode('pesca');
-          if (this.currentWorld === 2) {
-            this.consoleLog('Você já está no Mundo 2!', '#06b6d4');
-            this.renderAll();
-          } else if (this.world2SavedData) {
-            this.travelBetweenWorlds(2);
-            this.consoleLog('🌊 Viajou para o Mundo 2 via Batiscafo!', '#06b6d4');
-          } else {
-            this.enterWorld2Reset();
-            this.consoleLog('🌊 Entrou no Mundo 2 (Reset de Prestígio)!', '#06b6d4');
-          }
-        } else {
-          this.consoleLog(`Mundo atual: Mundo ${this.currentWorld} (Modo: ${this.gameMode}). Uso: world 1 ou world 2 (ou m1 / m2)`, '#38bdf8');
+      case 'camada':
+      case 'layer':
+      case 'profundidade': {
+        const n = parseInt(arg, 10);
+        if (!(n >= 1 && n <= DEPTH_LAYERS.length)) {
+          const L = DEPTH_LAYERS[this.getCurrentLayer() - 1];
+          this.consoleLog(`Camada atual: ${L.id} (${L.name}), liberada até ${this.getMaxLayer()}. Uso: camada 1 a ${DEPTH_LAYERS.length}`, '#38bdf8');
+          break;
         }
+        if (this.gameMode === 'ima') this.setGameMode('pesca');
+        // Dev: libera as varas necessárias para chegar na camada
+        RODS.filter(r => r.depthLayer <= n).forEach(r => { if (!this.unlockedRods.includes(r.id)) this.unlockedRods.push(r.id); });
+        this.setLayer(n);
+        this.consoleLog(`🌊 Camada ${n}: ${DEPTH_LAYERS[n - 1].name}`, '#06b6d4');
         break;
       }
-
-      case 'world1':
-      case 'mundo1':
-      case 'm1':
-      case 'w1':
-        if (this.gameMode === 'ima') this.setGameMode('pesca');
-        this.travelBetweenWorlds(1);
-        this.consoleLog('☀️ Retornou ao Mundo 1 via Batiscafo!', '#fbbf24');
-        break;
-
-      case 'world2':
-      case 'mundo2':
-      case 'm2':
-      case 'w2':
-        if (this.gameMode === 'ima') this.setGameMode('pesca');
-        if (this.currentWorld === 2) {
-          this.consoleLog('Você já está no Mundo 2!', '#06b6d4');
-          this.renderAll();
-        } else if (this.world2SavedData) {
-          this.travelBetweenWorlds(2);
-          this.consoleLog('🌊 Retornou ao Mundo 2 via Batiscafo!', '#06b6d4');
-        } else {
-          this.enterWorld2Reset();
-          this.consoleLog('🌊 Entrou no Mundo 2 (Reset de Prestígio com Herança M1)!', '#06b6d4');
-        }
-        break;
 
       case 'pesca':
       case 'pescaria':
       case 'normal':
       case 'modopesca':
         this.setGameMode('pesca');
-        this.consoleLog(`🎣 Retornou para o modo de Pesca tradicional (Mundo ${this.currentWorld})!`, '#38bdf8');
+        this.consoleLog('🎣 Retornou para o modo de Pesca tradicional!', '#38bdf8');
         break;
-
-      case 'skipbiome':
-      case 'nextbiome':
-        this.skipWorld2Biome();
-        this.consoleLog('Bioma avançado para a próxima rotação de 5 minutos!', '#38bdf8');
-        break;
-
-      case 'biome':
-      case 'bioma': {
-        const bArg = (arg || '').toLowerCase();
-        const bMap = {
-          'recife': 'recife_bioluminescente',
-          'neon': 'recife_bioluminescente',
-          'fenda': 'fendas_vulcanicas',
-          'fendas': 'fendas_vulcanicas',
-          'vulcao': 'fendas_vulcanicas',
-          'vulcanicas': 'fendas_vulcanicas',
-          'naufragio': 'cemiterio_naufragios',
-          'naufragios': 'cemiterio_naufragios',
-          'cemiterio': 'cemiterio_naufragios',
-          'hadal': 'zona_hadal',
-          'abissal': 'zona_hadal'
-        };
-        const targetBiome = bMap[bArg] || (['recife_bioluminescente', 'fendas_vulcanicas', 'cemiterio_naufragios', 'zona_hadal'].includes(bArg) ? bArg : null);
-        if (targetBiome) {
-          this.setWorld2Biome(targetBiome);
-          this.consoleLog(`Bioma alterado para: ${targetBiome} (05:00 restantes)`, '#38bdf8');
-        } else {
-          const rem = this.getWorld2BiomeRemaining();
-          this.consoleLog(`Bioma atual: ${this.activeWorld2Biome} (${rem.text} restantes). Opções: recife, fendas, naufragios, hadal`, '#38bdf8');
-        }
-        break;
-      }
 
       case 'kraken':
         this.triggerKrakenCinematic();
         this.consoleLog('🦑 Cinemática do Kraken Ancestral iniciada!', '#a855f7');
-        break;
-
-      case 'parts':
-      case 'unlockparts':
-        this.ascensionParts = { bateria_neon: true, casco_titanio: true, helice_galeao: true, sistema_lastro_hadal: true };
-        this.saveGame();
-        this.consoleLog('🚀 Todas as 4 peças do Batiscafo foram desbloqueadas!', '#10b981');
-        this.renderSubmarineModal();
-        this.renderAll();
         break;
 
       case 'clearinv':

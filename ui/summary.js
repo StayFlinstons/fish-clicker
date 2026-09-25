@@ -4,7 +4,7 @@ import { ACHIEVEMENTS } from '../achievementsData.js';
 import { FISH_LIST, RARITIES } from '../fishData.js';
 import { BAITS, RODS } from '../itemsData.js';
 import { sound } from '../sound.js';
-import { BAITS_WORLD_2, FISH_WORLD_2, RODS_WORLD_2, WORLD2_BIOMES } from '../world2Data.js';
+import { getDepthLayer } from '../depthData.js';
 
 export class SummaryMethods {
   getTotalBloodMoonCatches() {
@@ -69,7 +69,7 @@ export class SummaryMethods {
       timeFooter.textContent = `Tempo de Jornada: ${this.formatPlayTime(this.playTimeSeconds)}`;
     }
 
-    const allFishList = [...FISH_LIST, ...FISH_WORLD_2];
+    const allFishList = FISH_LIST;
     const allFishMap = {};
     allFishList.forEach(f => { allFishMap[f.id] = f; });
 
@@ -119,19 +119,17 @@ export class SummaryMethods {
     const avgGoldPerCatch = Math.round((this.totalGoldEarned || 0) / Math.max(1, this.totalCatches || 0));
 
     // Nomes de Vara e Isca
-    const allRodsList = [...RODS, ...(typeof RODS_WORLD_2 !== 'undefined' ? RODS_WORLD_2 : [])];
-    const currentRod = allRodsList.find(r => r.id === this.selectedRodId)?.name || this.selectedRodId;
-    const allBaitsList = [...BAITS, ...(typeof BAITS_WORLD_2 !== 'undefined' ? BAITS_WORLD_2 : [])];
-    const currentBait = allBaitsList.find(b => b.id === this.selectedBaitId)?.name || this.selectedBaitId;
+    const currentRod = RODS.find(r => r.id === this.selectedRodId)?.name || this.selectedRodId;
+    const currentBait = BAITS.find(b => b.id === this.selectedBaitId)?.name || this.selectedBaitId;
 
-    // Bioma / Horário
+    // Camada / Horário
     let locationDetail = '';
-    if (this.currentWorld === 2) {
-      const bInfo = WORLD2_BIOMES?.find(b => b.id === this.activeWorld2Biome);
-      locationDetail = bInfo ? `${bInfo.name}` : 'Mundo 2: Abismo';
-    } else {
+    const layer = getDepthLayer(this.getCurrentLayer());
+    if (layer.sunlit) {
       const timeNames = { day: 'Dia Claro', sunset: 'Pôr do Sol', night: 'Noite' };
-      locationDetail = `Mundo 1: Lago Sagrado (${timeNames[this.timeOfDay] || 'Dia'})`;
+      locationDetail = `${layer.name} (${timeNames[this.timeOfDay] || 'Dia'})`;
+    } else {
+      locationDetail = layer.name;
     }
 
     // Ícones Pixel Art para o Sumário

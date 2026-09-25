@@ -1,8 +1,8 @@
 // Álbum de Peixes (enciclopédia).
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
-import { BUFF_CONFIG, FISH_LIST, RARITIES } from '../fishData.js';
+import { BUFF_CONFIG, RARITIES } from '../fishData.js';
 import { sound } from '../sound.js';
-import { FISH_WORLD_2, WORLD2_BIOMES } from '../world2Data.js';
+import { formatDepth, getDepthLayer } from '../depthData.js';
 
 export class AlbumMethods {
   openAlbum() {
@@ -20,7 +20,7 @@ export class AlbumMethods {
   }
 
   updateAlbumBadge() {
-    const activeList = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const activeList = this.getFishCatalog();
     const normalFish = activeList.filter(f => !f.secret);
     const secretFish = activeList.filter(f => f.secret);
     const discoveredNormal = normalFish.filter(f => this.discoveredFish[f.id]).length;
@@ -126,7 +126,7 @@ export class AlbumMethods {
 
     this.updateAlbumBadge();
 
-    const activeList = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const activeList = this.getFishCatalog();
     const visibleList = activeList.filter(fish => !fish.secret || this.discoveredFish[fish.id]);
 
     let totalCatchesCount = 0;
@@ -151,7 +151,23 @@ export class AlbumMethods {
     const statAurasEl = document.getElementById('album-stat-auras');
     if (statAurasEl) statAurasEl.textContent = `${unlockedAurasCount}/${totalSpecies * 2}`;
 
+    const maxLayer = this.getMaxLayer();
+    let lastLayer = 0;
     grid.innerHTML = visibleList.map(fish => {
+      // Cabeçalho de cada camada de profundidade
+      let header = '';
+      if (fish.layer !== lastLayer) {
+        lastLayer = fish.layer;
+        const L = getDepthLayer(fish.layer);
+        const inLayer = activeList.filter(f => f.layer === fish.layer && !f.secret);
+        const found = inLayer.filter(f => this.discoveredFish[f.id]).length;
+        const locked = fish.layer > maxLayer;
+        header = `
+          <div class="col-span-full flex items-center justify-between gap-2 px-2 py-1.5 border-b-2 mt-1" style="border-color:${L.themeColor}; font-family:var(--font-pixel);">
+            <span class="text-[10px] font-bold" style="color:${L.themeColor};">${L.icon} ${L.name} <span class="text-slate-400 font-normal">${formatDepth(L.minDepth)}–${formatDepth(L.maxDepth)}</span></span>
+            <span class="text-[8px] text-slate-400 whitespace-nowrap">${locked ? '🔒 ' : ''}${found}/${inLayer.length}</span>
+          </div>`;
+      }
       const isDiscovered = !!this.discoveredFish[fish.id];
       const data = this.discoveredFish[fish.id] || { maxWeight: 0, count: 0, caughtBloodMoon: false, caughtEclipse: false };
       const r = RARITIES[fish.rarity] || RARITIES.COMUM;
@@ -166,17 +182,10 @@ export class AlbumMethods {
         timeBadge = '<span class="text-[8px] font-bold px-1.5 py-0.5 border text-indigo-300 border-indigo-500/80 bg-indigo-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">🌙 NOITE</span>';
       }
 
-      let biomeBadge = '';
-      if (fish.biome) {
-        const bInfo = WORLD2_BIOMES.find(b => b.id === fish.biome);
-        if (bInfo) {
-          biomeBadge = `<span class="text-[8px] font-bold px-1.5 py-0.5 border text-cyan-300 border-cyan-500/80 bg-cyan-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">${bInfo.icon} ${bInfo.shortName}</span>`;
-        }
-      }
 
       const isSecretCard = fish.secret && isDiscovered;
 
-      return `
+      return header + `
         <div class="p-2.5 sm:p-3 border-2 ${isDiscovered ? 'bg-slate-900/90' : 'bg-slate-950/70 border-slate-800 opacity-60'} flex items-start gap-3 pixel-border-thin min-w-0 ${isSecretCard ? 'shadow-[0_0_16px_rgba(220,38,38,0.45)]' : ''}" style="${isDiscovered ? `border-color:${r.border}; background:${r.bg};` : ''}">
           <div class="w-14 h-12 shrink-0 flex items-center justify-center ${isSecretCard ? 'bg-black border-2 border-red-600/90 shadow-[0_0_12px_rgba(239,68,68,0.5)]' : 'bg-slate-950/70 border border-slate-800'} p-1 mt-0.5">
             <img src="${spriteURL}" class="w-12 h-8 object-contain ${isDiscovered ? '' : 'brightness-0 contrast-200'} ${isSecretCard ? 'animate-pulse' : ''}" alt="${fish.name}" style="image-rendering:pixelated;">
@@ -189,7 +198,6 @@ export class AlbumMethods {
               ` : `
                 <span class="text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${isDiscovered ? r.color : '#64748b'};border-color:${isDiscovered ? r.border : '#334155'};background:rgba(0,0,0,0.5);">${r.label}</span>
                 ${timeBadge}
-                ${biomeBadge}
               `}
             </div>
             ${isDiscovered ? `

@@ -1,15 +1,18 @@
 // Renderização do modo pesca: header, buffs, loja, balde e aquário.
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
 import { BUFF_LABELS, RARITIES } from '../fishData.js';
-import { BAITS, RODS, UPGRADES } from '../itemsData.js';
+import { formatDepth, getDepthLayer } from '../depthData.js';
+import { RODS } from '../itemsData.js';
 import { PIXEL_ICONS, getBaitIconDataURL, getRodIconDataURL, getUpgradeIconDataURL } from '../pixelArt.js';
-import { BAITS_WORLD_2, RODS_WORLD_2, UPGRADES_WORLD_2 } from '../world2Data.js';
+
+// Varas que alcançam a mesma camada da vara anterior (as outras liberam camada nova).
+const RODS_BY_DEPTH_PREV = Object.fromEntries(RODS.map((r, i) => [r.id, i > 0 && RODS[i - 1].depthLayer === r.depthLayer]));
 
 export class RenderMethods {
   renderAll() {
     this.renderHeader();
     this.syncGameModeUI();
-    this.syncWorld2UI();
+    this.renderDepthSelector();
     if (this.gameMode === 'ima') {
       this.renderMagnetAll();
     } else {
@@ -79,13 +82,14 @@ export class RenderMethods {
     let html = '';
 
     if (this.activeTab === 'varas') {
-      const rodList = this.currentWorld === 2 ? RODS_WORLD_2 : RODS;
+      const rodList = this.getRodCatalog();
       html = rodList.map(rod => {
         const owned = this.unlockedRods.includes(rod.id);
         const equipped = this.selectedRodId === rod.id;
         const afford = this.gold >= rod.price;
         const iconURL = getRodIconDataURL(rod.id, 2);
-        const powerDisplay = rod.power ? `${rod.power}x` : `T${rod.tier || 1}`;
+        const layer = getDepthLayer(rod.depthLayer);
+        const unlocksLayer = !RODS_BY_DEPTH_PREV[rod.id];
         return `
           <div class="p-2.5 border-2 ${equipped ? 'border-amber-500 bg-amber-950/30' : 'border-slate-800 bg-slate-900/80'} pixel-border-thin">
             <div class="flex items-start gap-2">
@@ -99,10 +103,8 @@ export class RenderMethods {
                 </div>
                 <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${rod.desc}</p>
                 <div class="flex flex-wrap gap-1.5 mt-1.5">
-                  <span class="text-[8px] text-cyan-400" title="Poder da vara: atrai espécimes mais pesados e favorece novos recordes de peso" style="font-family:var(--font-pixel); cursor:help;">PWR:${powerDisplay}</span>
-                  ${rod.luckBonus > 0 ? `<span class="text-[8px] text-purple-400" style="font-family:var(--font-pixel);">+${Math.round(rod.luckBonus*100)}% ${BUFF_LABELS.luck_bonus}</span>` : ''}
-                  ${(rod.fishingSpeedBonus || rod.speedBonus) > 0 ? `<span class="text-[8px] text-cyan-300" style="font-family:var(--font-pixel);">+${Math.round((rod.fishingSpeedBonus || rod.speedBonus)*100)}% ${BUFF_LABELS.fishing_speed}</span>` : ''}
-                  ${rod.doubleCatchChance > 0 ? `<span class="text-[8px] text-emerald-400" style="font-family:var(--font-pixel);">+${Math.round(rod.doubleCatchChance*100)}% ${BUFF_LABELS.double_catch_chance}</span>` : ''}
+                  <span class="text-[8px] text-cyan-400" title="Profundidade máxima: ${layer.name}" style="font-family:var(--font-pixel); cursor:help;">${layer.icon} ${formatDepth(layer.maxDepth)}${unlocksLayer && rod.depthLayer > 1 ? ' · NOVA CAMADA' : ''}</span>
+                  <span class="text-[8px] text-amber-300" title="PWR: peixes mais pesados que isso podem arrebentar a linha" style="font-family:var(--font-pixel); cursor:help;">PWR: ${rod.maxWeight.toLocaleString('pt-BR')}kg</span>
                 </div>
               </div>
             </div>
@@ -117,7 +119,7 @@ export class RenderMethods {
           </div>`;
       }).join('');
     } else if (this.activeTab === 'iscas') {
-      const baitList = this.currentWorld === 2 ? BAITS_WORLD_2 : BAITS.filter(bait => !bait.unbuyable || this.unlockedBaits.includes(bait.id));
+      const baitList = this.getBaitCatalog().filter(bait => !bait.unbuyable || this.unlockedBaits.includes(bait.id));
       html = baitList.map(bait => {
         const owned = this.unlockedBaits.includes(bait.id);
         const equipped = this.selectedBaitId === bait.id;
@@ -136,7 +138,8 @@ export class RenderMethods {
                 </div>
                 <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${bait.desc}</p>
                 <div class="flex flex-wrap gap-1.5 mt-1.5">
-                  <span class="text-[8px] text-purple-400" style="font-family:var(--font-pixel);">${BUFF_LABELS.luck_bonus}: ${bait.luckMultiplier}x</span>
+                  ${bait.luckBonus > 0 ? `<span class="text-[8px] text-purple-400" style="font-family:var(--font-pixel);">+${Math.round(bait.luckBonus*100)}% ${BUFF_LABELS.luck_bonus}</span>` : ''}
+                  ${bait.speedBonus > 0 ? `<span class="text-[8px] text-cyan-300" style="font-family:var(--font-pixel);">+${Math.round(bait.speedBonus*100)}% ${BUFF_LABELS.fishing_speed}</span>` : ''}
                   ${bait.doubleCatchBonus > 0 ? `<span class="text-[8px] text-emerald-400" style="font-family:var(--font-pixel);">+${Math.round(bait.doubleCatchBonus*100)}% ${BUFF_LABELS.double_catch_chance}</span>` : ''}
                 </div>
               </div>
@@ -152,7 +155,7 @@ export class RenderMethods {
           </div>`;
       }).join('');
     } else {
-      const upgradeList = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+      const upgradeList = this.getUpgradeCatalog();
       html = upgradeList.map(u => {
         const lvl = this.upgradeLevels[u.id] || 0;
         const isMax = lvl >= u.maxLevel;
@@ -191,6 +194,9 @@ export class RenderMethods {
                 </div>
                 <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${u.desc}</p>
                 ${lvl > 0 && u.id === 'ima_dourado' ? `<div class="text-[8px] text-amber-400 mt-1" style="font-family:var(--font-pixel);">⚡ Recarga: ${u.getValue(lvl)}s</div>` : ''}
+                ${lvl > 0 && u.id === 'carretilha' ? `<div class="text-[8px] text-amber-400 mt-1" style="font-family:var(--font-pixel);">⚡ Segura ${Math.round(u.getValue(lvl) * 100)}% dos peixes que escapariam</div>` : ''}
+                ${u.id === 'rede_espera' ? `<div class="text-[8px] text-amber-400 mt-1" style="font-family:var(--font-pixel);">⚡ Limite offline: ${u.getValue(lvl)}h</div>` : ''}
+                ${lvl > 0 && u.id === 'encomendas' ? this.renderOrdersHtml() : ''}
               </div>
             </div>
             <div class="mt-2">

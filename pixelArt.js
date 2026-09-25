@@ -35,7 +35,7 @@ const PALETTES = {
   kraken_estelar: { body:'#312e81', belly:'#c7d2fe', eye:'#c084fc', fin:'#4338ca', outline:'#1e1b4b' },
   lampreia_negra: { body:'#09090b', belly:'#18181b', eye:'#ff1a1a', fin:'#7f1d1d', outline:'#450a0a' },
   // ═══════════════════════════════════════════
-  // PEIXES DO MUNDO 2: O ABISMO OCEÂNICO
+  // PEIXES DAS CAMADAS FUNDAS (antigo Mundo 2)
   // ═══════════════════════════════════════════
   camarao_neon:         { body:'#06b6d4', belly:'#cffafe', eye:'#38bdf8', fin:'#0891b2', outline:'#164e63' },
   peixe_lanterna:       { body:'#0284c7', belly:'#bae6fd', eye:'#fde047', fin:'#0369a1', outline:'#0c4a6e' },
@@ -61,7 +61,30 @@ const PALETTES = {
   kraken_galeoes:       { body:'#064e3b', belly:'#fef08a', eye:'#34d399', fin:'#047857', outline:'#022c22' },
   isopode_hadal:        { body:'#6b21a8', belly:'#e9d5ff', eye:'#c084fc', fin:'#581c87', outline:'#3b0764' },
   polvo_vampiro:        { body:'#4c1d95', belly:'#f43f5e', eye:'#38bdf8', fin:'#6d28d9', outline:'#1e0538' },
-  olho_vazio:           { body:'#1e0836', belly:'#ea580c', eye:'#fef08a', fin:'#dc2626', outline:'#010003' }
+  olho_vazio:           { body:'#1e0836', belly:'#ea580c', eye:'#fef08a', fin:'#dc2626', outline:'#010003' },
+  // ═══════════════════════════════════════════
+  // PEIXES NOVOS DAS CAMADAS DE PROFUNDIDADE
+  // ═══════════════════════════════════════════
+  traira:               { body:'#5b6b3a', belly:'#c9c79a', eye:'#fde047', fin:'#3f4a27', outline:'#262d17' },
+  tucunare:             { body:'#a3b82c', belly:'#fef3c7', eye:'#dc2626', fin:'#ea580c', outline:'#3f4a12' },
+  tambaqui:             { body:'#374151', belly:'#1f2937', eye:'#fbbf24', fin:'#111827', outline:'#030712' },
+  poraque:              { body:'#4a3b2b', belly:'#f59e0b', eye:'#fef08a', fin:'#2e2419', outline:'#1c150d' },
+  boiuna:               { body:'#14532d', belly:'#a3e635', eye:'#facc15', fin:'#052e16', outline:'#021a0c' },
+  cavala:               { body:'#0f766e', belly:'#e2e8f0', eye:'#1a1a2e', fin:'#115e59', outline:'#134e4a' },
+  dourado_mar:          { body:'#22c55e', belly:'#fde047', eye:'#1a1a2e', fin:'#2563eb', outline:'#14532d' },
+  atum:                 { body:'#1e3a8a', belly:'#e2e8f0', eye:'#1a1a2e', fin:'#facc15', outline:'#172554' },
+  peixe_lua:            { body:'#94a3b8', belly:'#e2e8f0', eye:'#1a1a2e', fin:'#64748b', outline:'#334155' },
+  peixe_machado:        { body:'#cbd5e1', belly:'#f8fafc', eye:'#0f172a', fin:'#94a3b8', outline:'#475569' },
+  lula_humboldt:        { body:'#b91c1c', belly:'#fecaca', eye:'#fde047', fin:'#991b1b', outline:'#450a0a' },
+  peixe_bolha:          { body:'#f9a8d4', belly:'#fce7f3', eye:'#1a1a2e', fin:'#f472b6', outline:'#9d174d' },
+  peixe_vibora:         { body:'#111827', belly:'#1e3a8a', eye:'#38bdf8', fin:'#1f2937', outline:'#030712' },
+  tubarao_groenlandia:  { body:'#57534e', belly:'#a8a29e', eye:'#e0f2fe', fin:'#44403c', outline:'#1c1917' },
+  granadeiro:           { body:'#71717a', belly:'#d4d4d8', eye:'#38bdf8', fin:'#52525b', outline:'#27272a' },
+  peixe_tripe:          { body:'#a8a29e', belly:'#e7e5e4', eye:'#1a1a2e', fin:'#78716c', outline:'#44403c' },
+  anfipode:             { body:'#fda4af', belly:'#ffe4e6', eye:'#1a1a2e', fin:'#fb7185', outline:'#9f1239' },
+  peixe_caracol:        { body:'#fbcfe8', belly:'#fdf2f8', eye:'#1a1a2e', fin:'#f9a8d4', outline:'#be185d' },
+  holoturia:            { body:'#e879f9', belly:'#fae8ff', eye:'#1a1a2e', fin:'#d946ef', outline:'#86198f' },
+  polvo_dumbo:          { body:'#fb923c', belly:'#ffedd5', eye:'#1a1a2e', fin:'#f97316', outline:'#9a3412' }
 };
 
 // ═══════════════════════════════════════════════
@@ -279,6 +302,119 @@ const SPRITE_LAMPREY = [
 ];
 
 // Mapeamento de cada espécie para sua silhueta anatômica
+// ── Formatos dos peixes novos das camadas (v1.7) ──
+// Peixe-lua (disco alto, nadadeiras em cima e embaixo, sem cauda)
+const SPRITE_SUNFISH = [
+  [0,0,0,0,0,0,0,1,5,1,0,0,0,0,0,0],
+  [0,0,0,0,1,1,1,5,5,1,1,1,0,0,0,0],
+  [0,0,1,1,2,2,2,2,2,2,2,2,1,1,0,0],
+  [0,1,2,4,2,2,2,2,2,2,2,2,2,5,1,0],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,5,5,1],
+  [1,3,3,3,3,3,3,3,3,3,3,3,2,5,5,1],
+  [0,1,3,3,3,3,3,3,3,3,3,3,2,5,1,0],
+  [0,0,1,1,3,3,3,3,3,3,3,1,1,1,0,0],
+  [0,0,0,0,1,1,1,5,5,1,1,1,0,0,0,0],
+  [0,0,0,0,0,0,0,1,5,1,0,0,0,0,0,0],
+];
+
+// Peixe-bolha (corpo mole, nariz caído)
+const SPRITE_BLOB = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0],
+  [0,0,0,1,2,2,2,2,2,2,1,1,0,0,0,0],
+  [0,0,1,2,4,2,2,2,2,2,2,2,1,0,0,0],
+  [0,1,6,6,2,2,2,2,2,2,2,2,2,1,1,0],
+  [1,6,6,6,6,2,2,2,2,2,2,2,2,5,5,1],
+  [1,6,6,6,3,3,3,3,3,2,2,2,2,1,5,1],
+  [0,1,1,3,3,3,3,3,3,3,2,2,1,0,1,0],
+  [0,0,0,1,1,3,3,3,3,1,1,1,0,0,0,0],
+  [0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0],
+];
+
+// Polvo-dumbo (nadadeiras de orelha e tentáculos)
+const SPRITE_DUMBO = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,1,0,0,1,1,1,1,1,1,0,0,1,1,0],
+  [1,5,5,1,1,2,2,2,2,2,2,1,1,5,5,1],
+  [1,5,5,5,1,2,2,2,2,2,2,1,5,5,5,1],
+  [0,1,1,1,2,2,4,2,2,4,2,2,1,1,1,0],
+  [0,0,0,1,2,2,2,2,2,2,2,2,1,0,0,0],
+  [0,0,0,1,3,3,3,3,3,3,3,3,1,0,0,0],
+  [0,0,1,3,1,3,1,3,3,1,3,1,3,1,0,0],
+  [0,1,3,1,0,1,3,1,1,3,1,0,1,3,1,0],
+  [0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0],
+];
+
+// Peixe-tripé (apoiado em nadadeiras compridas)
+const SPRITE_TRIPOD = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+  [0,0,0,1,1,1,2,2,2,2,1,1,1,0,0,0],
+  [0,1,1,2,4,2,2,2,2,2,2,2,2,1,1,1],
+  [1,2,2,3,3,3,3,3,2,2,2,2,2,2,5,1],
+  [0,1,1,1,3,3,3,1,1,1,1,1,1,1,1,0],
+  [0,0,0,6,0,0,0,0,6,0,0,0,0,6,0,0],
+  [0,0,6,0,0,0,0,0,6,0,0,0,0,0,6,0],
+  [0,0,6,0,0,0,0,0,6,0,0,0,0,0,6,0],
+  [0,6,6,0,0,0,0,6,6,0,0,0,0,0,6,6],
+];
+
+// Peixe-machado (alto e fino, fotóforos na barriga)
+const SPRITE_HATCHET = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0],
+  [0,0,0,1,2,2,2,2,2,1,1,0,0,0,0,0],
+  [0,0,1,4,2,2,2,2,2,2,2,1,0,1,1,0],
+  [0,1,2,2,2,2,2,2,2,2,2,2,1,5,5,1],
+  [0,1,3,3,3,3,3,3,3,3,3,2,1,5,5,1],
+  [0,1,3,3,3,3,3,3,3,3,3,1,0,1,1,0],
+  [0,0,1,6,3,6,3,6,3,6,1,0,0,0,0,0],
+  [0,0,0,1,6,1,6,1,6,1,0,0,0,0,0,0],
+  [0,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0],
+];
+
+// Cabeça grande e cauda afinando (granadeiro, peixe-caracol)
+const SPRITE_TADPOLE = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
+  [0,1,2,2,2,2,1,1,0,0,0,0,0,0,0,0],
+  [1,2,4,2,2,2,2,2,1,1,0,0,0,0,0,0],
+  [1,2,2,2,2,2,2,2,2,2,1,1,1,0,0,0],
+  [1,3,3,3,3,3,2,2,2,2,2,2,2,1,1,0],
+  [0,1,3,3,3,3,3,3,2,2,2,2,2,2,5,1],
+  [0,0,1,1,5,1,5,3,3,3,1,1,1,1,1,0],
+  [0,0,0,0,1,0,0,1,1,1,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
+
+// Holotúria (tubo com pezinhos)
+const SPRITE_CUCUMBER = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,6,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+  [0,1,2,2,2,2,2,2,2,2,2,2,2,1,1,0],
+  [1,2,4,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1],
+  [0,1,1,3,3,3,3,3,3,3,3,3,3,1,1,0],
+  [0,0,0,1,6,1,6,1,6,1,6,1,6,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
+
+// Anfípode (crustáceo segmentado com patas)
+const SPRITE_AMPHIPOD = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,6,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+  [0,0,6,1,1,2,1,2,1,2,2,1,1,0,0,0],
+  [0,0,1,4,2,2,1,2,1,2,1,2,2,1,0,0],
+  [0,1,2,2,2,2,1,2,1,2,1,2,2,2,1,0],
+  [0,1,3,3,3,3,1,3,1,3,1,3,3,2,5,1],
+  [0,0,1,1,1,1,1,1,1,1,1,3,1,5,1,0],
+  [0,0,0,6,0,6,0,6,0,6,0,1,5,1,0,0],
+  [0,0,6,0,6,0,6,0,6,0,6,0,1,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
+
 const FISH_ANATOMY = {
   lambari:   SPRITE_CLASSIC,
   tilapia:   SPRITE_CLASSIC,
@@ -308,7 +444,7 @@ const FISH_ANATOMY = {
   tubarao_lunar:  SPRITE_SHARK,
   kraken_estelar: SPRITE_KRAKEN,
   lampreia_negra: SPRITE_LAMPREY,
-  // Mundo 2
+  // Camadas fundas (antigo Mundo 2)
   camarao_neon:         SPRITE_SLENDER,
   peixe_lanterna:       SPRITE_CLASSIC,
   agua_viva_aurora:     SPRITE_RAY,
@@ -334,6 +470,27 @@ const FISH_ANATOMY = {
   isopode_hadal:        SPRITE_PUFFER,
   polvo_vampiro:        SPRITE_RAY,
   olho_vazio:           SPRITE_LEVIATHAN,
+  // Peixes novos das camadas
+  traira:               SPRITE_PIRANHA,
+  tucunare:             SPRITE_CLASSIC,
+  tambaqui:             SPRITE_CLASSIC,
+  poraque:              SPRITE_SERPENT,
+  boiuna:               SPRITE_SERPENT,
+  cavala:               SPRITE_SLENDER,
+  dourado_mar:          SPRITE_CLASSIC,
+  atum:                 SPRITE_SLENDER,
+  peixe_lua:            SPRITE_SUNFISH,
+  peixe_machado:        SPRITE_HATCHET,
+  lula_humboldt:        SPRITE_KRAKEN,
+  peixe_bolha:          SPRITE_BLOB,
+  peixe_vibora:         SPRITE_PIRANHA,
+  tubarao_groenlandia:  SPRITE_SHARK,
+  granadeiro:           SPRITE_TADPOLE,
+  peixe_tripe:          SPRITE_TRIPOD,
+  anfipode:             SPRITE_AMPHIPOD,
+  peixe_caracol:        SPRITE_TADPOLE,
+  holoturia:            SPRITE_CUCUMBER,
+  polvo_dumbo:          SPRITE_DUMBO,
 };
 
 
@@ -754,6 +911,78 @@ const BAIT_SPRITES = {
 
 // Sprites de Upgrades Gerais (16x16)
 const UPGRADE_SPRITES = {
+  carretilha: [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,1,1,2,2,2,2,2,1,1,0,0,0,0],
+    [0,0,1,2,2,3,3,3,3,3,2,2,1,0,0,0],
+    [0,0,1,2,3,4,4,4,4,4,3,2,1,0,0,0],
+    [0,1,2,3,4,4,4,1,4,4,4,3,2,1,0,0],
+    [0,1,2,3,4,4,1,1,1,4,4,3,2,1,0,0],
+    [0,1,2,3,4,4,4,1,4,4,4,3,2,1,1,1],
+    [0,0,1,2,3,4,4,4,4,4,3,2,1,5,5,1],
+    [0,0,1,2,2,3,3,3,3,3,2,2,1,5,5,1],
+    [0,0,0,1,1,2,2,2,2,2,1,1,0,1,1,1],
+    [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,0,1,2,1,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,1,2,1,1,0,0,0,0,0,0],
+    [0,0,0,1,1,2,2,2,2,2,1,1,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  ],
+  sonar: [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
+    [0,1,2,3,3,3,3,3,3,3,3,3,3,2,1,0],
+    [0,1,2,3,3,3,4,4,4,3,3,3,3,2,1,0],
+    [0,1,2,3,3,4,3,3,3,4,3,3,3,2,1,0],
+    [0,1,2,3,4,3,3,3,3,3,4,3,3,2,1,0],
+    [0,1,2,3,4,3,3,5,4,3,4,3,3,2,1,0],
+    [0,1,2,3,4,3,4,4,4,3,4,3,3,2,1,0],
+    [0,1,2,3,3,4,3,3,3,4,3,3,3,2,1,0],
+    [0,1,2,3,3,3,4,4,4,3,3,3,3,2,1,0],
+    [0,1,2,3,3,3,3,3,3,3,3,3,3,2,1,0],
+    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+  ],
+  encomendas: [
+    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,4,4,4,4,1,0,0,0,0,0],
+    [0,1,1,1,1,1,4,4,4,4,1,1,1,1,1,0],
+    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
+    [0,1,2,3,3,3,3,3,3,3,3,3,3,2,1,0],
+    [0,1,2,3,5,5,3,6,6,6,6,6,3,2,1,0],
+    [0,1,2,3,3,3,5,3,6,6,6,6,3,2,1,0],
+    [0,1,2,3,3,3,3,3,3,3,3,3,3,2,1,0],
+    [0,1,2,3,5,5,3,6,6,6,6,6,3,2,1,0],
+    [0,1,2,3,3,3,5,3,6,6,6,6,3,2,1,0],
+    [0,1,2,3,3,3,3,3,3,3,3,3,3,2,1,0],
+    [0,1,2,3,5,5,3,6,6,6,6,6,3,2,1,0],
+    [0,1,2,3,3,3,5,3,6,6,6,6,3,2,1,0],
+    [0,1,2,3,3,3,3,3,3,3,3,3,3,2,1,0],
+    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+  ],
+  rede_espera: [
+    [0,0,0,0,0,0,0,0,0,0,0,3,3,3,0,0],
+    [0,0,0,0,0,0,0,0,0,0,3,3,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,3,3,0,0,0,0],
+    [1,1,0,0,0,0,0,0,0,0,0,3,3,3,1,1],
+    [1,2,1,0,0,0,0,0,0,0,0,0,0,1,2,1],
+    [1,2,2,1,0,0,0,0,0,0,0,0,1,2,2,1],
+    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
+    [0,1,2,4,2,4,2,4,2,4,2,4,2,2,1,0],
+    [0,0,1,2,4,2,4,2,4,2,4,2,2,1,0,0],
+    [0,0,1,2,2,4,2,4,2,4,2,2,1,0,0,0],
+    [0,0,0,1,2,2,4,2,4,2,2,1,0,0,0,0],
+    [0,0,0,0,1,2,2,2,2,2,1,0,0,0,0,0],
+    [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  ],
   balde: [
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
@@ -921,7 +1150,7 @@ function drawPixelGrid(ctx, sprite, palette, scale, offsetX = 0, offsetY = 0) {
 export function renderFishermanToCanvas(canvas, scale = 4, rodId = 'vara_bambu', gender = 'male', outfitId = 'verde', hairId = 'ruivo', isWorld2 = false) {
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
-  const isW2 = Boolean(isWorld2) || (canvas.id === 'fisherman-canvas' && Boolean(window.game ? window.game.currentWorld === 2 : false));
+  const isW2 = Boolean(isWorld2) || (canvas.id === 'fisherman-canvas' && Boolean(window.game?.isDeepLayer?.()));
   const sprite = isW2 ? DIVER_WITH_ROD : (gender === 'female' ? FISHERWOMAN_WITH_ROD : FISHERMAN_WITH_ROD);
   const cols = 32;
   const rows = sprite.length;
@@ -1042,7 +1271,14 @@ export function getUpgradeIconDataURL(upgradeId, scale = 2.5) {
   } else if (upgradeId === 'auto_vendedor') {
     pal = { 1: '#0f172a', 2: '#ef4444', 3: '#ffffff', 4: '#78350f', 5: '#38bdf8', 6: '#b45309', 7: '#fbbf24' };
   } else if (upgradeId === 'ima_dourado') {
-    pal = { 1: '#0f172a', 2: '#d97706', 3: '#facc15', 4: '#cbd5e1', 5: '#38bdf8', 6: '#f59e0b' };
+    pal = { 1: '#0f172a', 2: '#d97706', 3: '#facc15', 4: '#cbd5e1', 5: '#38bdf8', 6: '#f59e0b' };  } else if (upgradeId === 'carretilha') {
+    pal = { 1: '#0f172a', 2: '#475569', 3: '#94a3b8', 4: '#e2e8f0', 5: '#f97316' };
+  } else if (upgradeId === 'sonar') {
+    pal = { 1: '#0f172a', 2: '#334155', 3: '#052e16', 4: '#4ade80', 5: '#ef4444' };
+  } else if (upgradeId === 'encomendas') {
+    pal = { 1: '#0f172a', 2: '#92400e', 3: '#f8fafc', 4: '#94a3b8', 5: '#16a34a', 6: '#cbd5e1' };
+  } else if (upgradeId === 'rede_espera') {
+    pal = { 1: '#0f172a', 2: '#a16207', 3: '#fde68a', 4: '#38bdf8' };
   }
 
   drawPixelGrid(ctx, sprite, pal, scale);
@@ -1074,6 +1310,15 @@ export function renderFishToCanvas(canvas, fishIconId, scale = 4) {
   else if (fishIconId === 'fenix_magma') specialColor = '#fef08a';
   else if (fishIconId === 'kraken_galeoes') specialColor = '#facc15';
   else if (fishIconId === 'olho_vazio') specialColor = '#facc15'; // aura carmesim abissal pulsante
+  else if (fishIconId === 'poraque') specialColor = '#fde047'; // faíscas elétricas
+  else if (fishIconId === 'boiuna') specialColor = '#facc15';
+  else if (fishIconId === 'traira' || fishIconId === 'peixe_vibora') specialColor = '#f8fafc'; // dentes
+  else if (fishIconId === 'peixe_machado') specialColor = '#38bdf8'; // fotóforos azuis
+  else if (fishIconId === 'lula_humboldt') specialColor = '#fca5a5';
+  else if (fishIconId === 'peixe_bolha') specialColor = '#f472b6'; // nariz caído
+  else if (fishIconId === 'peixe_tripe') specialColor = '#e7e5e4'; // nadadeiras-tripé
+  else if (fishIconId === 'anfipode') specialColor = '#fecdd3';
+  else if (fishIconId === 'holoturia') specialColor = '#f0abfc';
 
   const colorMap = {
     1: pal.outline,
@@ -1189,13 +1434,18 @@ export class PixelWaterRenderer {
     window.addEventListener('resize', () => this._resize());
   }
 
-  setWorldMode(isW2, biomeId = null) {
+  // fishIcons: peixes que nadam no cenário; sceneKey: troca os peixes quando muda (ex.: camada).
+  setWorldMode(isW2, biomeId = null, fishIcons = null, sceneKey = biomeId) {
     const wasW2 = this.isWorld2;
+    const prevKey = this.sceneKey;
     this.isWorld2 = !!isW2;
     this.world2Biome = biomeId;
-    if (wasW2 !== this.isWorld2 || this.fishSprites.length === 0) {
+    this.sceneKey = sceneKey;
+    if (wasW2 !== this.isWorld2 || prevKey !== sceneKey || this.fishSprites.length === 0) {
       this.fishSprites = [];
-      if (this.isWorld2) {
+      if (fishIcons && fishIcons.length) {
+        fishIcons.forEach(f => this.addSwimmingFish(f));
+      } else if (this.isWorld2) {
         ['camarao_neon', 'peixe_lanterna', 'agua_viva_aurora', 'polvo_cintilante', 'moreia_brasa', 'arenque_fantasma'].forEach(f => this.addSwimmingFish(f));
       } else {
         ['lambari', 'carpa', 'truta', 'robalo'].forEach(f => this.addSwimmingFish(f));

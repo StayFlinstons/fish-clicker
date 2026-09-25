@@ -2,7 +2,6 @@
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
 import { UPGRADES } from '../itemsData.js';
 import { sound } from '../sound.js';
-import { UPGRADES_WORLD_2 } from '../world2Data.js';
 
 export class AutomationMethods {
   updateDiverVisual() {
@@ -45,7 +44,7 @@ export class AutomationMethods {
         btn.className = 'px-1.5 py-0.5 border text-[8px] font-bold cursor-pointer transition-colors bg-emerald-600 text-slate-950 border-emerald-400 hover:bg-emerald-500';
       }
 
-      const upgradeList = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+      const upgradeList = this.getUpgradeCatalog();
       const u = upgradeList.find(u => u.id === 'auto_pescador');
       const buffs = this.getActiveBuffs();
       const baseMs = (u ? u.getValue(lvl) : 8) * 1000;
@@ -107,7 +106,7 @@ export class AutomationMethods {
         countdownEl.className = 'text-emerald-300 font-bold bg-slate-950 px-1.5 py-0.5 border border-slate-700';
       }
 
-      const sellerUpgrades = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+      const sellerUpgrades = this.getUpgradeCatalog();
       const u = sellerUpgrades.find(up => up.id === 'auto_vendedor');
       const intervalSec = u ? u.getValue(lvl) : 60;
       const intervalMs = intervalSec * 1000;

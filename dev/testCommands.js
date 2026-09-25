@@ -2,7 +2,6 @@
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
 import { FISH_LIST } from '../fishData.js';
 import { updateRodSVG } from '../pixelArt.js';
-import { FISH_WORLD_2 } from '../world2Data.js';
 
 export class TestCommandMethods {
   /**
@@ -12,7 +11,7 @@ export class TestCommandMethods {
     if (force) {
       this.hasSeenBuffFishNotice = false;
     }
-    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const pool = this.getFishCatalog();
     let sample = pool.find(f => {
       const b = this.getFishBuffs(f);
       return b && b.length > 0;
@@ -51,8 +50,8 @@ export class TestCommandMethods {
     if (force) {
       this.firstRarityCatches[rarity] = false;
     }
-    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
-    let sample = pool.find(f => f.rarity === rarity) || FISH_LIST.find(f => f.rarity === rarity) || FISH_WORLD_2.find(f => f.rarity === rarity);
+    const pool = this.getFishCatalog();
+    let sample = pool.find(f => f.rarity === rarity);
     if (!sample) {
       sample = { id: `test_${rarity.toLowerCase()}`, name: `Peixe ${rarity}`, rarity: rarity, icon: 'celacanto', weight: 150 };
     }
@@ -69,7 +68,7 @@ export class TestCommandMethods {
       this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
     }
     this.firstRarityCatches[rarity] = true;
-    const pool = this.currentWorld === 2 ? FISH_WORLD_2 : FISH_LIST;
+    const pool = this.getFishCatalog();
     let sample = pool.filter(f => f.rarity === rarity)[1] || pool.find(f => f.rarity === rarity);
     console.log(`%c[TESTE] Pescando 2º peixe ${rarity} (${sample?.name || rarity})...`, 'color: #f59e0b;');
     const beforeEyes = this.fishEyesCount || 0;
@@ -289,22 +288,8 @@ export function installDevGlobals() {
   window.sumario = () => window.game?.openSummary();
   window.summary = () => window.game?.openSummary();
 
-  // Navegação entre Mundos & Modos de Jogo
-  window.world = (w) => window.game?.travelBetweenWorlds(Number(w) || 1);
-  window.travelBetweenWorlds = (w) => window.game?.travelBetweenWorlds(Number(w) || 1);
-  window.m1 = () => window.game?.travelBetweenWorlds(1);
-  window.m2 = () => {
-    if (window.game) {
-      if (window.game.gameMode === 'ima') window.game.setGameMode('pesca');
-      if (window.game.currentWorld === 2) {
-        window.game.renderAll();
-      } else if (window.game.world2SavedData) {
-        window.game.travelBetweenWorlds(2);
-      } else {
-        window.game.enterWorld2Reset();
-      }
-    }
-  };
+  // Camadas de profundidade & Modos de Jogo
+  window.camada = (n) => window.game?.execConsoleCmd(`camada ${n}`);
   window.modoPesca = () => window.game?.setGameMode('pesca');
   window.modoIma = () => {
     if (window.game) {
