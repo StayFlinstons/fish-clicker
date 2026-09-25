@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fish-clicker-v38';
+const CACHE_NAME = 'fish-clicker-v39';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -88,8 +88,16 @@ self.addEventListener('fetch', (event) => {
   // Ignora requisições não-GET
   if (event.request.method !== 'GET') return;
 
+  // Revalida com o servidor em vez de aceitar o cache HTTP do navegador (o GitHub Pages
+  // manda guardar por 10 min). Com o jogo dividido em módulos, um game.js novo com um
+  // módulo antigo do cache quebraria o carregamento. Sem mudanças, o servidor responde 304.
+  // Requisições de navegação não aceitam RequestInit, então seguem como estão.
+  const request = event.request.mode === 'navigate'
+    ? event.request
+    : new Request(event.request, { cache: 'no-cache' });
+
   event.respondWith(
-    fetch(event.request)
+    fetch(request)
       .then((networkResponse) => {
         // Atualiza o cache dinamicamente para requisições bem-sucedidas do mesmo domínio
         if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {

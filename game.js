@@ -287,6 +287,7 @@ class FishingGame {
   }
 
   setupEventListeners() {
+    // Botões com onclick no index.html NÃO recebem listener aqui (a ação rodaria 2x por clique)
     document.getElementById('btn-pescar-main')?.addEventListener('click', () => this.fish(false));
 
     // Seletor de ordenação do inventário
@@ -303,11 +304,11 @@ class FishingGame {
       this.renderAquarium();
     });
 
-    // Tabs upgrades (varas/iscas/geral)
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    // Tabs upgrades (varas/iscas/geral). Só [data-tab]: as abas do ímã também usam .tab-btn
+    document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         this.activeTab = e.currentTarget.dataset.tab;
-        document.querySelectorAll('.tab-btn').forEach(b => {
+        document.querySelectorAll('.tab-btn[data-tab]').forEach(b => {
           b.classList.remove('bg-slate-700','text-white','border-cyan-500/50');
           b.classList.add('text-slate-500','border-transparent');
         });
@@ -359,11 +360,7 @@ class FishingGame {
       sound.playClick();
     });
 
-    // Configurações
-    document.getElementById('btn-open-settings')?.addEventListener('click', () => this.openSettings());
-
     // Conquistas / Sala de Troféus
-    document.getElementById('btn-open-achievements')?.addEventListener('click', () => this.openAchievements());
     document.getElementById('btn-close-achievements')?.addEventListener('click', () => this.closeAchievements());
     document.querySelectorAll('.ach-tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -379,17 +376,11 @@ class FishingGame {
     });
 
     // Capítulo 1 / Portal Dimensional & Altar de Sacrifício
-    document.getElementById('btn-open-chapter1')?.addEventListener('click', () => this.openChapter1Modal());
     document.getElementById('btn-close-chapter1')?.addEventListener('click', () => this.closeChapter1Modal());
     document.getElementById('btn-chapter1-confirm')?.addEventListener('click', () => this.closeChapter1Modal());
     document.getElementById('btn-sacrifice-fish')?.addEventListener('click', () => this.sacrificeFish());
     document.getElementById('btn-summon-kraken')?.addEventListener('click', () => this.triggerKrakenCinematic());
 
-    document.getElementById('btn-open-album')?.addEventListener('click', () => this.openAlbum());
-    document.getElementById('btn-close-album')?.addEventListener('click', () => this.closeAlbum());
-    document.getElementById('btn-open-fish-eyes')?.addEventListener('click', () => this.openFishEyesModal());
-    document.getElementById('btn-open-patch-notes')?.addEventListener('click', () => this.openPatchNotesModal());
-    document.getElementById('btn-toggle-time')?.addEventListener('click', () => this.showTimeOfDayStatus());
 
     // Fechar dropdown de menu ao clicar fora dele
     document.addEventListener('click', (e) => {
