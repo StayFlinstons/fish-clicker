@@ -3772,13 +3772,27 @@
       <!-- Lista de Atualizações com Scroll -->
       <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-[8.5px] text-slate-300" style="font-family:var(--font-pixel);">
 
-        <!-- Cartão Destaque: Versão 1.6.1 -->
-        <div class="bg-gradient-to-r from-sky-950/70 via-slate-950/70 to-teal-950/60 border-2 border-sky-400 p-2.5 space-y-1.5" style="box-shadow: 0 0 16px rgba(56,189,248,0.4), 2px 2px 0 #000;">
+        <!-- Cartão Destaque: Versão 1.6.2 -->
+        <div class="bg-gradient-to-r from-violet-950/70 via-slate-950/70 to-indigo-950/60 border-2 border-violet-400 p-2.5 space-y-1.5" style="box-shadow: 0 0 16px rgba(167,139,250,0.4), 2px 2px 0 #000;">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 text-violet-300 font-bold text-[9.5px]">
+              <span>📊 QUANTOS PESCADORES NO LAGO?</span>
+            </div>
+            <span class="text-[8px] bg-violet-950 border border-violet-400 text-violet-300 px-1 py-0.5 animate-pulse shrink-0">VERSÃO 1.6.2</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-300 text-[8px] leading-normal pl-1">
+            <li><b class="text-violet-300">Estatísticas Anônimas:</b> O jogo agora conta quantas pessoas jogam e até onde chegam (começar um save, chegar ao Mundo 2, montar o Batiscafo), para ajudar a decidir as próximas atualizações.</li>
+            <li><b class="text-slate-200">Sem Dados Pessoais:</b> Nada do seu save é enviado e não há cookies. Jogando offline, nada é enviado e o jogo funciona igual.</li>
+          </ul>
+        </div>
+
+        <!-- Cartão: Versão 1.6.1 -->
+        <div class="bg-gradient-to-r from-sky-950/70 via-slate-950/70 to-teal-950/60 border-2 border-sky-400 p-2.5 space-y-1.5" style="box-shadow: 2px 2px 0 #000;">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-1.5 text-sky-300 font-bold text-[9.5px]">
               <span>🌊 O LAGO GANHOU VIDA</span>
             </div>
-            <span class="text-[8px] bg-sky-950 border border-sky-400 text-sky-300 px-1 py-0.5 animate-pulse shrink-0">VERSÃO 1.6.1</span>
+            <span class="text-[8px] bg-sky-950 border border-sky-400 text-sky-300 px-1 py-0.5 shrink-0">VERSÃO 1.6.1</span>
           </div>
           <ul class="list-disc list-inside space-y-1 text-slate-300 text-[8px] leading-normal pl-1">
             <li><b class="text-sky-300">Fundo Animado:</b> A superfície da água agora ondula e as plantas do fundo balançam com a correnteza, no Dia, no Pôr do Sol e na Noite.</li>
@@ -4104,7 +4118,7 @@
        import maps ignoram o mapa e carregam os arquivos sem ?v= (funciona igual). -->
   <script>
     (function () {
-      var ASSET_VERSION = '46';
+      var ASSET_VERSION = '47';
       var MODULES = [
         'game.js',
         'fishData.js',
