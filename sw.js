@@ -13,6 +13,7 @@ const ASSETS_TO_CACHE = [
   './dev/devConsole.js',
   './dev/testCommands.js',
   './systems/achievements.js',
+  './systems/analytics.js',
   './systems/automation.js',
   './systems/chapter1.js',
   './systems/events.js',
@@ -89,6 +90,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Ignora requisições não-GET
   if (event.request.method !== 'GET') return;
+  // Estatísticas (GoatCounter) vão direto para a rede, sem cache; offline só falham em silêncio
+  if (new URL(event.request.url).hostname.endsWith('.goatcounter.com')) return;
 
   // Revalida com o servidor em vez de aceitar o cache HTTP do navegador (o GitHub Pages
   // manda guardar por 10 min). Com o jogo dividido em módulos, um game.js novo com um

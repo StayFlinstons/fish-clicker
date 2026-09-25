@@ -387,6 +387,7 @@ export class Chapter1Methods {
     // Começa com 0 ouro, inventário e aquário vazios, novos upgrades em 0
     // Progressão limpa e autêntica no Abismo com novos equipamentos e biomas
     this.currentWorld = 2;
+    this.trackAnalyticsOnce('mundo-2');
     this.gold = 0;
     this.inventory = [];
     this.aquarium = [];

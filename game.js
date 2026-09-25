@@ -21,6 +21,7 @@ import { FishEyesMethods } from './systems/fishEyes.js';
 import { MagnetMethods } from './systems/magnet.js';
 import { World2Methods } from './systems/world2.js';
 import { Chapter1Methods } from './systems/chapter1.js';
+import { AnalyticsMethods } from './systems/analytics.js';
 import { AchievementMethods } from './systems/achievements.js';
 import { EventMethods } from './systems/events.js';
 import { RenderMethods } from './ui/render.js';
@@ -170,6 +171,7 @@ class FishingGame {
     // Celebração de primeira captura por raridade (1x por raridade permanentemente)
     this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
     this.hasSeenBuffFishNotice = false;
+    this.analyticsSent = []; // marcos já contados nas estatísticas (systems/analytics.js)
 
     // Cache de sprites (ui/sprites.js)
     this._fishSpriteCache = {};
@@ -203,6 +205,7 @@ class FishingGame {
     this.initPWA();
     this.checkPatchNotesOnStartup();
     this.renderMenuQuickStats();
+    this.initAnalytics();
     setInterval(() => {
       this.playTimeSeconds = (this.playTimeSeconds || 0) + 1;
       const ptEl = document.getElementById('menu-quick-playtime');
@@ -450,6 +453,7 @@ applyMixins(FishingGame, [
   World2Methods,
   Chapter1Methods,
   AchievementMethods,
+  AnalyticsMethods,
   EventMethods,
   RenderMethods,
   SpriteMethods,

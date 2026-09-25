@@ -275,6 +275,7 @@ export class World2Methods {
   assembleSubmarine() {
     sound.playUpgrade?.();
     this.submarineAssembled = true;
+    this.trackAnalyticsOnce('batiscafo');
     this.saveGame();
     this.showToast('★ O BATISCAFO FOI CONSTRUÍDO! PREPARANDO ROTA PARA O MUNDO 3! ★', 'legendary');
     this.renderSubmarineModal();

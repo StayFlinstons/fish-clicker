@@ -66,6 +66,7 @@ export class SaveMethods {
       magnetGoldEarned: this.magnetGoldEarned || 0,
       firstRarityCatches: this.firstRarityCatches || { LENDARIO: false, MITICO: false, SECRETO: false },
       hasSeenBuffFishNotice: Boolean(this.hasSeenBuffFishNotice),
+      analyticsSent: this.analyticsSent || [],
       settings: this.settings,
       // Com a coleta offline pendente, mantém o horário antigo para um F5 não perder a recompensa
       lastActiveTime: this.offlinePending ? this.lastActiveTime : Date.now()
@@ -147,6 +148,7 @@ export class SaveMethods {
           ? { LENDARIO: Boolean(d.firstRarityCatches.LENDARIO), MITICO: Boolean(d.firstRarityCatches.MITICO), SECRETO: Boolean(d.firstRarityCatches.SECRETO) }
           : { LENDARIO: false, MITICO: false, SECRETO: false };
         this.hasSeenBuffFishNotice = Boolean(d.hasSeenBuffFishNotice);
+        this.analyticsSent = Array.isArray(d.analyticsSent) ? d.analyticsSent : [];
 
         // Retro-compatibilidade: se o save antigo não tinha firstRarityCatches ou se peixes dessas raridades já foram descobertos
         if (this.discoveredFish) {
