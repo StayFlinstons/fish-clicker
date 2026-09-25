@@ -3,6 +3,42 @@
 import { sound } from '../sound.js';
 
 export class FishingMethods {
+  // Espera entre arremessos manuais: 2s, dividida por (1 + Vel. Pesca). Todo ponto de
+  // velocidade conta, cada vez menos (60% → 1,25s; 95% → 1,03s; +50% do Peixe Dourado → 0,8s).
+  getFishCooldownMs() {
+    return Math.max(250, 2000 / (1 + this.getActiveBuffs().fishingSpeedBonus));
+  }
+
+  // Trava o botão PESCAR e anima a barra de recarga embaixo dele até poder pescar de novo.
+  startFishCooldown(ms) {
+    this.isFishing = true;
+    const start = performance.now();
+    const btn = document.getElementById('btn-pescar-main');
+    const bar = document.getElementById('fish-cooldown');
+    const fill = document.getElementById('fish-cooldown-fill');
+    const text = document.getElementById('fish-cooldown-text');
+    btn?.classList.add('cooling');
+    bar?.classList.remove('ready');
+    // A trava sai por timer (o requestAnimationFrame para com a aba em segundo plano)
+    clearTimeout(this._fishCooldownTimer);
+    this._fishCooldownTimer = setTimeout(() => {
+      this.isFishing = false;
+      btn?.classList.remove('cooling');
+      bar?.classList.add('ready');
+      if (fill) fill.style.width = '100%';
+      if (text) text.textContent = 'PRONTO!';
+    }, ms);
+    const run = this._fishCooldownRun = (this._fishCooldownRun || 0) + 1;
+    const tick = () => {
+      if (!this.isFishing || run !== this._fishCooldownRun) return;
+      const left = Math.max(0, ms - (performance.now() - start));
+      if (fill) fill.style.width = `${(1 - left / ms) * 100}%`;
+      if (text) text.textContent = `${(left / 1000).toFixed(1).replace('.', ',')}s`;
+      requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
   fish(isAuto = false) {
     if (this.isFishing && !isAuto) return;
 
@@ -13,10 +49,7 @@ export class FishingMethods {
     }
 
     if (!isAuto) {
-      this.isFishing = true;
-      const buffs = this.getActiveBuffs();
-      const cooldown = Math.max(500, 900 * (1 - buffs.fishingSpeedBonus));
-      setTimeout(() => { this.isFishing = false; }, cooldown);
+      this.startFishCooldown(this.getFishCooldownMs());
       sound.vibrateCast();
     }
 

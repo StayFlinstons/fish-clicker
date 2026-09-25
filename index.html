@@ -310,6 +310,11 @@
           <button id="btn-pescar-main" aria-label="Pescar" class="btn-pescar-img group relative flex items-center justify-center cursor-pointer outline-none">
             <img src="icons/btn_pescar.png" alt="PESCAR" class="w-60 sm:w-68 md:w-76 max-w-[90vw] h-auto object-contain pointer-events-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]" style="image-rendering:pixelated;">
           </button>
+          <!-- Recarga do arremesso manual (2s ÷ (1 + Vel. Pesca)): systems/fishing.js -->
+          <div id="fish-cooldown" class="fish-cooldown ready" aria-hidden="true">
+            <div id="fish-cooldown-fill" class="fish-cooldown-fill" style="width:100%"></div>
+            <span id="fish-cooldown-text" class="fish-cooldown-text">PRONTO!</span>
+          </div>
         </div>
       </div>
 
@@ -1906,6 +1911,19 @@
       <!-- Lista de Atualizações com Scroll -->
       <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-[8.5px] text-slate-300" style="font-family:var(--font-pixel);">
 
+        <!-- Cartão: Versão 1.7.1 -->
+        <div class="bg-gradient-to-r from-sky-950/70 via-slate-950/70 to-cyan-950/60 border-2 border-sky-400 p-2.5 space-y-1.5" style="box-shadow: 0 0 16px rgba(56,189,248,0.4), 2px 2px 0 #000;">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 text-sky-300 font-bold text-[9.5px]">
+              <span>⏳ RECARGA DO ARREMESSO</span>
+            </div>
+            <span class="text-[8px] bg-sky-950 border border-sky-400 text-sky-300 px-1 py-0.5 animate-pulse shrink-0">VERSÃO 1.7.1</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-300 text-[8px] leading-normal pl-1">
+            <li><b class="text-sky-300">Barra de Recarga:</b> Embaixo do botão PESCAR aparece quanto falta para arremessar de novo. Quando fica verde, está PRONTO!</li>
+            <li><b class="text-cyan-300">Velocidade de Pesca Vale Sempre:</b> O arremesso manual espera 2s, e cada ponto de Vel. Pesca diminui essa espera (60% → 1,25s; 95% → 1,03s). Antes, acima de 44% a velocidade não fazia mais diferença.</li>
+          </ul>
+        </div>
         <!-- Cartão Destaque: Versão 1.7.0 -->
         <div class="bg-gradient-to-r from-cyan-950/70 via-slate-950/70 to-blue-950/60 border-2 border-cyan-400 p-2.5 space-y-1.5" style="box-shadow: 0 0 16px rgba(34,211,238,0.4), 2px 2px 0 #000;">
           <div class="flex items-center justify-between gap-2">
@@ -2278,7 +2296,7 @@
        import maps ignoram o mapa e carregam os arquivos sem ?v= (funciona igual). -->
   <script>
     (function () {
-      var ASSET_VERSION = '54';
+      var ASSET_VERSION = '55';
       var MODULES = [
         'game.js',
         'fishData.js',

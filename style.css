@@ -268,6 +268,43 @@ body {
   transform: translateY(3px) scale(0.97);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) brightness(0.95);
 }
+/* Recarregando: botão apagado até poder pescar de novo */
+.btn-pescar-img.cooling,
+.btn-pescar-img.cooling:hover {
+  transform: none;
+  filter: grayscale(0.7) brightness(0.7);
+  cursor: wait;
+}
+
+/* Barra de recarga embaixo do botão PESCAR */
+.fish-cooldown {
+  position: relative;
+  width: min(200px, 60vw);
+  height: 12px;
+  margin-top: 2px;
+  background: #0f172a;
+  border: 2px solid #334155;
+  box-shadow: 2px 2px 0 #000;
+  overflow: hidden;
+}
+.fish-cooldown-fill {
+  height: 100%;
+  background: #38bdf8;
+}
+.fish-cooldown.ready { border-color: #16a34a; }
+.fish-cooldown.ready .fish-cooldown-fill { background: #22c55e; }
+.fish-cooldown-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+}
 
 /* ═══════════════════════════════════════════════
    ESTILO DE BOTÕES ARCADE / BEVEL PIXEL ART (INSPIRADO NO BOTÃO PESCAR)
