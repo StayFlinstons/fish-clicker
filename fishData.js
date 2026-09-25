@@ -37,7 +37,7 @@ export const FISH_LIST = [
   { numId:18, id:'peixe_dragao',           name:'Peixe-Dragão da Fenda',    rarity:'EPICO',    icon:'dragao',         minWeight:6.0,  maxWeight:35.0,  baseValue:550,   desc:'Cospe chamas azuis no fundo abissal.', buff:{ type:'auto_fish_speed', value:0.15, text:'+15% Vel. Auto' } },
 
   // ── LENDÁRIOS ──
-  { numId:19, id:'celacanto_anciao',       name:'Celacanto Ancião',         rarity:'LENDARIO', icon:'celacanto',      minWeight:35.0, maxWeight:130.0, baseValue:1800,  desc:'Fóssil vivo que aprimora tudo.', buff:{ type:'all_stats', value:0.08, text:'+8% Tudo' } },
+  { numId:19, id:'celacanto_anciao',       name:'Celacanto Ancião',         rarity:'LENDARIO', icon:'celacanto',      minWeight:35.0, maxWeight:130.0, baseValue:1800,  desc:'Fóssil vivo que aprimora tudo.', buff:{ type:'all_stats', value:0.08, text:'+8% Todos Atributos' } },
   { numId:20, id:'abissal_bioluminescente',name:'Leviatã Bioluminescente',  rarity:'LENDARIO', icon:'leviata',        minWeight:40.0, maxWeight:180.0, baseValue:2500,  desc:'Ilumina a escuridão abissal.', buff:{ type:'double_catch_chance', value:0.12, text:'+12% Pesca Dupla' } },
   // Exclusivos por horário (Lendários)
   { numId:21, id:'peixe_sol_radiante',     name:'Peixe-Sol Radiante',       rarity:'LENDARIO', icon:'peixe_sol',      timeExclusive:'day',    minWeight:30.0, maxWeight:110.0, baseValue:2200, desc:'Brilha com o calor dourado do meio-dia. Só emerge sob o sol pleno.', buff:{ type:'gold_multiplier', value:0.22, text:'+22% Ouro' } },
@@ -45,7 +45,7 @@ export const FISH_LIST = [
   { numId:23, id:'tubarao_fantasma_lunar', name:'Tubarão Fantasma Lunar',   rarity:'LENDARIO', icon:'tubarao_lunar',  timeExclusive:'night',  minWeight:45.0, maxWeight:160.0, baseValue:2600, desc:'Espectro prateado fluorescente que só vaga sob o luar da meia-noite.', buff:{ type:'luck_bonus', value:0.18, text:'+18% Sorte' } },
 
   // ── MÍTICOS (quase impossíveis) ──
-  { numId:24, id:'serpente_solar',         name:'Serpente Solar Cósmica',    rarity:'MITICO',   icon:'serpente',       minWeight:80.0, maxWeight:400.0, baseValue:8000,  desc:'Entidade celestial que nada entre estrelas.', buff:{ type:'mythic_mastery', value:0.30, text:'+25% Ouro, +15% Sorte, +10% Dupla' } },
+  { numId:24, id:'serpente_solar',         name:'Serpente Solar Cósmica',    rarity:'MITICO',   icon:'serpente',       minWeight:80.0, maxWeight:400.0, baseValue:8000,  desc:'Entidade celestial que nada entre estrelas.', buff:{ type:'mythic_mastery', value:0.30, text:'+30% Ouro, +18% Sorte, +12% Pesca Dupla' } },
   // Exclusivos por horário (Míticos)
   { numId:25, id:'leviata_prisma_solar',   name:'Leviatã do Prisma Solar',   rarity:'MITICO',   icon:'prisma_solar',   timeExclusive:'day',    minWeight:75.0, maxWeight:380.0, baseValue:8500, desc:'Colosso celestial que refrata a luz solar em feixes de energia pura.', buff:{ type:'mythic_mastery', value:0.30, text:'+30% Ouro, +18% Sorte, +12% Pesca Dupla' } },
   { numId:26, id:'fenix_ocaso_eterno',     name:'Fênix do Ocaso Eterno',     rarity:'MITICO',   icon:'fenix_ocaso',    timeExclusive:'sunset', minWeight:80.0, maxWeight:420.0, baseValue:9000, desc:'Manifestação astral nascida do abraço entre o fogo solar e o crepúsculo.', buff:{ type:'mythic_mastery', value:0.32, text:'+32% Ouro, +19% Sorte, +13% Pesca Dupla' } },
@@ -87,84 +87,117 @@ export const FISH_AFFINITIES = {
   lampreia_negra: ['mythic_mastery', 'all_stats', 'gold_multiplier', 'luck_bonus']
 };
 
+// Nomes oficiais dos atributos. TODA tela deve exibir buffs por aqui (BUFF_LABELS / formatBuffText),
+// nunca com texto próprio, para o mesmo buff não aparecer com nomes diferentes.
+export const BUFF_LABELS = {
+  gold_multiplier: 'Ouro',
+  luck_bonus: 'Sorte',
+  fishing_speed: 'Vel. Pesca',
+  double_catch_chance: 'Pesca Dupla',
+  auto_fish_speed: 'Vel. Auto',
+  all_stats: 'Todos Atributos',
+  mythic_mastery: 'Maestria Mítica'
+};
+
+const buffPct = v => Math.round((v || 0) * 100);
+
+// Texto de exibição de um buff, derivado do tipo e do valor (o campo `text` salvo é ignorado).
+// Os valores padrão dos eventos espelham _applyFishBuff() em core/economy.js.
+export function formatBuffText(b) {
+  if (!b) return '';
+  const L = BUFF_LABELS;
+  if (b.type === 'mythic_mastery') {
+    const base = b.value || 0.25;
+    return `+${buffPct(base)}% ${L.gold_multiplier}, +${buffPct(base * 0.6)}% ${L.luck_bonus}, +${buffPct(base * 0.4)}% ${L.double_catch_chance}`;
+  }
+  if (b.type === 'event_blood_moon') {
+    return `+${buffPct(b.value || 0.15)}% ${L.gold_multiplier}, +${buffPct(b.luck || 0.15)}% ${L.luck_bonus} (Lua Sangrenta)`;
+  }
+  if (b.type === 'event_eclipse') {
+    return `+${buffPct(b.value || 0.15)}% ${L.fishing_speed}, +${buffPct(b.double || 0.15)}% ${L.double_catch_chance} (Eclipse)`;
+  }
+  if (L[b.type]) return `+${buffPct(b.value)}% ${L[b.type]}`;
+  return b.text || '';
+}
+
 // Configuração de probabilidades, chances de buff duplo e faixas numéricas estritas por raridade
 export const BUFF_CONFIG = {
   COMUM: {
     chance: 0.05,
     doubleChance: 0.0,
     ranges: {
-      gold_multiplier: [0.01, 0.02, '% Ouro'],
-      luck_bonus: [0.01, 0.01, '% Sorte'],
-      fishing_speed: [0.01, 0.02, '% Vel. Pesca'],
-      double_catch_chance: [0.01, 0.01, '% Pesca Dupla'],
-      auto_fish_speed: [0.01, 0.02, '% Vel. Auto']
+      gold_multiplier: [0.01, 0.02],
+      luck_bonus: [0.01, 0.01],
+      fishing_speed: [0.01, 0.02],
+      double_catch_chance: [0.01, 0.01],
+      auto_fish_speed: [0.01, 0.02]
     }
   },
   INCOMUM: {
     chance: 0.25,
     doubleChance: 0.03,
     ranges: {
-      gold_multiplier: [0.02, 0.04, '% Ouro'],
-      luck_bonus: [0.02, 0.03, '% Sorte'],
-      fishing_speed: [0.02, 0.04, '% Vel. Pesca'],
-      double_catch_chance: [0.02, 0.03, '% Pesca Dupla'],
-      auto_fish_speed: [0.02, 0.04, '% Vel. Auto']
+      gold_multiplier: [0.02, 0.04],
+      luck_bonus: [0.02, 0.03],
+      fishing_speed: [0.02, 0.04],
+      double_catch_chance: [0.02, 0.03],
+      auto_fish_speed: [0.02, 0.04]
     }
   },
   RARO: {
     chance: 1.0,
     doubleChance: 0.08,
     ranges: {
-      gold_multiplier: [0.04, 0.08, '% Ouro'],
-      luck_bonus: [0.03, 0.06, '% Sorte'],
-      fishing_speed: [0.05, 0.09, '% Vel. Pesca'],
-      double_catch_chance: [0.03, 0.06, '% Pesca Dupla'],
-      auto_fish_speed: [0.05, 0.10, '% Vel. Auto']
+      gold_multiplier: [0.04, 0.08],
+      luck_bonus: [0.03, 0.06],
+      fishing_speed: [0.05, 0.09],
+      double_catch_chance: [0.03, 0.06],
+      auto_fish_speed: [0.05, 0.10]
     }
   },
   EPICO: {
     chance: 1.0,
     doubleChance: 0.15,
     ranges: {
-      gold_multiplier: [0.09, 0.16, '% Ouro'],
-      luck_bonus: [0.07, 0.13, '% Sorte'],
-      fishing_speed: [0.10, 0.18, '% Vel. Pesca'],
-      double_catch_chance: [0.07, 0.13, '% Pesca Dupla'],
-      auto_fish_speed: [0.12, 0.20, '% Vel. Auto']
+      gold_multiplier: [0.09, 0.16],
+      luck_bonus: [0.07, 0.13],
+      fishing_speed: [0.10, 0.18],
+      double_catch_chance: [0.07, 0.13],
+      auto_fish_speed: [0.12, 0.20]
     }
   },
   LENDARIO: {
     chance: 1.0,
     doubleChance: 0.25,
     ranges: {
-      gold_multiplier: [0.18, 0.28, '% Ouro'],
-      luck_bonus: [0.12, 0.20, '% Sorte'],
-      double_catch_chance: [0.12, 0.18, '% Pesca Dupla'],
-      fishing_speed: [0.15, 0.25, '% Vel. Pesca'],
-      all_stats: [0.06, 0.10, '% Tudo']
+      gold_multiplier: [0.18, 0.28],
+      luck_bonus: [0.12, 0.20],
+      double_catch_chance: [0.12, 0.18],
+      fishing_speed: [0.15, 0.25],
+      all_stats: [0.06, 0.10]
     }
   },
   MITICO: {
     chance: 1.0,
     doubleChance: 1.0,
     ranges: {
-      mythic_mastery: [0.25, 0.35, '% Maestria Mítica'],
-      gold_multiplier: [0.20, 0.35, '% Ouro'],
-      luck_bonus: [0.15, 0.25, '% Sorte'],
-      all_stats: [0.10, 0.18, '% Tudo']
+      mythic_mastery: [0.25, 0.35],
+      gold_multiplier: [0.20, 0.35],
+      luck_bonus: [0.15, 0.25],
+      all_stats: [0.10, 0.18]
     }
   },
   SECRETO: {
     chance: 1.0,
     tripleBuff: true,
     ranges: {
-      mythic_mastery: [0.35, 0.50, '% Maestria Cósmica'],
-      all_stats: [0.15, 0.25, '% Tudo'],
-      gold_multiplier: [0.35, 0.55, '% Ouro'],
-      luck_bonus: [0.25, 0.40, '% Sorte'],
-      fishing_speed: [0.30, 0.45, '% Vel. Pesca'],
-      double_catch_chance: [0.25, 0.35, '% Pesca Dupla'],
-      auto_fish_speed: [0.30, 0.45, '% Vel. Auto']
+      mythic_mastery: [0.35, 0.50],
+      all_stats: [0.15, 0.25],
+      gold_multiplier: [0.35, 0.55],
+      luck_bonus: [0.25, 0.40],
+      fishing_speed: [0.30, 0.45],
+      double_catch_chance: [0.25, 0.35],
+      auto_fish_speed: [0.30, 0.45]
     }
   }
 };
@@ -199,13 +232,12 @@ export function generateFishBuffs(fishId, rarity) {
   }
 
   return chosenTypes.map(type => {
-    const [min, max, label] = conf.ranges[type];
+    const [min, max] = conf.ranges[type];
     const val = +(min + Math.random() * (max - min)).toFixed(3);
-    const pct = Math.round(val * 100);
     return {
       type,
       value: val,
-      text: '+' + pct + label
+      text: formatBuffText({ type, value: val })
     };
   });
 }

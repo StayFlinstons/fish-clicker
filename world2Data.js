@@ -185,7 +185,7 @@ export const FISH_WORLD_2 = [
     maxWeight: 110.0,
     baseValue: 2600,
     desc: 'Carapaça mineral forjada no calor das chaminés hidrotermais. Corta a água fervente como lâmina.',
-    buff: { type: 'fishing_speed', value: 0.28, text: '+28% Vel. Pesca & +15% Ouro' }
+    buff: { type: 'fishing_speed', value: 0.28, text: '+28% Vel. Pesca' }
   },
   {
     numId: 111,
@@ -278,7 +278,7 @@ export const FISH_WORLD_2 = [
     maxWeight: 160.0,
     baseValue: 8500,
     desc: 'Lâmina óssea incrustada com dobrões piratas. Corta as redes antigas com velocidade sobrenatural.',
-    buff: { type: 'gold_multiplier', value: 0.38, text: '+38% Ouro & +22% Pesca Dupla' }
+    buff: { type: 'gold_multiplier', value: 0.38, text: '+38% Ouro' }
   },
   {
     numId: 118,

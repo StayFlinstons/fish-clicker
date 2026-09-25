@@ -1,6 +1,6 @@
 // Regras da economia: capacidade, buffs ativos, chances de raridade, peso/valor e sorteio de peixes.
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
-import { FISH_LIST, RARITIES, generateFishBuffs } from '../fishData.js';
+import { FISH_LIST, RARITIES, formatBuffText, generateFishBuffs } from '../fishData.js';
 import { BAITS, RODS, UPGRADES } from '../itemsData.js';
 import { BAITS_WORLD_2, FISH_WORLD_2, RODS_WORLD_2, UPGRADES_WORLD_2 } from '../world2Data.js';
 
@@ -18,33 +18,7 @@ export class EconomyMethods {
   }
 
   formatFishBuffText(b) {
-    if (!b) return '';
-    const cleanMap = {
-      luck_bonus: 'Sorte',
-      gold_multiplier: 'Ouro',
-      fishing_speed: 'Vel. Pesca',
-      double_catch_chance: 'Pesca Dupla',
-      auto_fish_speed: 'Vel. Auto',
-      all_stats: 'Todos Atributos'
-    };
-    if (b.type === 'mythic_mastery') {
-      const base = b.value || 0.25;
-      return `+${Math.round(base * 100)}% Ouro, +${Math.round(base * 0.6 * 100)}% Sorte, +${Math.round(base * 0.4 * 100)}% Pesca Dupla`;
-    }
-    if (cleanMap[b.type]) {
-      const pct = Math.round((b.value || 0) * 100);
-      return `+${pct}% ${cleanMap[b.type]}`;
-    }
-    let txt = b.text || '';
-    txt = txt.replace(/Sorte\s+(Abissal|no Abismo|no Vazio|Pirata|nas Trevas)/gi, 'Sorte')
-             .replace(/Ouro\s+(no Abismo|dos Corais|Abissal|de Naufrágio|de Naufrágios)/gi, 'Ouro')
-             .replace(/Velocidade\s+Subaquática/gi, 'Vel. Pesca')
-             .replace(/Velocidade\s+de\s+Isca/gi, 'Vel. Pesca')
-             .replace(/Agilidade\s+Hadal/gi, 'Vel. Pesca')
-             .replace(/Captura\s+Dupla/gi, 'Pesca Dupla')
-             .replace(/Pesca\s+Automática/gi, 'Vel. Auto')
-             .replace(/Todos\s+os\s+Atributos\s+Submarinos/gi, 'Todos Atributos');
-    return txt;
+    return formatBuffText(b);
   }
 
   getFishBuffs(fish) {
@@ -294,7 +268,7 @@ export class EconomyMethods {
           type: 'event_eclipse',
           value: 0.15,
           double: 0.15,
-          text: '+15% Vel. Pesca & +15% Dupla (Eclipse)'
+          text: '+15% Vel. Pesca, +15% Pesca Dupla (Eclipse)'
         });
       } else if (auraRoll < 0.20) {
         specialAura = 'lua_sangrenta';
@@ -302,7 +276,7 @@ export class EconomyMethods {
           type: 'event_blood_moon',
           value: 0.15,
           luck: 0.15,
-          text: '+15% Ouro & +15% Sorte (Lua Sangrenta)'
+          text: '+15% Ouro, +15% Sorte (Lua Sangrenta)'
         });
       }
     }

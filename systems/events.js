@@ -241,7 +241,7 @@ export class EventMethods {
         </div>
         <div style="font-family:var(--font-pixel); font-size:9px; color:#fca5a5; margin-top:8px; line-height:1.6;">
           O Mar se transformou em Sangue por <span style="color:#ffffff; font-weight:bold;">60 segundos</span>!<br>
-          Peixes capturados têm chance de receber <span style="color:#ef4444; font-weight:bold;">Aura da Lua Sangrenta (10% de chance)</span> (+15% Ouro, +15% Sorte) ou <span style="color:#f87171; font-weight:bold;">Aura do Eclipse (10% de chance)</span> (+15% Vel., +15% Dupla)!
+          Peixes capturados têm chance de receber <span style="color:#ef4444; font-weight:bold;">Aura da Lua Sangrenta (10% de chance)</span> (+15% Ouro, +15% Sorte) ou <span style="color:#f87171; font-weight:bold;">Aura do Eclipse (10% de chance)</span> (+15% Vel. Pesca, +15% Pesca Dupla)!
         </div>
       </div>
     `;

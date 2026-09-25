@@ -2309,10 +2309,10 @@
           <select id="select-aquarium-filter" class="bg-slate-900 border border-purple-900/60 text-purple-300 px-1.5 py-1 text-[8px] focus:outline-none focus:border-purple-500 cursor-pointer">
             <option value="todos">Todos</option>
             <option value="double_buffs">★ Buffs Duplos</option>
-            <option value="gold_multiplier">+Ouro (%)</option>
+            <option value="gold_multiplier">+Ouro</option>
             <option value="luck_bonus">+Sorte</option>
-            <option value="fishing_speed">+Velocidade</option>
-            <option value="double_catch_chance">+Dupla (%)</option>
+            <option value="fishing_speed">+Vel. Pesca / Vel. Auto</option>
+            <option value="double_catch_chance">+Pesca Dupla</option>
             <option value="raridade_desc">Maior Raridade</option>
             <option value="peso_desc">Mais Pesados</option>
           </select>
@@ -2589,7 +2589,7 @@
             <h4 class="text-[10px] sm:text-[11px] font-bold text-purple-300" style="font-family:var(--font-pixel);">O QUE SÃO OS BUFFS?</h4>
           </div>
           <p class="text-[8px] sm:text-[9px] text-slate-300 leading-relaxed" style="font-family:var(--font-pixel);">
-            Nem todo peixe serve apenas para ser vendido no mercado! Determinados peixes podem vir com <strong class="text-purple-300">atributos mágicos permanentes</strong> que aumentam seus ganhos de ouro, velocidade de puxada, sorte e pesca dupla enquanto estiverem guardados no seu <strong class="text-cyan-300">Aquário</strong>.
+            Nem todo peixe serve apenas para ser vendido no mercado! Determinados peixes podem vir com <strong class="text-purple-300">atributos mágicos permanentes</strong> que aumentam seus ganhos de Ouro, Vel. Pesca, Sorte e Pesca Dupla enquanto estiverem guardados no seu <strong class="text-cyan-300">Aquário</strong>.
           </p>
         </div>
 
@@ -2627,11 +2627,11 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-[8px] sm:text-[8.5px]" style="font-family:var(--font-pixel);">
             <div class="bg-slate-900/90 border border-pink-900/60 p-2 text-center">
               <span class="text-amber-400 block font-bold text-[9px]">🪙 +100% do Valor</span>
-              <span class="text-slate-400">em Multiplicador de Ouro</span>
+              <span class="text-slate-400">em Ouro</span>
             </div>
             <div class="bg-slate-900/90 border border-pink-900/60 p-2 text-center">
               <span class="text-purple-400 block font-bold text-[9px]">🍀 +60% do Valor</span>
-              <span class="text-slate-400">em Bônus de Sorte</span>
+              <span class="text-slate-400">em Sorte</span>
             </div>
             <div class="bg-slate-900/90 border border-pink-900/60 p-2 text-center">
               <span class="text-emerald-400 block font-bold text-[9px]">🎣 +40% do Valor</span>
@@ -2639,42 +2639,15 @@
             </div>
           </div>
           <p class="text-[7.5px] sm:text-[8px] text-pink-200/90 leading-normal italic bg-pink-950/40 p-1.5 border border-pink-900/40" style="font-family:var(--font-pixel);">
-            ★ <strong>Exemplo Real:</strong> Um peixe com <strong>+30% Maestria Mítica</strong> concede automaticamente <strong>+30% Ouro</strong>, <strong>+18% Sorte</strong> e <strong>+12% Pesca Dupla</strong>! E se for colocado no <strong>Aquário</strong>, esses valores sobem para incríveis <strong>+45% Ouro, +27% Sorte e +18% Dupla</strong>!
+            ★ <strong>Exemplo Real:</strong> Um peixe com <strong>+30% Maestria Mítica</strong> concede <strong>+30% Ouro</strong>, <strong>+18% Sorte</strong> e <strong>+12% Pesca Dupla</strong> enquanto estiver no <strong>Aquário</strong>!
           </p>
         </div>
 
         <!-- Card 4: Tabela de Probabilidades por Raridade -->
         <div class="p-3 bg-slate-950/90 border-2 border-slate-800 pixel-border-thin space-y-2">
           <h4 class="text-[10px] sm:text-[11px] font-bold text-slate-200" style="font-family:var(--font-pixel);">CHANCES DE BUFF POR RARIDADE</h4>
-          <div class="space-y-1.5 text-[8px] sm:text-[9px]" style="font-family:var(--font-pixel);">
-            <div class="p-1.5 bg-slate-900 border border-slate-700 flex items-center justify-between">
-              <span class="text-slate-400 font-bold">Comum</span>
-              <span class="text-slate-300">5% chance de vir com buff leve</span>
-            </div>
-            <div class="p-1.5 bg-cyan-950/40 border border-cyan-800 flex items-center justify-between">
-              <span class="text-cyan-400 font-bold">Incomum</span>
-              <span class="text-slate-300">25% chance de buff · <strong class="text-amber-400">3% Buff Duplo</strong></span>
-            </div>
-            <div class="p-1.5 bg-purple-950/40 border border-purple-800 flex items-center justify-between">
-              <span class="text-purple-400 font-bold">Raro</span>
-              <span class="text-slate-300"><strong class="text-emerald-400">100% garantido</strong> · <strong class="text-amber-400">8% Buff Duplo</strong></span>
-            </div>
-            <div class="p-1.5 bg-amber-950/40 border border-amber-800 flex items-center justify-between">
-              <span class="text-amber-400 font-bold">Épico</span>
-              <span class="text-slate-300"><strong class="text-emerald-400">100% garantido</strong> · <strong class="text-amber-400">15% Buff Duplo</strong></span>
-            </div>
-            <div class="p-1.5 bg-red-950/40 border border-red-800 flex items-center justify-between">
-              <span class="text-red-400 font-bold">Lendário</span>
-              <span class="text-slate-300"><strong class="text-emerald-400">100% garantido</strong> · <strong class="text-amber-400">25% Buff Duplo</strong></span>
-            </div>
-            <div class="p-1.5 bg-pink-950/40 border border-pink-700 flex items-center justify-between">
-              <span class="text-pink-400 font-bold">Mítico</span>
-              <span class="text-pink-300 font-bold">100% garantido SEMPRE com 2 super buffs (Maestria Mítica)!</span>
-            </div>
-            <div class="p-1.5 bg-rose-950/50 border border-red-600 flex items-center justify-between">
-              <span class="text-red-400 font-bold">Secreto</span>
-              <span class="text-red-300 font-bold">100% garantido SEMPRE com 3 buffs colossais (Buff Triplo)!</span>
-            </div>
+          <div id="album-buff-chances" class="space-y-1.5 text-[8px] sm:text-[9px]" style="font-family:var(--font-pixel);">
+            <!-- Gerado por renderAlbumBuffs() a partir do BUFF_CONFIG (fishData.js) -->
           </div>
         </div>
 
@@ -2683,28 +2656,28 @@
           <h4 class="text-[10px] sm:text-[11px] font-bold text-slate-200" style="font-family:var(--font-pixel);">EFEITOS DOS ATRIBUTOS</h4>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[8px] sm:text-[9px]" style="font-family:var(--font-pixel);">
             <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
-              <div class="text-amber-400 font-bold">🪙 Mais Ouro (+% Ouro)</div>
+              <div class="text-amber-400 font-bold">🪙 Ouro</div>
               <p class="text-slate-400">Aumenta o valor de venda de todos os peixes que você vende.</p>
             </div>
             <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
-              <div class="text-purple-400 font-bold">🍀 Sorte (+% Sorte)</div>
+              <div class="text-purple-400 font-bold">🍀 Sorte</div>
               <p class="text-slate-400">Aumenta a chance de fisgar espécies raras, épicas e lendárias.</p>
             </div>
             <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
-              <div class="text-cyan-400 font-bold">⚡ Vel. Pesca (+% Vel. Pesca)</div>
+              <div class="text-cyan-400 font-bold">⚡ Vel. Pesca</div>
               <p class="text-slate-400">Reduz o tempo de puxada da linha ao pescar manualmente.</p>
             </div>
             <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
-              <div class="text-emerald-400 font-bold">🎣 Pesca Dupla (+% Pesca Dupla)</div>
+              <div class="text-emerald-400 font-bold">🎣 Pesca Dupla</div>
               <p class="text-slate-400">Chance de capturar dois peixes de uma só vez na mesma puxada.</p>
             </div>
             <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
-              <div class="text-blue-400 font-bold">🤿 Vel. Auto (+% Vel. Auto)</div>
+              <div class="text-blue-400 font-bold">🤿 Vel. Auto</div>
               <p class="text-slate-400">Faz o seu Mergulhador Amigo pescar com maior frequência.</p>
             </div>
             <div class="p-2 bg-slate-900 border border-slate-800 space-y-0.5">
-              <div class="text-pink-400 font-bold">🌌 Tudo (+% Tudo / Mítico)</div>
-              <p class="text-slate-400">Bônus celestial que melhora ouro, sorte e velocidade juntos.</p>
+              <div class="text-pink-400 font-bold">🌌 Todos Atributos</div>
+              <p class="text-slate-400">Soma o mesmo bônus em Ouro, Sorte, Vel. Pesca e Pesca Dupla.</p>
             </div>
           </div>
         </div>
@@ -2855,7 +2828,7 @@
                 <span class="text-[8px] font-bold text-cyan-300 leading-snug truncate" style="font-family:var(--font-pixel);">Vara da Travessia</span>
                 <span id="req-rod-status" class="text-[7px] font-bold text-red-400 shrink-0" style="font-family:var(--font-pixel);">PENDENTE</span>
               </div>
-              <p class="text-[7px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Poder: 9.0x | Sorte: +45% | Vel: +60%</p>
+              <p class="text-[7px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Poder: 9.0x | Sorte: +45% | Vel. Pesca: +60%</p>
               <p class="text-[7.5px] font-bold text-amber-400 mt-0.5" style="font-family:var(--font-pixel);">600.000 G (Loja de Varas)</p>
             </div>
           </div>
@@ -2870,7 +2843,7 @@
                 <span class="text-[8px] font-bold text-purple-300 leading-snug truncate" style="font-family:var(--font-pixel);">Essencia do Vortice</span>
                 <span id="req-bait-status" class="text-[7px] font-bold text-red-400 shrink-0" style="font-family:var(--font-pixel);">PENDENTE</span>
               </div>
-              <p class="text-[7px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Tier: 6 | Sorte: 2.50x | Dupla: +25%</p>
+              <p class="text-[7px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Tier: 6 | Sorte: 2.50x | Pesca Dupla: +25%</p>
               <p class="text-[7.5px] font-bold text-amber-400 mt-0.5" style="font-family:var(--font-pixel);">250.000 G (Loja de Iscas)</p>
             </div>
           </div>
@@ -4064,6 +4037,6 @@
     </div>
   </div>
 
-  <script type="module" src="game.js?v=36"></script>
+  <script type="module" src="game.js?v=37"></script>
 </body>
 </html>

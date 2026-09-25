@@ -1,6 +1,6 @@
 // Renderização do modo pesca: header, buffs, loja, balde, aquário e cache de sprites.
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
-import { RARITIES } from '../fishData.js';
+import { BUFF_LABELS, RARITIES } from '../fishData.js';
 import { BAITS, RODS, UPGRADES } from '../itemsData.js';
 import { PIXEL_ICONS, getBaitIconDataURL, getBloodMoonFishDataURL, getFishDataURL, getFishSilhouetteDataURL, getRodIconDataURL, getUpgradeIconDataURL } from '../pixelArt.js';
 import { BAITS_WORLD_2, RODS_WORLD_2, UPGRADES_WORLD_2 } from '../world2Data.js';
@@ -79,10 +79,10 @@ export class RenderMethods {
     const b = this.getActiveBuffs();
     const pills = [];
 
-    if (b.goldMultiplier > 0)     pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-amber-700 text-amber-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.goldMultiplier*100)}% OURO</span>`);
-    if (b.luckBonus > 0)          pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-purple-700 text-purple-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.luckBonus*100)}% SORTE</span>`);
-    if (b.fishingSpeedBonus > 0)  pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-cyan-700 text-cyan-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.fishingSpeedBonus*100)}% VEL</span>`);
-    if (b.doubleCatchChance > 0)  pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-emerald-700 text-emerald-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.doubleCatchChance*100)}% DUPLA</span>`);
+    if (b.goldMultiplier > 0)     pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-amber-700 text-amber-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.goldMultiplier*100)}% ${BUFF_LABELS.gold_multiplier.toUpperCase()}</span>`);
+    if (b.luckBonus > 0)          pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-purple-700 text-purple-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.luckBonus*100)}% ${BUFF_LABELS.luck_bonus.toUpperCase()}</span>`);
+    if (b.fishingSpeedBonus > 0)  pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-cyan-700 text-cyan-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.fishingSpeedBonus*100)}% ${BUFF_LABELS.fishing_speed.toUpperCase()}</span>`);
+    if (b.doubleCatchChance > 0)  pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-emerald-700 text-emerald-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.doubleCatchChance*100)}% ${BUFF_LABELS.double_catch_chance.toUpperCase()}</span>`);
     c.innerHTML = pills.length
       ? pills.join('')
       : '<span class="text-[8px] text-slate-600 italic" style="font-family:var(--font-pixel);">Nenhum buff ativo</span>';
@@ -116,9 +116,9 @@ export class RenderMethods {
                 <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${rod.desc}</p>
                 <div class="flex flex-wrap gap-1.5 mt-1.5">
                   <span class="text-[8px] text-cyan-400" title="Poder da vara: atrai espécimes mais pesados e favorece novos recordes de peso" style="font-family:var(--font-pixel); cursor:help;">PWR:${powerDisplay}</span>
-                  ${rod.luckBonus > 0 ? `<span class="text-[8px] text-purple-400" style="font-family:var(--font-pixel);">+${Math.round(rod.luckBonus*100)}%SRT</span>` : ''}
-                  ${(rod.fishingSpeedBonus || rod.speedBonus) > 0 ? `<span class="text-[8px] text-cyan-300" style="font-family:var(--font-pixel);">+${Math.round((rod.fishingSpeedBonus || rod.speedBonus)*100)}%VEL</span>` : ''}
-                  ${rod.doubleCatchChance > 0 ? `<span class="text-[8px] text-emerald-400" style="font-family:var(--font-pixel);">+${Math.round(rod.doubleCatchChance*100)}%DUP</span>` : ''}
+                  ${rod.luckBonus > 0 ? `<span class="text-[8px] text-purple-400" style="font-family:var(--font-pixel);">+${Math.round(rod.luckBonus*100)}% ${BUFF_LABELS.luck_bonus}</span>` : ''}
+                  ${(rod.fishingSpeedBonus || rod.speedBonus) > 0 ? `<span class="text-[8px] text-cyan-300" style="font-family:var(--font-pixel);">+${Math.round((rod.fishingSpeedBonus || rod.speedBonus)*100)}% ${BUFF_LABELS.fishing_speed}</span>` : ''}
+                  ${rod.doubleCatchChance > 0 ? `<span class="text-[8px] text-emerald-400" style="font-family:var(--font-pixel);">+${Math.round(rod.doubleCatchChance*100)}% ${BUFF_LABELS.double_catch_chance}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -152,8 +152,8 @@ export class RenderMethods {
                 </div>
                 <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${bait.desc}</p>
                 <div class="flex flex-wrap gap-1.5 mt-1.5">
-                  <span class="text-[8px] text-purple-400" style="font-family:var(--font-pixel);">SRT:${bait.luckMultiplier}x</span>
-                  ${bait.doubleCatchBonus > 0 ? `<span class="text-[8px] text-emerald-400" style="font-family:var(--font-pixel);">+${Math.round(bait.doubleCatchBonus*100)}%DUP</span>` : ''}
+                  <span class="text-[8px] text-purple-400" style="font-family:var(--font-pixel);">${BUFF_LABELS.luck_bonus}: ${bait.luckMultiplier}x</span>
+                  ${bait.doubleCatchBonus > 0 ? `<span class="text-[8px] text-emerald-400" style="font-family:var(--font-pixel);">+${Math.round(bait.doubleCatchBonus*100)}% ${BUFF_LABELS.double_catch_chance}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -350,7 +350,7 @@ export class RenderMethods {
     } else if (filter === 'luck_bonus') {
       displayFish = displayFish.filter(f => this.getFishBuffs(f).some(b => b.type === 'luck_bonus' || b.type === 'all_stats' || b.type === 'mythic_mastery'));
     } else if (filter === 'fishing_speed') {
-      displayFish = displayFish.filter(f => this.getFishBuffs(f).some(b => b.type === 'fishing_speed' || b.type === 'auto_fish_speed' || b.type === 'all_stats' || b.type === 'mythic_mastery'));
+      displayFish = displayFish.filter(f => this.getFishBuffs(f).some(b => b.type === 'fishing_speed' || b.type === 'auto_fish_speed' || b.type === 'all_stats'));
     } else if (filter === 'double_catch_chance') {
       displayFish = displayFish.filter(f => this.getFishBuffs(f).some(b => b.type === 'double_catch_chance' || b.type === 'all_stats' || b.type === 'mythic_mastery'));
     } else if (filter === 'raridade_desc') {

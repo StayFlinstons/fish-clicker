@@ -1,6 +1,6 @@
 // Olhos de Peixe (meta-progressão diária à meia-noite), Santuário e Oferenda de Espécies.
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
-import { FISH_LIST, RARITIES } from '../fishData.js';
+import { BUFF_LABELS, FISH_LIST, RARITIES } from '../fishData.js';
 import { sound } from '../sound.js';
 import { FISH_WORLD_2 } from '../world2Data.js';
 
@@ -451,10 +451,10 @@ export class FishEyesMethods {
 
     sound.playUpgrade?.() || sound.playClick?.();
     const names = {
-      gold: 'Multiplicador de Ouro (+1% & +1% Cap)',
-      luck: 'Bônus de Sorte (+1% & +1% Cap)',
-      speed: 'Velocidade de Pesca (+1% & +1% Cap)',
-      double: 'Pesca Dupla (+1% & +1% Cap)'
+      gold: `${BUFF_LABELS.gold_multiplier} (+1% & +1% Cap)`,
+      luck: `${BUFF_LABELS.luck_bonus} (+1% & +1% Cap)`,
+      speed: `${BUFF_LABELS.fishing_speed} (+1% & +1% Cap)`,
+      double: `${BUFF_LABELS.double_catch_chance} (+1% & +1% Cap)`
     };
     this.showToast(`👁️ +1 Olho investido em ${names[attr]}!`, 'success');
     this.renderFishEyesBadge();

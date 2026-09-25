@@ -1,6 +1,6 @@
 // Álbum de Peixes (enciclopédia).
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
-import { FISH_LIST, RARITIES } from '../fishData.js';
+import { BUFF_CONFIG, FISH_LIST, RARITIES } from '../fishData.js';
 import { sound } from '../sound.js';
 import { FISH_WORLD_2, WORLD2_BIOMES } from '../world2Data.js';
 
@@ -81,6 +81,43 @@ export class AlbumMethods {
       this.renderAlbumBuffs();
     }
     sound.playClick?.();
+  }
+
+  // Aba "Buffs" do álbum: a tabela de chances é gerada do BUFF_CONFIG para nunca sair de sincronia.
+  renderAlbumBuffs() {
+    const c = document.getElementById('album-buff-chances');
+    if (!c) return;
+    const styles = {
+      COMUM:    ['bg-slate-900 border-slate-700', 'text-slate-400', 'text-slate-300'],
+      INCOMUM:  ['bg-cyan-950/40 border-cyan-800', 'text-cyan-400', 'text-slate-300'],
+      RARO:     ['bg-purple-950/40 border-purple-800', 'text-purple-400', 'text-slate-300'],
+      EPICO:    ['bg-amber-950/40 border-amber-800', 'text-amber-400', 'text-slate-300'],
+      LENDARIO: ['bg-red-950/40 border-red-800', 'text-red-400', 'text-slate-300'],
+      MITICO:   ['bg-pink-950/40 border-pink-700', 'text-pink-400', 'text-pink-300 font-bold'],
+      SECRETO:  ['bg-rose-950/50 border-red-600', 'text-red-400', 'text-red-300 font-bold']
+    };
+    const pct = v => Math.round(v * 100) + '%';
+    const order = ['COMUM', 'INCOMUM', 'RARO', 'EPICO', 'LENDARIO', 'MITICO', 'SECRETO'];
+    c.innerHTML = order.filter(r => BUFF_CONFIG[r]).map(r => {
+      const conf = BUFF_CONFIG[r];
+      const [box, labelCls, textCls] = styles[r] || styles.COMUM;
+      let text;
+      if (conf.tripleBuff) {
+        text = '100% garantido SEMPRE com 3 buffs (Buff Triplo)!';
+      } else if (conf.chance >= 1 && conf.doubleChance >= 1) {
+        text = '100% garantido SEMPRE com 2 buffs (Buff Duplo)!';
+      } else {
+        text = conf.chance >= 1
+          ? '<strong class="text-emerald-400">100% garantido</strong>'
+          : `${pct(conf.chance)} chance de buff`;
+        if (conf.doubleChance > 0) text += ` · <strong class="text-amber-400">${pct(conf.doubleChance)} Buff Duplo</strong>`;
+      }
+      return `
+        <div class="p-1.5 ${box} border flex items-center justify-between gap-2">
+          <span class="${labelCls} font-bold">${(RARITIES[r] || {}).label || r}</span>
+          <span class="${textCls} text-right">${text}</span>
+        </div>`;
+    }).join('');
   }
 
   renderAlbum() {
@@ -170,14 +207,14 @@ export class AlbumMethods {
                 <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtBloodMoon ? 'border-red-500 bg-red-950/90 text-red-300 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtBloodMoon ? 'Capturado com Aura da Lua Sangrenta (+15% Ouro, +15% Sorte)' : 'Ainda não capturado com Aura da Lua Sangrenta'}">
                   🩸 ${data.caughtBloodMoon ? 'LUA SANGRENTA' : 'LUA SANGRENTA (?)'}
                 </span>
-                <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtEclipse ? 'border-red-700 bg-black/95 text-red-400 shadow-[0_0_8px_rgba(185,28,28,0.6)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtEclipse ? 'Capturado com Aura do Eclipse (+15% Vel., +15% Dupla)' : 'Ainda não capturado com Aura do Eclipse'}">
+                <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtEclipse ? 'border-red-700 bg-black/95 text-red-400 shadow-[0_0_8px_rgba(185,28,28,0.6)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtEclipse ? 'Capturado com Aura do Eclipse (+15% Vel. Pesca, +15% Pesca Dupla)' : 'Ainda não capturado com Aura do Eclipse'}">
                   🌑 ${data.caughtEclipse ? 'ECLIPSE' : 'ECLIPSE (?)'}
                 </span>
               </div>
 
               ${fish.buff ? `
                 <div class="text-[8px] sm:text-[8.5px] ${isSecretCard ? 'text-red-300 bg-red-950/70 border-red-700/80' : 'text-purple-300 bg-purple-950/60 border-purple-800/60'} mt-1.5 px-2 py-1 border leading-relaxed break-words" style="font-family:var(--font-pixel);">
-                  ★ ${fish.buff.text}
+                  ★ ${this.formatFishBuffText(fish.buff)}
                 </div>
               ` : ''}
               ${fish.desc ? `

@@ -329,7 +329,7 @@ export class DevConsoleMethods {
                 type: 'event_eclipse',
                 value: 0.15,
                 double: 0.15,
-                text: '+15% Vel. Pesca & +15% Dupla (Eclipse)'
+                text: '+15% Vel. Pesca, +15% Pesca Dupla (Eclipse)'
               });
             } else if (auraRoll < 0.20) {
               specialAura = 'lua_sangrenta';
@@ -337,7 +337,7 @@ export class DevConsoleMethods {
                 type: 'event_blood_moon',
                 value: 0.15,
                 luck: 0.15,
-                text: '+15% Ouro & +15% Sorte (Lua Sangrenta)'
+                text: '+15% Ouro, +15% Sorte (Lua Sangrenta)'
               });
             }
           }

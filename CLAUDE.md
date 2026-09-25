@@ -65,6 +65,7 @@ A random "Golden Fish" swims across the lake periodically (`initGoldenFish`/`spa
 
 - All in-game text, IDs, comments, and commit messages are Portuguese (pt-BR); keep new content consistent with this.
 - No framework, no build step by design ("Sem frameworks pesados, foco em performance pura" per README) — don't introduce a bundler, TypeScript, or a UI framework without discussing it first, since the whole project is intentionally dependency-light and installable as-is.
+- Buff/attribute names shown to the player come only from `BUFF_LABELS` and `formatBuffText()` in `fishData.js` (Ouro, Sorte, Vel. Pesca, Pesca Dupla, Vel. Auto, Todos Atributos, Maestria Mítica). Never hand-write a buff label in UI code; a stored `buff.text` is ignored for display.
 - Rarity tiers, fish, items, and achievements are plain data objects in the `*Data.js` files — prefer extending those catalogs over hardcoding new special cases in the feature modules.
 
 ## Knowledge graph (graphify)
