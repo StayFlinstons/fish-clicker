@@ -26,6 +26,7 @@ export class RenderMethods {
   renderHeader() {
     const el = document.getElementById('player-gold');
     if (el) el.textContent = this.gold.toLocaleString('pt-BR') + ' G';
+    this.updateMobileNav();
     const inv = document.getElementById('inv-counter-badge');
     if (inv) {
       if (this.invTab === 'aquarium') {
@@ -86,7 +87,7 @@ export class RenderMethods {
               <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-1.5">
                   <h4 class="text-[9px] sm:text-[10px] md:text-[11px] font-bold text-slate-200 leading-snug break-words" style="font-family:var(--font-pixel);">${rod.name}</h4>
-                  ${equipped ? '<span class="text-[7px] sm:text-[8px] text-amber-400 bg-amber-900/50 px-1 py-0.5 border border-amber-600 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">EQUIP</span>' : ''}
+                  ${equipped ? '<span class="text-[8px] text-amber-400 bg-amber-900/50 px-1 py-0.5 border border-amber-600 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">EQUIP</span>' : ''}
                 </div>
                 <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${rod.desc}</p>
                 <div class="flex flex-wrap gap-1.5 mt-1.5">
@@ -102,7 +103,7 @@ export class RenderMethods {
                 ? (equipped
                   ? `<button disabled class="pixel-btn w-full py-1 bg-amber-950/80 text-amber-300 text-[10px] border-amber-600 cursor-default" style="font-family:var(--font-pixel);">EM USO</button>`
                   : `<button onclick="window.game.equipRod('${rod.id}')" class="pixel-btn w-full py-1 bg-slate-700 text-slate-200 text-[10px] border-slate-600" style="font-family:var(--font-pixel);">EQUIPAR</button>`)
-                : `<button onclick="window.game.buyRod('${rod.id}')" class="pixel-btn w-full py-1 ${afford ? 'bg-amber-600 text-slate-950' : 'bg-slate-800 text-slate-600 cursor-not-allowed'} text-[10px]" style="font-family:var(--font-pixel);">COMPRAR ${rod.price.toLocaleString('pt-BR')}G</button>`
+                : `<button onclick="window.game.buyRod('${rod.id}')" class="pixel-btn w-full py-1 ${afford ? 'bg-amber-600 text-slate-950' : 'bg-slate-800 text-slate-300 border-slate-600 cursor-not-allowed'} text-[10px]" style="font-family:var(--font-pixel);">COMPRAR ${rod.price.toLocaleString('pt-BR')}G</button>${this.renderMissingGold(rod.price)}`
               }
             </div>
           </div>`;
@@ -123,7 +124,7 @@ export class RenderMethods {
               <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-1.5">
                   <h4 class="text-[9px] sm:text-[10px] md:text-[11px] font-bold text-slate-200 leading-snug break-words" style="font-family:var(--font-pixel);">${bait.name}</h4>
-                  ${equipped ? '<span class="text-[7px] sm:text-[8px] text-cyan-400 bg-cyan-900/50 px-1 py-0.5 border border-cyan-600 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">EQUIP</span>' : ''}
+                  ${equipped ? '<span class="text-[8px] text-cyan-400 bg-cyan-900/50 px-1 py-0.5 border border-cyan-600 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">EQUIP</span>' : ''}
                 </div>
                 <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${bait.desc}</p>
                 <div class="flex flex-wrap gap-1.5 mt-1.5">
@@ -137,7 +138,7 @@ export class RenderMethods {
                 ? (equipped
                   ? `<button disabled class="pixel-btn w-full py-1 bg-cyan-950/80 text-cyan-300 text-[10px] border-cyan-600 cursor-default" style="font-family:var(--font-pixel);">EM USO</button>`
                   : `<button onclick="window.game.equipBait('${bait.id}')" class="pixel-btn w-full py-1 bg-slate-700 text-slate-200 text-[10px] border-slate-600" style="font-family:var(--font-pixel);">EQUIPAR</button>`)
-                : `<button onclick="window.game.buyBait('${bait.id}')" class="pixel-btn w-full py-1 ${afford ? 'bg-cyan-600 text-slate-950' : 'bg-slate-800 text-slate-600 cursor-not-allowed'} text-[10px]" style="font-family:var(--font-pixel);">COMPRAR ${bait.price.toLocaleString('pt-BR')}G</button>`
+                : `<button onclick="window.game.buyBait('${bait.id}')" class="pixel-btn w-full py-1 ${afford ? 'bg-cyan-600 text-slate-950' : 'bg-slate-800 text-slate-300 border-slate-600 cursor-not-allowed'} text-[10px]" style="font-family:var(--font-pixel);">COMPRAR ${bait.price.toLocaleString('pt-BR')}G</button>${this.renderMissingGold(bait.price)}`
               }
             </div>
           </div>`;
@@ -155,13 +156,13 @@ export class RenderMethods {
         if (u.id === 'auto_pescador' && lvl > 0) {
           const isOn = this.autoFisherEnabled;
           toggleHtml = `
-            <button onclick="window.game.toggleAutoFisher(event)" title="Ligar / Desligar Mergulhador Amigo" class="px-1.5 py-0.5 text-[7.5px] font-bold border transition-colors cursor-pointer shrink-0 ${isOn ? 'bg-emerald-600 hover:bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-red-950/80 hover:bg-red-900 text-red-300 border-red-700'}" style="font-family:var(--font-pixel);">
+            <button onclick="window.game.toggleAutoFisher(event)" title="Ligar / Desligar Mergulhador Amigo" class="px-1.5 py-0.5 text-[8px] font-bold border transition-colors cursor-pointer shrink-0 ${isOn ? 'bg-emerald-600 hover:bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-red-950/80 hover:bg-red-900 text-red-300 border-red-700'}" style="font-family:var(--font-pixel);">
               ${isOn ? '● ON' : '○ OFF'}
             </button>`;
         } else if (u.id === 'auto_vendedor' && lvl > 0) {
           const isOn = this.autoSellerEnabled;
           toggleHtml = `
-            <button onclick="window.game.toggleAutoSeller(event)" title="Ligar / Desligar Peixaria Automática" class="px-1.5 py-0.5 text-[7.5px] font-bold border transition-colors cursor-pointer shrink-0 ${isOn ? 'bg-emerald-600 hover:bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-red-950/80 hover:bg-red-900 text-red-300 border-red-700'}" style="font-family:var(--font-pixel);">
+            <button onclick="window.game.toggleAutoSeller(event)" title="Ligar / Desligar Peixaria Automática" class="px-1.5 py-0.5 text-[8px] font-bold border transition-colors cursor-pointer shrink-0 ${isOn ? 'bg-emerald-600 hover:bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-red-950/80 hover:bg-red-900 text-red-300 border-red-700'}" style="font-family:var(--font-pixel);">
               ${isOn ? '● ON' : '○ OFF'}
             </button>`;
         }
@@ -187,7 +188,7 @@ export class RenderMethods {
             <div class="mt-2">
               ${isMax
                 ? `<button disabled class="pixel-btn w-full py-1 bg-slate-900 text-slate-500 text-[10px] border-slate-800 cursor-default" style="font-family:var(--font-pixel);">MAX ★</button>`
-                : `<button onclick="window.game.buyUpgrade('${u.id}')" class="pixel-btn w-full py-1 ${afford ? 'bg-emerald-600 text-slate-950' : 'bg-slate-800 text-slate-600 cursor-not-allowed'} text-[10px]" style="font-family:var(--font-pixel);">LV.${lvl+1} = ${price.toLocaleString('pt-BR')}G</button>`
+                : `<button onclick="window.game.buyUpgrade('${u.id}')" class="pixel-btn w-full py-1 ${afford ? 'bg-emerald-600 text-slate-950' : 'bg-slate-800 text-slate-300 border-slate-600 cursor-not-allowed'} text-[10px]" style="font-family:var(--font-pixel);">LV.${lvl+1} = ${price.toLocaleString('pt-BR')}G</button>${this.renderMissingGold(price)}`
               }
             </div>
           </div>`;
@@ -195,6 +196,12 @@ export class RenderMethods {
     }
 
     list.innerHTML = html;
+  }
+
+  // Linha "Faltam X G" embaixo dos botões de compra que o jogador ainda não pode pagar
+  renderMissingGold(price) {
+    if (this.gold >= price) return '';
+    return `<p class="text-[8px] text-rose-300/90 text-center mt-1" style="font-family:var(--font-pixel);">Faltam ${(price - this.gold).toLocaleString('pt-BR')}G</p>`;
   }
 
   renderInventory() {
@@ -241,9 +248,9 @@ export class RenderMethods {
       const isDouble = buffsList.length === 2;
       const auraClass = fish.specialAura === 'lua_sangrenta' ? 'aura-lua-sangrenta' : (fish.specialAura === 'eclipse' ? 'aura-eclipse' : '');
       const auraBadge = fish.specialAura === 'lua_sangrenta' 
-        ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 8px rgba(239,68,68,0.7);">🩸 LUA SANGRENTA</span>'
+        ? '<span class="text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 8px rgba(239,68,68,0.7);">🩸 LUA SANGRENTA</span>'
         : (fish.specialAura === 'eclipse'
-          ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-700 bg-black/90 text-red-400 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 10px rgba(185,28,28,0.8);">🌑 ECLIPSE</span>'
+          ? '<span class="text-[8px] font-bold px-1 py-0.5 border border-red-700 bg-black/90 text-red-400 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 10px rgba(185,28,28,0.8);">🌑 ECLIPSE</span>'
           : '');
 
       return `
@@ -256,9 +263,9 @@ export class RenderMethods {
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="text-[9.5px] sm:text-[10.5px] font-bold ${isTriple ? 'text-red-300' : 'text-slate-100'} leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
-                <span class="text-[6.5px] sm:text-[7px] font-bold px-1 py-0.2 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+                <span class="text-[8px] font-bold px-1 py-0.2 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
                 ${auraBadge}
-                ${isTriple ? '<span class="text-[6.5px] sm:text-[7px] font-bold px-1 py-0.2 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[6.5px] sm:text-[7px] font-bold px-1 py-0.2 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
+                ${isTriple ? '<span class="text-[8px] font-bold px-1 py-0.2 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[8px] font-bold px-1 py-0.2 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
               </div>
               <div class="flex items-center gap-2.5 text-[8px] sm:text-[9px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">
                 <span>⚖️ ${fish.weight}kg</span>
@@ -269,24 +276,24 @@ export class RenderMethods {
 
           <!-- Linha do Meio: Bônus e Atributos (se houver) -->
           ${hasBuff ? `
-            <div class="bg-black/35 border border-slate-800/80 px-2 py-1 flex flex-col gap-0.5 text-[7.5px] sm:text-[8px]" style="font-family:var(--font-pixel);">
-              ${buffsList.map(b => `<span class="${isTriple ? 'text-red-300' : 'text-purple-300'} leading-tight whitespace-normal">★ ${b.text} <span class="text-slate-500 text-[7px] font-normal">(Mova ao Aquário p/ ativar)</span></span>`).join('')}
+            <div class="bg-black/35 border border-slate-800/80 px-2 py-1 flex flex-col gap-0.5 text-[8px]" style="font-family:var(--font-pixel);">
+              ${buffsList.map(b => `<span class="${isTriple ? 'text-red-300' : 'text-purple-300'} leading-tight whitespace-normal">★ ${b.text} <span class="text-slate-500 text-[8px] font-normal">(Mova ao Aquário p/ ativar)</span></span>`).join('')}
             </div>
           ` : ''}
 
           <!-- Linha Inferior: Barra de Ações com largura total (sem colisão com o texto) -->
           <div class="flex items-center justify-end gap-1.5 w-full pt-1 border-t border-slate-800/80 flex-wrap">
             ${(Boolean(this.firstRarityCatches?.MITICO) && !this.speciesDonations?.[fish.id] && !this.donatedSpeciesHistory?.[fish.id]) ? `
-              <button onclick="window.game.donateFish('${fish.id}', '${fish.uid}')" ${fish.locked ? 'disabled' : ''} title="Doar 1 exemplar desta espécie para o Santuário dos Olhos de Peixe" class="pixel-btn px-2 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-amber-950 border border-amber-500 text-amber-300 hover:bg-amber-900'} text-[7.5px] sm:text-[8px] font-bold shrink-0 flex items-center gap-1 cursor-pointer" style="font-family:var(--font-pixel);">
+              <button onclick="window.game.donateFish('${fish.id}', '${fish.uid}')" ${fish.locked ? 'disabled' : ''} title="Doar 1 exemplar desta espécie para o Santuário dos Olhos de Peixe" class="pixel-btn px-2 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-amber-950 border border-amber-500 text-amber-300 hover:bg-amber-900'} text-[8px] font-bold shrink-0 flex items-center gap-1 cursor-pointer" style="font-family:var(--font-pixel);">
                 <span>🏺</span><span>DOAR</span>
               </button>
             ` : ''}
             ${canSacrifice && (fish.rarity === 'LENDARIO' || fish.rarity === 'MITICO') ? `
-              <button onclick="window.game.sacrificeSpecificFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} title="Sacrificar no Altar das Almas" class="pixel-btn px-2 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-purple-950 border border-rose-500 text-rose-300 hover:bg-rose-900'} text-[7.5px] sm:text-[8px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">SACRIFICAR</button>
+              <button onclick="window.game.sacrificeSpecificFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} title="Sacrificar no Altar das Almas" class="pixel-btn px-2 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-purple-950 border border-rose-500 text-rose-300 hover:bg-rose-900'} text-[8px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">SACRIFICAR</button>
             ` : ''}
-            ${hasBuff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário para ativar os buffs" class="pixel-btn px-2 py-1 text-[7.5px] sm:text-[8px] font-bold bg-purple-950/80 border border-purple-500 text-purple-300 hover:bg-purple-900 shrink-0 cursor-pointer flex items-center gap-1" style="font-family:var(--font-pixel);"><span>🐠</span><span>AQUÁRIO</span></button>` : ''}
+            ${hasBuff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário para ativar os buffs" class="pixel-btn px-2 py-1 text-[8px] font-bold bg-purple-950/80 border border-purple-500 text-purple-300 hover:bg-purple-900 shrink-0 cursor-pointer flex items-center gap-1" style="font-family:var(--font-pixel);"><span>🐠</span><span>AQUÁRIO</span></button>` : ''}
             <button onclick="window.game.toggleLockFish('${fish.uid}')" title="${fish.locked ? 'Destravar peixe' : 'Travar peixe'}" class="pixel-btn px-2 py-1 text-[10px] ${fish.locked ? 'bg-amber-950/90 border-amber-500 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'} shrink-0 cursor-pointer">${fish.locked ? PIXEL_ICONS.lockClosed : PIXEL_ICONS.lockOpen}</button>
-            <button onclick="window.game.sellFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} class="pixel-btn px-3 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 cursor-not-allowed border-slate-800' : 'bg-emerald-800 text-emerald-200 border-emerald-600 hover:bg-emerald-700'} text-[9px] sm:text-[10px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">SELL</button>
+            <button onclick="window.game.sellFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} class="pixel-btn px-3 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 cursor-not-allowed border-slate-800' : 'bg-emerald-800 text-emerald-200 border-emerald-600 hover:bg-emerald-700'} text-[9px] sm:text-[10px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">VENDER</button>
           </div>
         </div>`;
     }).join('');
@@ -309,7 +316,7 @@ export class RenderMethods {
           <div class="w-8 h-8 mb-1 opacity-40 inline-flex items-center justify-center">${PIXEL_ICONS.aquarium}</div>
           <p class="text-[10.5px] text-purple-300 font-bold" style="font-family:var(--font-pixel);">AQUÁRIO VAZIO</p>
           <p class="text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">${maxAq} vagas · Buffs ativos apenas aqui</p>
-          <p class="text-[7.5px] text-purple-400 mt-2" style="font-family:var(--font-pixel);">Mova seus melhores peixes do balde para ativar seus bônus!</p>
+          <p class="text-[8px] text-purple-400 mt-2" style="font-family:var(--font-pixel);">Mova seus melhores peixes do balde para ativar seus bônus!</p>
         </div>`;
       return;
     }
@@ -351,9 +358,9 @@ export class RenderMethods {
       const isDouble = buffsList.length === 2;
       const auraClass = fish.specialAura === 'lua_sangrenta' ? 'aura-lua-sangrenta' : (fish.specialAura === 'eclipse' ? 'aura-eclipse' : '');
       const auraBadge = fish.specialAura === 'lua_sangrenta' 
-        ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 8px rgba(239,68,68,0.7);">🩸 LUA SANGRENTA</span>'
+        ? '<span class="text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 8px rgba(239,68,68,0.7);">🩸 LUA SANGRENTA</span>'
         : (fish.specialAura === 'eclipse'
-          ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-700 bg-black/90 text-red-400 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 10px rgba(185,28,28,0.8);">🌑 ECLIPSE</span>'
+          ? '<span class="text-[8px] font-bold px-1 py-0.5 border border-red-700 bg-black/90 text-red-400 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel); box-shadow: 0 0 10px rgba(185,28,28,0.8);">🌑 ECLIPSE</span>'
           : '');
 
       return `
@@ -363,10 +370,10 @@ export class RenderMethods {
             <div class="min-w-0 flex-1">
               <div class="flex items-baseline gap-1.5 flex-wrap">
                 <span class="text-[9px] sm:text-[10px] font-bold ${isTriple ? 'text-red-300' : 'text-slate-100'} leading-snug break-words" style="font-family:var(--font-pixel);">${fish.name}</span>
-                <span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+                <span class="text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
                 ${auraBadge}
-                ${isTriple ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[7px] sm:text-[8px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
-                <span class="text-[7px] sm:text-[7.5px] font-bold px-1 py-0.2 border border-purple-500/80 bg-purple-950/80 text-purple-200 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">BUFF ATIVO</span>
+                ${isTriple ? '<span class="text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/80 text-red-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">🔥 TRIPLO</span>' : (isDouble ? '<span class="text-[8px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap shrink-0" style="font-family:var(--font-pixel);">★ DUPLO</span>' : '')}
+                <span class="text-[8px] font-bold px-1 py-0.2 border border-purple-500/80 bg-purple-950/80 text-purple-200 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">BUFF ATIVO</span>
               </div>
               <div class="flex items-center gap-1.5 text-[8px] text-slate-400 mt-1" style="font-family:var(--font-pixel);">
                 <span>${fish.weight}kg</span>
@@ -386,6 +393,7 @@ export class RenderMethods {
     if (c) c.textContent = this.totalCatches.toLocaleString('pt-BR');
     const g = document.getElementById('player-gold') || document.getElementById('stat-total-gold');
     if (g) g.textContent = this.gold.toLocaleString('pt-BR') + ' G';
+    this.updateMobileNav();
   }
 
   switchInvTab() {

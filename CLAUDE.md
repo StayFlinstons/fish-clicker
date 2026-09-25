@@ -27,7 +27,7 @@ Then open `http://localhost:3000`. `start_game.bat` does the same (serves on por
 - **Feature modules** — each exports a class whose methods become `FishingGame` methods (`this` is the game; `window.game.x()` and HTML `onclick` keep working). `core/mixins.js` throws on load if two modules define the same method name.
   - `core/` — `constants.js` (`GAME_VERSION`, `SAVE_KEY`), `save.js` (save/load/reset/export-import), `economy.js` (buffs, rarity chances, weight/value, `rollFish()`), `timeCycle.js` (day/sunset/night).
   - `systems/` — `fishing.js` (`fish()`, `recordDiscovery()`, selling, bucket/aquarium), `shop.js`, `automation.js` (auto-fisher/auto-seller), `offline.js`, `fishEyes.js` (daily Fish Eyes, Sanctuary, species offerings), `magnet.js` (game modes + Pesca Magnética/Forge/Museum), `world2.js` (Abyss biomes, submarine, world travel), `chapter1.js` (portal/altar/Kraken), `achievements.js`, `events.js` (Golden Fish, Blood Moon Eclipse, temp buffs).
-  - `ui/` — `render.js` (`renderAll()` and fishing-mode panels), `sprites.js` (fish sprite cache), `effects.js` (toasts, floating text, catch popups), `celebrations.js`, `album.js`, `summary.js`, `settings.js`, `patchNotes.js`.
+  - `ui/` — `render.js` (`renderAll()` and fishing-mode panels), `sprites.js` (fish sprite cache), `mobileNav.js` (mobile tab bar + header gold), `effects.js` (toasts, floating text, catch popups), `celebrations.js`, `album.js`, `summary.js`, `settings.js`, `patchNotes.js`.
   - `dev/` — `devConsole.js` (in-game dev console and its commands), `testCommands.js` (browser-console test commands and the `window.test*()` globals).
 - **New feature code goes in a new or matching module, not in `game.js`.** A new module needs: an `import` + entry in the `applyMixins` list in `game.js`, and its path in `ASSETS_TO_CACHE` in `sw.js` (otherwise the offline PWA breaks). Run `node scripts/check_modules.cjs` to verify the wiring (also catches a method defined in two modules).
 - **Methods marked "Sem chamadas no momento"** belong to features paused on purpose (magnet mode entry, Batiscafo/World 3 button). Keep them.
@@ -41,6 +41,10 @@ Then open `http://localhost:3000`. `start_game.bat` does the same (serves on por
 - **`sw.js` / `manifest.json`** — Service Worker (offline cache) and PWA manifest; bump the cache name/version in `sw.js` when shipping changes so installed PWAs pick up updates.
 - **`scripts/check_modules.cjs`** — module wiring check (see above).
 - **`scripts/generate_icons.cjs`** — Node script (run manually, not part of any build pipeline) that generates the PWA icon set in `icons/`.
+
+### Layout: desktop vs mobile
+
+Same DOM for both, no duplicated markup (code finds elements by id). At ≥1024px the `<main>` grid shows three columns (shop | scene | bucket). Below 1024px (`style.css`, "LAYOUT MOBILE") only one panel is shown at a time: the three panels carry `data-mpanel="loja|pescar|balde"`, `body[data-mobile-tab]` picks the visible one, and the `#mobile-nav` tab bar switches it via `setMobileTab()`. Elements with `.mobile-only` exist only in the mobile layout. Toasts and achievement popups go through `pushNotice()` (`ui/effects.js`), a single bottom stack (max 3), so they never overlap each other or the catch popup at the top of the lake. Minimum text size is 8px (Press Start 2P's native grid; smaller sizes blur).
 
 ### State & persistence
 

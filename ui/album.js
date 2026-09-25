@@ -35,7 +35,7 @@ export class AlbumMethods {
     if (discoveredSecret > 0) {
       if (badge) {
         badge.textContent = `${totalDiscovered}/${baseTotal}+`;
-        badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-red-300 bg-red-950 px-1.5 py-0.5 border border-red-800/80 animate-pulse shrink-0 whitespace-nowrap';
+        badge.className = 'min-w-[58px] text-center text-[8px] font-bold text-red-300 bg-red-950 px-1.5 py-0.5 border border-red-800/80 animate-pulse shrink-0 whitespace-nowrap';
       }
       if (progText) {
         progText.innerHTML = `<span class="text-red-400 font-bold">🌌 ${totalDiscovered}/${baseTotal} (+${discoveredSecret} SECRETO)</span>`;
@@ -48,7 +48,7 @@ export class AlbumMethods {
       const str = `${discoveredNormal}/${baseTotal}`;
       if (badge) {
         badge.textContent = str;
-        badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-cyan-300 bg-cyan-950 px-1.5 py-0.5 border border-cyan-800/80 shrink-0 whitespace-nowrap';
+        badge.className = 'min-w-[58px] text-center text-[8px] font-bold text-cyan-300 bg-cyan-950 px-1.5 py-0.5 border border-cyan-800/80 shrink-0 whitespace-nowrap';
       }
       if (progText) progText.textContent = `${str} (${Math.round((discoveredNormal/baseTotal)*100)}%)`;
       if (progBar) {
@@ -159,18 +159,18 @@ export class AlbumMethods {
 
       let timeBadge = '';
       if (fish.timeExclusive === 'day') {
-        timeBadge = '<span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-amber-300 border-amber-500/80 bg-amber-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">☀️ DIA</span>';
+        timeBadge = '<span class="text-[8px] font-bold px-1.5 py-0.5 border text-amber-300 border-amber-500/80 bg-amber-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">☀️ DIA</span>';
       } else if (fish.timeExclusive === 'sunset') {
-        timeBadge = '<span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-orange-300 border-orange-500/80 bg-orange-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">🌅 PÔR DO SOL</span>';
+        timeBadge = '<span class="text-[8px] font-bold px-1.5 py-0.5 border text-orange-300 border-orange-500/80 bg-orange-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">🌅 PÔR DO SOL</span>';
       } else if (fish.timeExclusive === 'night') {
-        timeBadge = '<span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-indigo-300 border-indigo-500/80 bg-indigo-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">🌙 NOITE</span>';
+        timeBadge = '<span class="text-[8px] font-bold px-1.5 py-0.5 border text-indigo-300 border-indigo-500/80 bg-indigo-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">🌙 NOITE</span>';
       }
 
       let biomeBadge = '';
       if (fish.biome) {
         const bInfo = WORLD2_BIOMES.find(b => b.id === fish.biome);
         if (bInfo) {
-          biomeBadge = `<span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-cyan-300 border-cyan-500/80 bg-cyan-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">${bInfo.icon} ${bInfo.shortName}</span>`;
+          biomeBadge = `<span class="text-[8px] font-bold px-1.5 py-0.5 border text-cyan-300 border-cyan-500/80 bg-cyan-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">${bInfo.icon} ${bInfo.shortName}</span>`;
         }
       }
 
@@ -185,9 +185,9 @@ export class AlbumMethods {
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="text-[10px] sm:text-[11px] font-bold ${isDiscovered ? (isSecretCard ? 'text-red-300' : 'text-slate-100') : 'text-slate-500'} leading-tight break-words" style="font-family:var(--font-pixel);"><span class="text-slate-400 font-normal">#${fish.numId || '?'}</span> ${isDiscovered ? fish.name : '???'}</span>
               ${isSecretCard ? `
-                <span class="text-[7.5px] sm:text-[8px] font-bold px-1.5 py-0.5 border text-red-300 border-red-500/80 bg-red-950/90 shrink-0 whitespace-nowrap shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" style="font-family:var(--font-pixel);">🌌 SECRETO</span>
+                <span class="text-[8px] font-bold px-1.5 py-0.5 border text-red-300 border-red-500/80 bg-red-950/90 shrink-0 whitespace-nowrap shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" style="font-family:var(--font-pixel);">🌌 SECRETO</span>
               ` : `
-                <span class="text-[7.5px] sm:text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${isDiscovered ? r.color : '#64748b'};border-color:${isDiscovered ? r.border : '#334155'};background:rgba(0,0,0,0.5);">${r.label}</span>
+                <span class="text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${isDiscovered ? r.color : '#64748b'};border-color:${isDiscovered ? r.border : '#334155'};background:rgba(0,0,0,0.5);">${r.label}</span>
                 ${timeBadge}
                 ${biomeBadge}
               `}
@@ -204,10 +204,10 @@ export class AlbumMethods {
 
               <!-- Registro de Auras Místicas Descobertas -->
               <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtBloodMoon ? 'border-red-500 bg-red-950/90 text-red-300 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtBloodMoon ? 'Capturado com Aura da Lua Sangrenta (+15% Ouro, +15% Sorte)' : 'Ainda não capturado com Aura da Lua Sangrenta'}">
+                <span class="text-[8px] font-bold px-1.5 py-0.5 border ${data.caughtBloodMoon ? 'border-red-500 bg-red-950/90 text-red-300 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtBloodMoon ? 'Capturado com Aura da Lua Sangrenta (+15% Ouro, +15% Sorte)' : 'Ainda não capturado com Aura da Lua Sangrenta'}">
                   🩸 ${data.caughtBloodMoon ? 'LUA SANGRENTA' : 'LUA SANGRENTA (?)'}
                 </span>
-                <span class="text-[7px] sm:text-[7.5px] font-bold px-1.5 py-0.5 border ${data.caughtEclipse ? 'border-red-700 bg-black/95 text-red-400 shadow-[0_0_8px_rgba(185,28,28,0.6)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtEclipse ? 'Capturado com Aura do Eclipse (+15% Vel. Pesca, +15% Pesca Dupla)' : 'Ainda não capturado com Aura do Eclipse'}">
+                <span class="text-[8px] font-bold px-1.5 py-0.5 border ${data.caughtEclipse ? 'border-red-700 bg-black/95 text-red-400 shadow-[0_0_8px_rgba(185,28,28,0.6)]' : 'border-slate-800 bg-slate-950/80 text-slate-600'} shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);" title="${data.caughtEclipse ? 'Capturado com Aura do Eclipse (+15% Vel. Pesca, +15% Pesca Dupla)' : 'Ainda não capturado com Aura do Eclipse'}">
                   🌑 ${data.caughtEclipse ? 'ECLIPSE' : 'ECLIPSE (?)'}
                 </span>
               </div>

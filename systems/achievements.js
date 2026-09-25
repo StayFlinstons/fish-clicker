@@ -31,7 +31,7 @@ export class AchievementMethods {
 
   showAchievementToast(ach) {
     const toast = document.createElement('div');
-    toast.className = 'fixed top-4 right-4 z-50 p-3 bg-slate-900 border-2 border-amber-400 text-amber-300 flex items-center gap-3 transition-all duration-300 transform translate-y-[-20px] opacity-0';
+    toast.className = 'p-3 bg-slate-900 border-2 border-amber-400 text-amber-300 flex items-center gap-3 text-left';
     toast.style.fontFamily = 'var(--font-pixel)';
     toast.style.boxShadow = '4px 4px 0 #000';
     toast.style.maxWidth = '320px';
@@ -47,17 +47,7 @@ export class AchievementMethods {
       </div>
     `;
 
-    document.body.appendChild(toast);
-    requestAnimationFrame(() => {
-      toast.style.transform = 'translateY(0)';
-      toast.style.opacity = '1';
-    });
-
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(-20px)';
-      setTimeout(() => toast.remove(), 300);
-    }, 4000);
+    this.pushNotice(toast, 4000);
   }
 
   updateAchievementsBadge() {
@@ -124,7 +114,7 @@ export class AchievementMethods {
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between gap-1.5">
               <h4 class="text-[9px] sm:text-[10px] font-bold ${isUnlocked ? 'text-amber-300' : 'text-slate-400'} leading-snug break-words" style="font-family:var(--font-pixel);">${ach.title}</h4>
-              <span class="text-[7px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap ${
+              <span class="text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap ${
                 isUnlocked
                   ? 'border-emerald-600 bg-emerald-950 text-emerald-300'
                   : 'border-slate-800 bg-slate-900 text-slate-500'

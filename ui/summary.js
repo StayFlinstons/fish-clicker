@@ -151,52 +151,52 @@ export class SummaryMethods {
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div class="bg-cyan-950/40 border-2 border-cyan-500/80 p-2 shadow-[2px_2px_0_#000] flex flex-col justify-between">
           <div class="flex items-center justify-between text-cyan-400">
-            <span class="text-[7.5px] font-bold" style="font-family:var(--font-pixel);">TOTAL PESCADO</span>
+            <span class="text-[8px] font-bold" style="font-family:var(--font-pixel);">TOTAL PESCADO</span>
             ${pxlRod}
           </div>
           <div class="text-base sm:text-lg font-bold text-white font-mono my-1 tracking-tight">
             ${(this.totalCatches || 0).toLocaleString('pt-BR')}
           </div>
-          <div class="text-[6.5px] text-cyan-300/80" style="font-family:var(--font-pixel);">
+          <div class="text-[8px] text-cyan-300/80" style="font-family:var(--font-pixel);">
             ${totalCatalogedSpecies}/${totalSpeciesInGame} espécies descobertas
           </div>
         </div>
 
         <div class="bg-amber-950/40 border-2 border-amber-500/80 p-2 shadow-[2px_2px_0_#000] flex flex-col justify-between">
           <div class="flex items-center justify-between text-amber-400">
-            <span class="text-[7.5px] font-bold" style="font-family:var(--font-pixel);">OURO TOTAL</span>
+            <span class="text-[8px] font-bold" style="font-family:var(--font-pixel);">OURO TOTAL</span>
             ${pxlCoin}
           </div>
           <div class="text-base sm:text-lg font-bold text-amber-300 font-mono my-1 tracking-tight">
             ${(this.totalGoldEarned || 0).toLocaleString('pt-BR')}G
           </div>
-          <div class="text-[6.5px] text-amber-200/80" style="font-family:var(--font-pixel);">
+          <div class="text-[8px] text-amber-200/80" style="font-family:var(--font-pixel);">
             No bolso: ${(this.gold || 0).toLocaleString('pt-BR')}G
           </div>
         </div>
 
         <div class="bg-yellow-950/40 border-2 border-yellow-500/80 p-2 shadow-[2px_2px_0_#000] flex flex-col justify-between">
           <div class="flex items-center justify-between text-yellow-400">
-            <span class="text-[7.5px] font-bold" style="font-family:var(--font-pixel);">PEIXES DOURADOS</span>
+            <span class="text-[8px] font-bold" style="font-family:var(--font-pixel);">PEIXES DOURADOS</span>
             ${pxlSparkle}
           </div>
           <div class="text-base sm:text-lg font-bold text-yellow-300 font-mono my-1 tracking-tight">
             ${(this.goldenFishCatches || 0).toLocaleString('pt-BR')}
           </div>
-          <div class="text-[6.5px] text-yellow-200/80" style="font-family:var(--font-pixel);">
+          <div class="text-[8px] text-yellow-200/80" style="font-family:var(--font-pixel);">
             Frenesis de ouro ativados
           </div>
         </div>
 
         <div class="bg-red-950/40 border-2 border-red-500/80 p-2 shadow-[2px_2px_0_#000] flex flex-col justify-between">
           <div class="flex items-center justify-between text-red-400">
-            <span class="text-[7.5px] font-bold" style="font-family:var(--font-pixel);">LUA SANGRENTA</span>
+            <span class="text-[8px] font-bold" style="font-family:var(--font-pixel);">LUA SANGRENTA</span>
             ${pxlBloodFish}
           </div>
           <div class="text-base sm:text-lg font-bold text-red-400 font-mono my-1 tracking-tight">
             ${(this.bloodMoonFishCatches || 0).toLocaleString('pt-BR')}
           </div>
-          <div class="text-[6.5px] text-red-300/80" style="font-family:var(--font-pixel);">
+          <div class="text-[8px] text-red-300/80" style="font-family:var(--font-pixel);">
             Peixes da Lua Sangrenta fisgados
           </div>
         </div>
@@ -208,7 +208,7 @@ export class SummaryMethods {
           <span class="text-[8.5px] font-bold text-cyan-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
             ${pxlFish} RECORDES DE CAPTURA
           </span>
-          <span class="text-[7px] text-slate-400" style="font-family:var(--font-pixel);">Maior peso e espécies mais pescadas</span>
+          <span class="text-[8px] text-slate-400" style="font-family:var(--font-pixel);">Maior peso e espécies mais pescadas</span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -218,13 +218,13 @@ export class SummaryMethods {
               ${biggestFish ? `<img src="${this.getFishSpriteURL(biggestFish.def.icon)}" class="w-10 h-10 object-contain" style="image-rendering:pixelated;" alt="${biggestFish.def.name}">` : '<span class="text-slate-600 text-lg">?</span>'}
             </div>
             <div class="min-w-0 flex-1">
-              <div class="text-[6.5px] text-slate-400 uppercase tracking-wider" style="font-family:var(--font-pixel);">MAIOR PEIXE FISGADO</div>
+              <div class="text-[8px] text-slate-400 uppercase tracking-wider" style="font-family:var(--font-pixel);">MAIOR PEIXE FISGADO</div>
               <div class="text-[8.5px] font-bold text-slate-200 truncate" style="font-family:var(--font-pixel);">
                 ${biggestFish ? biggestFish.def.name : 'Nenhum peixe ainda'}
               </div>
               <div class="flex items-center gap-1.5 mt-0.5">
                 <span class="text-[8.5px] font-mono font-bold text-amber-300">${biggestFish ? biggestFish.maxWeight.toFixed(2) + ' kg' : '0.00 kg'}</span>
-                ${biggestFish ? `<span class="text-[6.5px] font-bold px-1 py-0.2" style="font-family:var(--font-pixel); background-color:${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).color}22; color:${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).color}; border:1px solid ${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).color}66;">${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).label}</span>` : ''}
+                ${biggestFish ? `<span class="text-[8px] font-bold px-1 py-0.2" style="font-family:var(--font-pixel); background-color:${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).color}22; color:${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).color}; border:1px solid ${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).color}66;">${(RARITIES[biggestFish.def.rarity] || RARITIES.COMUM).label}</span>` : ''}
               </div>
             </div>
           </div>
@@ -235,20 +235,20 @@ export class SummaryMethods {
               ${mostCaughtFish ? `<img src="${this.getFishSpriteURL(mostCaughtFish.def.icon)}" class="w-10 h-10 object-contain" style="image-rendering:pixelated;" alt="${mostCaughtFish.def.name}">` : '<span class="text-slate-600 text-lg">?</span>'}
             </div>
             <div class="min-w-0 flex-1">
-              <div class="text-[6.5px] text-slate-400 uppercase tracking-wider" style="font-family:var(--font-pixel);">ESPÉCIE MAIS FREQUENTE</div>
+              <div class="text-[8px] text-slate-400 uppercase tracking-wider" style="font-family:var(--font-pixel);">ESPÉCIE MAIS FREQUENTE</div>
               <div class="text-[8.5px] font-bold text-slate-200 truncate" style="font-family:var(--font-pixel);">
                 ${mostCaughtFish ? mostCaughtFish.def.name : 'Nenhum peixe ainda'}
               </div>
               <div class="flex items-center gap-1.5 mt-0.5">
                 <span class="text-[8.5px] font-mono font-bold text-cyan-300">${mostCaughtFish ? mostCaughtFish.count.toLocaleString('pt-BR') + ' capturas' : '0'}</span>
-                ${mostCaughtFish ? `<span class="text-[6.5px] font-bold px-1 py-0.2" style="font-family:var(--font-pixel); background-color:${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).color}22; color:${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).color}; border:1px solid ${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).color}66;">${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).label}</span>` : ''}
+                ${mostCaughtFish ? `<span class="text-[8px] font-bold px-1 py-0.2" style="font-family:var(--font-pixel); background-color:${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).color}22; color:${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).color}; border:1px solid ${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).color}66;">${(RARITIES[mostCaughtFish.def.rarity] || RARITIES.COMUM).label}</span>` : ''}
               </div>
             </div>
           </div>
         </div>
 
         <!-- Capacidade de Armazenamento -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 border-t border-slate-800/80 text-[7.5px]" style="font-family:var(--font-pixel);">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 border-t border-slate-800/80 text-[8px]" style="font-family:var(--font-pixel);">
           <div class="bg-slate-900/60 p-1.5 border border-slate-800 flex items-center justify-between">
             <span class="text-slate-400">Balde Atual:</span>
             <span class="font-mono text-cyan-300 font-bold">${this.inventory.length} / ${this.getMaxInventory()}</span>
@@ -270,20 +270,20 @@ export class SummaryMethods {
           <span class="text-[8.5px] font-bold text-amber-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
             ${pxlChart} DISTRIBUIÇÃO POR RARIDADE
           </span>
-          <span class="text-[7px] text-slate-400" style="font-family:var(--font-pixel);">Total de capturas por escalão</span>
+          <span class="text-[8px] text-slate-400" style="font-family:var(--font-pixel);">Total de capturas por escalão</span>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
           ${Object.entries(RARITIES).map(([key, r]) => {
             const count = rarityCounts[key] || 0;
             return `
               <div class="bg-slate-900 border p-1.5 flex flex-col justify-between" style="border-color:${r.color}55;">
-                <div class="text-[6.5px] font-bold uppercase truncate" style="font-family:var(--font-pixel); color:${r.color};">
+                <div class="text-[8px] font-bold uppercase truncate" style="font-family:var(--font-pixel); color:${r.color};">
                   ${r.label}
                 </div>
                 <div class="text-[10px] font-mono font-bold text-white my-0.5">
                   ${count.toLocaleString('pt-BR')}
                 </div>
-                <div class="text-[6px] text-slate-500" style="font-family:var(--font-pixel);">
+                <div class="text-[8px] text-slate-500" style="font-family:var(--font-pixel);">
                   ${this.totalCatches > 0 ? Math.round((count / this.totalCatches) * 100) : 0}% do total
                 </div>
               </div>
@@ -298,27 +298,27 @@ export class SummaryMethods {
           <span class="text-[8.5px] font-bold text-emerald-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
             ${pxlFinances} RENDIMENTO & FINANÇAS
           </span>
-          <span class="text-[7px] text-slate-400" style="font-family:var(--font-pixel);">Fluxo de caixa e automações</span>
+          <span class="text-[8px] text-slate-400" style="font-family:var(--font-pixel);">Fluxo de caixa e automações</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[8px]" style="font-family:var(--font-pixel);">
           <div class="bg-slate-900 border border-slate-800 p-2">
-            <div class="text-slate-400 text-[7px]">MÉDIA POR CAPTURA</div>
+            <div class="text-slate-400 text-[8px]">MÉDIA POR CAPTURA</div>
             <div class="text-[11px] font-mono font-bold text-amber-300 mt-1">${avgGoldPerCatch.toLocaleString('pt-BR')}G</div>
-            <div class="text-[6.5px] text-slate-500 mt-0.5">Considerando bônus & auras</div>
+            <div class="text-[8px] text-slate-500 mt-0.5">Considerando bônus & auras</div>
           </div>
           <div class="bg-slate-900 border border-slate-800 p-2">
-            <div class="text-slate-400 text-[7px]">PESCA AUTOMÁTICA</div>
+            <div class="text-slate-400 text-[8px]">PESCA AUTOMÁTICA</div>
             <div class="text-[10px] font-bold ${this.autoFisherEnabled ? 'text-emerald-400' : 'text-red-400'} mt-1">
               ${this.autoFisherEnabled ? '● HABILITADA' : '○ DESATIVADA'}
             </div>
-            <div class="text-[6.5px] text-slate-500 mt-0.5">Nível ${this.upgradeLevels?.auto_pescador || 0}</div>
+            <div class="text-[8px] text-slate-500 mt-0.5">Nível ${this.upgradeLevels?.auto_pescador || 0}</div>
           </div>
           <div class="bg-slate-900 border border-slate-800 p-2">
-            <div class="text-slate-400 text-[7px]">VENDA AUTOMÁTICA</div>
+            <div class="text-slate-400 text-[8px]">VENDA AUTOMÁTICA</div>
             <div class="text-[10px] font-bold ${this.autoSellerEnabled ? 'text-emerald-400' : 'text-red-400'} mt-1">
               ${this.autoSellerEnabled ? '● HABILITADA' : '○ DESATIVADA'}
             </div>
-            <div class="text-[6.5px] text-slate-500 mt-0.5">${(this.autoSellFilter || []).join(', ') || 'Nenhum'}</div>
+            <div class="text-[8px] text-slate-500 mt-0.5">${(this.autoSellFilter || []).join(', ') || 'Nenhum'}</div>
           </div>
         </div>
       </div>
@@ -329,33 +329,33 @@ export class SummaryMethods {
           <span class="text-[8.5px] font-bold text-purple-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
             ${pxlTrophy} PROGRESSÃO & SANTUÁRIO MÍSTICO
           </span>
-          <span class="text-[7px] text-slate-400" style="font-family:var(--font-pixel);">Metas permanentes</span>
+          <span class="text-[8px] text-slate-400" style="font-family:var(--font-pixel);">Metas permanentes</span>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[7.5px]" style="font-family:var(--font-pixel);">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[8px]" style="font-family:var(--font-pixel);">
           <div class="bg-slate-900 border border-slate-800 p-2">
-            <div class="text-slate-400 text-[6.5px]">SALA DE TROFÉUS</div>
+            <div class="text-slate-400 text-[8px]">SALA DE TROFÉUS</div>
             <div class="text-[10px] font-mono font-bold text-amber-300 mt-0.5">${unlockedAchCount} / ${totalAchievements}</div>
-            <div class="text-[6.5px] text-slate-500">${Math.round((unlockedAchCount / totalAchievements) * 100)}% concluído</div>
+            <div class="text-[8px] text-slate-500">${Math.round((unlockedAchCount / totalAchievements) * 100)}% concluído</div>
           </div>
           <div class="bg-slate-900 border border-slate-800 p-2">
-            <div class="text-slate-400 text-[6.5px]">OLHOS DE PEIXE</div>
+            <div class="text-slate-400 text-[8px]">OLHOS DE PEIXE</div>
             <div class="text-[10px] font-mono font-bold text-cyan-300 mt-0.5">${this.fishEyesCount || 0} / ${this.fishEyesTotal || 0}</div>
-            <div class="text-[6.5px] text-slate-500">Disponíveis / Despertados</div>
+            <div class="text-[8px] text-slate-500">Disponíveis / Despertados</div>
           </div>
           <div class="bg-slate-900 border border-slate-800 p-2">
-            <div class="text-slate-400 text-[6.5px]">OFERENDAS SANTUÁRIO</div>
+            <div class="text-slate-400 text-[8px]">OFERENDAS SANTUÁRIO</div>
             <div class="text-[10px] font-mono font-bold text-purple-300 mt-0.5">Ciclo ${this.offeringCycle || 1}</div>
-            <div class="text-[6.5px] text-slate-500">${Object.keys(this.speciesDonations || {}).length} espécies doadas</div>
+            <div class="text-[8px] text-slate-500">${Object.keys(this.speciesDonations || {}).length} espécies doadas</div>
           </div>
           <div class="bg-slate-900 border border-slate-800 p-2">
-            <div class="text-slate-400 text-[6.5px]">ALTAR DAS ALMAS</div>
+            <div class="text-slate-400 text-[8px]">ALTAR DAS ALMAS</div>
             <div class="text-[10px] font-mono font-bold text-red-400 mt-0.5">${this.sacrificedFishCount || 0} / 15</div>
-            <div class="text-[6.5px] text-slate-500">${this.chapter1Completed ? 'Portal Ativado!' : 'Em andamento'}</div>
+            <div class="text-[8px] text-slate-500">${this.chapter1Completed ? 'Portal Ativado!' : 'Em andamento'}</div>
           </div>
         </div>
 
         <!-- Linha de Expedição Atual -->
-        <div class="bg-slate-900/90 border border-slate-800 p-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[7.5px]" style="font-family:var(--font-pixel);">
+        <div class="bg-slate-900/90 border border-slate-800 p-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[8px]" style="font-family:var(--font-pixel);">
           <div class="flex items-center gap-2">
             <span class="text-cyan-400 flex items-center gap-1">${pxlCompass} LOCALIZAÇÃO:</span>
             <span class="text-slate-200">${locationDetail}</span>

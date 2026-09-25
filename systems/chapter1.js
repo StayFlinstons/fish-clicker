@@ -40,13 +40,13 @@ export class Chapter1Methods {
 
     if (this.chapter1Completed) {
       badge.textContent = 'PORTAL ATIVO';
-      badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-cyan-300 bg-cyan-950 px-1.5 py-0.5 border border-cyan-800/80 animate-pulse shrink-0 whitespace-nowrap';
+      badge.className = 'min-w-[58px] text-center text-[8px] font-bold text-cyan-300 bg-cyan-950 px-1.5 py-0.5 border border-cyan-800/80 animate-pulse shrink-0 whitespace-nowrap';
     } else {
       const hasRod = this.unlockedRods.includes('vara_travessia');
       const hasBait = this.unlockedBaits.includes('essencia_travessia');
       const progress = (hasRod ? 1 : 0) + (hasBait ? 1 : 0);
       badge.textContent = progress > 0 ? `CAP. 1 (${progress}/2)` : 'CAP. 1';
-      badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-purple-300 bg-purple-950 px-1.5 py-0.5 border border-purple-800/80 shrink-0 whitespace-nowrap';
+      badge.className = 'min-w-[58px] text-center text-[8px] font-bold text-purple-300 bg-purple-950 px-1.5 py-0.5 border border-purple-800/80 shrink-0 whitespace-nowrap';
     }
   }
 
@@ -166,7 +166,7 @@ export class Chapter1Methods {
           <div class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border-2 ${isFilled ? 'bg-purple-950 border-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.7)]' : 'bg-slate-950 border-slate-800 opacity-50'}">
             ${isFilled 
               ? `<svg class="w-4 h-4 drop-shadow-[0_0_4px_#f43f5e]" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="4" y="1" width="2" height="1" fill="#fbcfe8"/><rect x="3" y="2" width="4" height="2" fill="#f43f5e"/><rect x="2" y="4" width="6" height="3" fill="#e11d48"/><rect x="3" y="7" width="4" height="1" fill="#9f1239"/><rect x="4" y="8" width="2" height="1" fill="#881337"/><rect x="4" y="3" width="2" height="3" fill="#ffffff"/></svg>`
-              : `<span class="text-[7px] text-slate-600 font-bold">✧</span>`
+              : `<span class="text-[8px] text-slate-600 font-bold">✧</span>`
             }
           </div>
         `;

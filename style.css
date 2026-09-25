@@ -22,11 +22,87 @@ html, body { height: 100%; overflow: hidden; }
   }
 }
 
-/* Mobile: permite scroll vertical natural */
-@media (max-width: 1023px) {
-  html, body { overflow-y: auto; height: auto; }
-  main { grid-template-rows: auto; }
+/* Elementos exclusivos do layout mobile (barra de abas, ouro no header) */
+@media (min-width: 1024px) {
+  .mobile-only { display: none !important; }
 }
+
+/* ── LAYOUT MOBILE (abaixo de 1024px) ──
+   Um painel por vez em tela cheia (Loja | Pescar | Balde), trocado pela barra de abas
+   #mobile-nav. Os painéis são os mesmos do desktop (mesmos ids), só a disposição muda.
+   A aba ativa vem de body[data-mobile-tab], definido por setMobileTab() em ui/mobileNav.js. */
+@media (max-width: 1023.98px) {
+  /* 100dvh: altura visível real (100vh inclui a área atrás da barra de endereço do navegador) */
+  body.h-screen { height: 100vh; height: 100dvh; }
+
+  main {
+    display: flex !important;
+    flex-direction: column;
+  }
+  main > [data-mpanel] {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  body[data-mobile-tab="pescar"] main > [data-mpanel]:not([data-mpanel="pescar"]),
+  body[data-mobile-tab="loja"]   main > [data-mpanel]:not([data-mpanel="loja"]),
+  body[data-mobile-tab="balde"]  main > [data-mpanel]:not([data-mpanel="balde"]) {
+    display: none !important;
+  }
+
+  #mobile-nav {
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Pilha de avisos (pushNotice em ui/effects.js) */
+#toast-stack {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  max-width: min(92vw, 420px);
+  pointer-events: none;
+}
+@media (max-width: 1023.98px) {
+  #toast-stack { bottom: calc(76px + env(safe-area-inset-bottom)); }
+}
+.toast-item {
+  max-width: 100%;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+.toast-item.is-shown { opacity: 1; transform: none; }
+
+.mobile-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 48px;
+  padding: 4px 2px;
+  font-size: 8px;
+  color: #64748b;
+  background: #0f172a;
+  border: 2px solid #1e293b;
+  cursor: pointer;
+}
+.mobile-tab-btn b { font-weight: bold; color: #22d3ee; }
+.mobile-tab-btn.is-active {
+  color: #f1f5f9;
+  background: #1e293b;
+  border-color: #06b6d4;
+  box-shadow: 2px 2px 0 #000;
+}
+.mobile-tab-btn.is-full b { color: #f87171; animation: mobile-bucket-full 1s ease-in-out infinite; }
+@keyframes mobile-bucket-full { 50% { opacity: 0.35; } }
 
 body {
   font-family: var(--font-pixel);

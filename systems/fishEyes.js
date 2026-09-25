@@ -118,9 +118,9 @@ export class FishEyesMethods {
       const count = this.fishEyesCount || 0;
       badge.textContent = `${count} ${count === 1 ? 'OLHO' : 'OLHOS'}`;
       if (count > 0) {
-        badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-amber-300 bg-amber-950 px-1.5 py-0.5 border border-amber-800/80 animate-pulse shrink-0 whitespace-nowrap';
+        badge.className = 'min-w-[58px] text-center text-[8px] font-bold text-amber-300 bg-amber-950 px-1.5 py-0.5 border border-amber-800/80 animate-pulse shrink-0 whitespace-nowrap';
       } else {
-        badge.className = 'min-w-[58px] text-center text-[7px] font-bold text-cyan-300 bg-cyan-950 px-1.5 py-0.5 border border-cyan-800/80 shrink-0 whitespace-nowrap';
+        badge.className = 'min-w-[58px] text-center text-[8px] font-bold text-cyan-300 bg-cyan-950 px-1.5 py-0.5 border border-cyan-800/80 shrink-0 whitespace-nowrap';
       }
     }
   }
@@ -224,9 +224,9 @@ export class FishEyesMethods {
     const tabBtn = document.getElementById('tab-btn-fe-offering');
     if (tabBtn) {
       if (isOfferingUnlocked) {
-        tabBtn.innerHTML = `<span>🏺</span> OFERENDA DE ESPÉCIES <span id="fe-offering-tab-badge" class="px-1 py-0.2 bg-amber-950 text-amber-300 text-[6.5px] border border-amber-600/80 font-mono">${donatedCount}/${total}</span>`;
+        tabBtn.innerHTML = `<span>🏺</span> OFERENDA DE ESPÉCIES <span id="fe-offering-tab-badge" class="px-1 py-0.2 bg-amber-950 text-amber-300 text-[8px] border border-amber-600/80 font-mono">${donatedCount}/${total}</span>`;
       } else {
-        tabBtn.innerHTML = `<span>🔒</span> OFERENDAS <span class="px-1 py-0.2 bg-pink-950 text-pink-300 text-[6.5px] border border-pink-700/80 font-mono">MÍTICO</span>`;
+        tabBtn.innerHTML = `<span>🔒</span> OFERENDAS <span class="px-1 py-0.2 bg-pink-950 text-pink-300 text-[8px] border border-pink-700/80 font-mono">MÍTICO</span>`;
       }
     }
 
@@ -289,7 +289,7 @@ export class FishEyesMethods {
             <div class="min-w-0 flex-1">
               <div class="text-[8.5px] sm:text-[9px] font-bold text-slate-100 leading-tight line-clamp-2" title="${fish.name}">${fish.name}</div>
               <div class="flex items-center gap-1.5 mt-1">
-                <span class="text-[6.5px] uppercase font-bold tracking-wider px-1 py-0.5 border" style="color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
+                <span class="text-[8px] uppercase font-bold tracking-wider px-1 py-0.5 border" style="color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
               </div>
             </div>
           </div>
@@ -297,10 +297,10 @@ export class FishEyesMethods {
           <!-- Lado Direito: Ação / Status -->
           <div class="shrink-0 flex items-center justify-end pl-1">
             ${isDonated 
-              ? '<span class="px-2.5 py-1.5 text-[7px] sm:text-[7.5px] font-bold text-emerald-300 bg-emerald-950/90 border border-emerald-400 whitespace-nowrap shadow-[0_0_8px_rgba(16,185,129,0.3)]">✓ ENTREGUE</span>' 
+              ? '<span class="px-2.5 py-1.5 text-[8px] font-bold text-emerald-300 bg-emerald-950/90 border border-emerald-400 whitespace-nowrap shadow-[0_0_8px_rgba(16,185,129,0.3)]">✓ ENTREGUE</span>' 
               : (hasInBucket 
                   ? `<button onclick="window.game.donateFish('${fish.id}')" class="pixel-btn px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-[8px] cursor-pointer whitespace-nowrap shadow-[0_0_8px_rgba(245,158,11,0.4)] transition-transform active:scale-95">DOAR</button>` 
-                  : '<span class="px-2 py-1.5 text-[6.5px] sm:text-[7px] font-bold text-slate-400 bg-slate-950 border border-slate-800 whitespace-nowrap">FALTA PESCAR</span>'
+                  : '<span class="px-2 py-1.5 text-[8px] font-bold text-slate-400 bg-slate-950 border border-slate-800 whitespace-nowrap">FALTA PESCAR</span>'
                 )
             }
           </div>

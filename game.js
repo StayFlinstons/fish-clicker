@@ -24,6 +24,7 @@ import { AchievementMethods } from './systems/achievements.js';
 import { EventMethods } from './systems/events.js';
 import { RenderMethods } from './ui/render.js';
 import { SpriteMethods } from './ui/sprites.js';
+import { MobileNavMethods } from './ui/mobileNav.js';
 import { EffectMethods } from './ui/effects.js';
 import { CelebrationMethods } from './ui/celebrations.js';
 import { AlbumMethods } from './ui/album.js';
@@ -139,6 +140,7 @@ class FishingGame {
     this.lastAutoFishTime = 0;
     this.activeTab = 'varas';
     this.invTab = 'inventory';
+    this.mobileTab = 'pescar'; // aba do layout mobile: 'loja' | 'pescar' | 'balde'
     this.waterRenderer = null;
 
     // Peixe Dourado (Evento Rápido) & buffs temporários
@@ -177,6 +179,7 @@ class FishingGame {
 
   init() {
     this.loadGame();
+    this.setMobileTab('pescar', true);
     this.applySettings();
     this.initPixelArt();
     this.initTimeOfDay();
@@ -442,6 +445,7 @@ applyMixins(FishingGame, [
   EventMethods,
   RenderMethods,
   SpriteMethods,
+  MobileNavMethods,
   EffectMethods,
   CelebrationMethods,
   AlbumMethods,

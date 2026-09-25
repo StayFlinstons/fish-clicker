@@ -27,9 +27,9 @@ export class EffectMethods {
     const isDouble = buffsList.length === 2;
     const auraClass = fish.specialAura === 'lua_sangrenta' ? 'aura-lua-sangrenta' : (fish.specialAura === 'eclipse' ? 'aura-eclipse' : '');
     const auraBadge = fish.specialAura === 'lua_sangrenta' 
-      ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel); box-shadow: 0 0 8px rgba(239,68,68,0.7);">🩸 LUA SANGRENTA</span>'
+      ? '<span class="text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel); box-shadow: 0 0 8px rgba(239,68,68,0.7);">🩸 LUA SANGRENTA</span>'
       : (fish.specialAura === 'eclipse' 
-        ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-red-700 bg-black/90 text-red-400 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel); box-shadow: 0 0 10px rgba(185,28,28,0.8);">🌑 ECLIPSE</span>' 
+        ? '<span class="text-[8px] font-bold px-1 py-0.5 border border-red-700 bg-black/90 text-red-400 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel); box-shadow: 0 0 10px rgba(185,28,28,0.8);">🌑 ECLIPSE</span>' 
         : '');
 
     const card = document.createElement('div');
@@ -45,7 +45,7 @@ export class EffectMethods {
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="text-[8px] font-bold px-1 py-0.5 border" style="font-family:var(--font-pixel);color:${r.color};border-color:${r.border};background:rgba(0,0,0,0.4);">${r.label}</span>
           ${auraBadge}
-          ${isTriple ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel);">🔥 BUFF TRIPLO!</span>' : (isDouble ? '<span class="text-[7px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel);">★ BUFF DUPLO!</span>' : '')}
+          ${isTriple ? '<span class="text-[8px] font-bold px-1 py-0.5 border border-red-500 bg-red-950/90 text-red-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel);">🔥 BUFF TRIPLO!</span>' : (isDouble ? '<span class="text-[8px] font-bold px-1 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 animate-pulse whitespace-nowrap" style="font-family:var(--font-pixel);">★ BUFF DUPLO!</span>' : '')}
           <span class="text-[8px] text-slate-400" style="font-family:var(--font-pixel);">${fish.weight}kg</span>
         </div>
         <h3 class="text-[11px] font-bold ${isTriple ? 'text-red-300' : 'text-slate-100'} mt-0.5" style="font-family:var(--font-pixel);">${fish.name}</h3>
@@ -70,28 +70,39 @@ export class EffectMethods {
     setTimeout(() => el.remove(), 1100);
   }
 
+  // Pilha única de avisos no rodapé (acima da barra de abas no celular): toasts e conquistas
+  // entram em fila, no máximo 3 visíveis, sem se sobrepor nem cobrir o topo do lago.
+  pushNotice(el, durationMs = 2500) {
+    let stack = document.getElementById('toast-stack');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = 'toast-stack';
+      document.body.appendChild(stack);
+    }
+    while (stack.children.length >= 3) stack.firstElementChild.remove();
+    el.classList.add('toast-item');
+    stack.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('is-shown'));
+    setTimeout(() => {
+      el.classList.remove('is-shown');
+      setTimeout(() => el.remove(), 300);
+    }, durationMs);
+  }
+
   showToast(msg, type = 'info') {
     const bgMap = {
       error: 'bg-red-950/95 border-red-500 text-red-200',
       warning: 'bg-amber-950/95 border-amber-500 text-amber-200',
       success: 'bg-emerald-950/95 border-emerald-400 text-emerald-100',
-      info: 'bg-slate-900/95 border-cyan-500 text-cyan-200'
+      info: 'bg-slate-900/95 border-cyan-500 text-cyan-200',
+      special: 'bg-purple-950/95 border-purple-400 text-purple-100',
+      legendary: 'bg-amber-900/95 border-yellow-300 text-yellow-100'
     };
     const t = document.createElement('div');
-    t.className = `fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-4 py-2 border-2 ${bgMap[type] || bgMap.info} text-[10px] transition-all duration-300 -translate-y-3 opacity-0 text-center`;
+    t.className = `px-4 py-2 border-2 ${bgMap[type] || bgMap.info} text-[10px] text-center`;
     t.style.fontFamily = 'var(--font-pixel)';
     t.style.boxShadow = '4px 4px 0 #000';
-    t.style.maxWidth = '90vw';
     t.textContent = msg;
-    document.body.appendChild(t);
-    requestAnimationFrame(() => {
-      t.style.transform = 'translate(-50%, 0)';
-      t.style.opacity = '1';
-    });
-    setTimeout(() => {
-      t.style.opacity = '0';
-      t.style.transform = 'translate(-50%, -10px)';
-      setTimeout(() => t.remove(), 300);
-    }, 2500);
+    this.pushNotice(t, 2500);
   }
 }

@@ -237,12 +237,12 @@ export class World2Methods {
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between gap-1">
                 <h4 class="text-[8.5px] font-bold ${found ? 'text-cyan-300' : 'text-slate-400'} leading-tight truncate" style="font-family:var(--font-pixel);">${part.name}</h4>
-                <span class="text-[6.5px] font-bold px-1 py-0.5 border shrink-0 ${found ? 'bg-emerald-950 text-emerald-300 border-emerald-600' : 'bg-red-950 text-red-400 border-red-800'}" style="font-family:var(--font-pixel);">
+                <span class="text-[8px] font-bold px-1 py-0.5 border shrink-0 ${found ? 'bg-emerald-950 text-emerald-300 border-emerald-600' : 'bg-red-950 text-red-400 border-red-800'}" style="font-family:var(--font-pixel);">
                   ${found ? 'RESGATADO' : 'PERDIDO'}
                 </span>
               </div>
-              <p class="text-[7.5px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${part.desc}</p>
-              <div class="text-[6.5px] text-amber-400/90 mt-1 font-mono">Bioma: ${biome ? biome.shortName : '--'}</div>
+              <p class="text-[8px] text-slate-500 mt-1 leading-normal" style="font-family:var(--font-pixel);">${part.desc}</p>
+              <div class="text-[8px] text-amber-400/90 mt-1 font-mono">Bioma: ${biome ? biome.shortName : '--'}</div>
             </div>
           </div>
         `;

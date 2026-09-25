@@ -199,9 +199,9 @@ export class MagnetMethods {
       const btn = document.getElementById(`btn-scenario-${id}`);
       if (!btn) return;
       if (this.magnetScenario === id) {
-        btn.className = 'inline-flex items-center gap-1 px-2 py-0.5 text-[7px] sm:text-[7.5px] font-bold border transition-all cursor-pointer bg-slate-800 text-cyan-300 border-cyan-400 shadow-[1px_1px_0_#000]';
+        btn.className = 'inline-flex items-center gap-1 px-2 py-0.5 text-[8px] font-bold border transition-all cursor-pointer bg-slate-800 text-cyan-300 border-cyan-400 shadow-[1px_1px_0_#000]';
       } else {
-        btn.className = 'inline-flex items-center gap-1 px-2 py-0.5 text-[7px] sm:text-[7.5px] font-bold border transition-all cursor-pointer bg-slate-900 text-slate-400 border-transparent hover:text-slate-200';
+        btn.className = 'inline-flex items-center gap-1 px-2 py-0.5 text-[8px] font-bold border transition-all cursor-pointer bg-slate-900 text-slate-400 border-transparent hover:text-slate-200';
       }
     });
   }
@@ -241,7 +241,7 @@ export class MagnetMethods {
     if (!container) return;
 
     let html = `
-      <div class="bg-slate-950/80 p-2 border border-slate-800 text-[7.5px] text-slate-300 mb-2 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+      <div class="bg-slate-950/80 p-2 border border-slate-800 text-[8px] text-slate-300 mb-2 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
         ${PIXEL_ICONS.gear} <span>Use sucatas e minérios resgatados pelo ímã para forjar upgrades tecnológicos permanentes!</span>
       </div>
     `;
@@ -256,7 +256,7 @@ export class MagnetMethods {
         if (!hasEnough) canCraft = false;
         const item = MAGNET_ITEMS[matId];
         return `
-          <span class="inline-flex items-center gap-1 px-1.5 py-0.5 border text-[7px] font-bold ${hasEnough ? 'bg-emerald-950 text-emerald-300 border-emerald-600' : 'bg-red-950 text-red-300 border-red-800'}" style="font-family:var(--font-pixel);">
+          <span class="inline-flex items-center gap-1 px-1.5 py-0.5 border text-[8px] font-bold ${hasEnough ? 'bg-emerald-950 text-emerald-300 border-emerald-600' : 'bg-red-950 text-red-300 border-red-800'}" style="font-family:var(--font-pixel);">
             ${item ? getMagnetItemSpriteSVG(matId, 12) : ''} <span>${item ? item.name : matId}: ${curQty}/${reqQty}</span>
           </span>
         `;
@@ -271,9 +271,9 @@ export class MagnetMethods {
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between gap-1">
                 <h4 class="text-[8.5px] font-bold ${isCrafted ? 'text-emerald-300' : 'text-slate-200'} truncate" style="font-family:var(--font-pixel);">${recipe.name}</h4>
-                ${isCrafted ? '<span class="text-[6px] px-1 py-0.2 bg-emerald-950 text-emerald-300 border border-emerald-600 font-bold shrink-0" style="font-family:var(--font-pixel);">ATIVO</span>' : ''}
+                ${isCrafted ? '<span class="text-[8px] px-1 py-0.2 bg-emerald-950 text-emerald-300 border border-emerald-600 font-bold shrink-0" style="font-family:var(--font-pixel);">ATIVO</span>' : ''}
               </div>
-              <p class="text-[7px] text-slate-400 mt-0.5 leading-snug" style="font-family:var(--font-pixel);">${recipe.desc}</p>
+              <p class="text-[8px] text-slate-400 mt-0.5 leading-snug" style="font-family:var(--font-pixel);">${recipe.desc}</p>
             </div>
           </div>
 
@@ -283,10 +283,10 @@ export class MagnetMethods {
 
           <div class="pt-1 border-t border-slate-800/80 flex justify-end">
             ${isCrafted
-              ? '<span class="px-2.5 py-1 bg-emerald-950 text-emerald-300 border border-emerald-600 text-[7.5px] font-bold" style="font-family:var(--font-pixel);">✓ FORJADO</span>'
+              ? '<span class="px-2.5 py-1 bg-emerald-950 text-emerald-300 border border-emerald-600 text-[8px] font-bold" style="font-family:var(--font-pixel);">✓ FORJADO</span>'
               : `<button onclick="window.game.craftForgeUpgrade('${recipe.id}')"
                   ${canCraft ? '' : 'disabled'}
-                  class="pixel-btn w-full py-1.5 text-[7.5px] font-bold uppercase transition-all ${
+                  class="pixel-btn w-full py-1.5 text-[8px] font-bold uppercase transition-all ${
                     canCraft
                       ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-[1px_1px_0_#000] cursor-pointer animate-pulse'
                       : 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed opacity-60'
@@ -312,7 +312,7 @@ export class MagnetMethods {
     });
 
     let html = `
-      <div class="bg-slate-950/80 p-2 border border-slate-800 text-[7.5px] text-slate-300 flex items-center justify-between mb-2" style="font-family:var(--font-pixel);">
+      <div class="bg-slate-950/80 p-2 border border-slate-800 text-[8px] text-slate-300 flex items-center justify-between mb-2" style="font-family:var(--font-pixel);">
         <span class="inline-flex items-center gap-1.5">${PIXEL_ICONS.book} <span>Doe relíquias para bônus permanentes!</span></span>
         <span class="text-amber-300 font-bold bg-amber-950 px-1.5 py-0.5 border border-amber-600/60">${totalDonated}/21 Doadas</span>
       </div>
@@ -333,10 +333,10 @@ export class MagnetMethods {
               <span class="w-5 h-5 flex items-center justify-center shrink-0">${scenIcon}</span>
               <div>
                 <h4 class="text-[8.5px] font-bold ${isComplete ? 'text-amber-300' : 'text-slate-200'}" style="font-family:var(--font-pixel);">${col.name}</h4>
-                <p class="text-[6.5px] text-slate-400" style="font-family:var(--font-pixel);">${col.rewardDesc}</p>
+                <p class="text-[8px] text-slate-400" style="font-family:var(--font-pixel);">${col.rewardDesc}</p>
               </div>
             </div>
-            <span class="px-1.5 py-0.5 text-[7px] font-bold border ${isComplete ? 'bg-amber-950 text-amber-300 border-amber-500 animate-pulse' : 'bg-slate-900 text-slate-400 border-slate-700'}" style="font-family:var(--font-pixel);">
+            <span class="px-1.5 py-0.5 text-[8px] font-bold border ${isComplete ? 'bg-amber-950 text-amber-300 border-amber-500 animate-pulse' : 'bg-slate-900 text-slate-400 border-slate-700'}" style="font-family:var(--font-pixel);">
               ${donatedCount}/${col.itemIds.length} ${isComplete ? '★ ATIVO' : ''}
             </span>
           </div>
@@ -365,7 +365,7 @@ export class MagnetMethods {
     if (!container) return;
 
     let html = `
-      <div class="bg-slate-950/80 p-2 border border-slate-800 text-[7.5px] text-slate-300 mb-2 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+      <div class="bg-slate-950/80 p-2 border border-slate-800 text-[8px] text-slate-300 mb-2 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
         ${PIXEL_ICONS.magnet} <span>Tiers superiores são encontrados exclusivamente com chances raras pelo Mergulhador Amigo!</span>
       </div>
     `;
@@ -383,19 +383,19 @@ export class MagnetMethods {
             <div>
               <div class="flex items-center gap-1.5">
                 <h4 class="text-[8.5px] font-bold" style="font-family:var(--font-pixel); color:${t.color};">${t.name}</h4>
-                <span class="text-[6.5px] px-1 bg-slate-900 border text-slate-400" style="border-color:${t.borderColor}; font-family:var(--font-pixel);">T${t.tier}</span>
+                <span class="text-[8px] px-1 bg-slate-900 border text-slate-400" style="border-color:${t.borderColor}; font-family:var(--font-pixel);">T${t.tier}</span>
               </div>
-              <p class="text-[7px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Poder: <b class="text-amber-300">${t.power.toFixed(1)}x</b> | Puxada: ${t.pullSpeedSec}s</p>
-              <p class="text-[6.5px] text-slate-500 mt-0.5" style="font-family:var(--font-pixel);">${t.desc}</p>
+              <p class="text-[8px] text-slate-400 mt-0.5" style="font-family:var(--font-pixel);">Poder: <b class="text-amber-300">${t.power.toFixed(1)}x</b> | Puxada: ${t.pullSpeedSec}s</p>
+              <p class="text-[8px] text-slate-500 mt-0.5" style="font-family:var(--font-pixel);">${t.desc}</p>
             </div>
           </div>
 
           <div class="shrink-0 text-right">
             ${isCurrent
-              ? '<span class="px-2 py-1 bg-amber-950 text-amber-300 border border-amber-500 text-[7px] font-bold animate-pulse" style="font-family:var(--font-pixel);">★ EQUIPADO</span>'
+              ? '<span class="px-2 py-1 bg-amber-950 text-amber-300 border border-amber-500 text-[8px] font-bold animate-pulse" style="font-family:var(--font-pixel);">★ EQUIPADO</span>'
               : isUnlocked
-                ? '<span class="px-2 py-1 bg-slate-900 text-slate-400 border border-slate-700 text-[7px] font-bold" style="font-family:var(--font-pixel);">DESBLOQUEADO</span>'
-                : '<span class="px-1.5 py-0.5 bg-slate-950 text-slate-600 border border-slate-800 text-[6.5px]" style="font-family:var(--font-pixel);">BLOQUEADO</span>'
+                ? '<span class="px-2 py-1 bg-slate-900 text-slate-400 border border-slate-700 text-[8px] font-bold" style="font-family:var(--font-pixel);">DESBLOQUEADO</span>'
+                : '<span class="px-1.5 py-0.5 bg-slate-950 text-slate-600 border border-slate-800 text-[8px]" style="font-family:var(--font-pixel);">BLOQUEADO</span>'
             }
           </div>
         </div>
@@ -492,7 +492,7 @@ export class MagnetMethods {
       if (catchToast && this.settings.fishNotifications !== false) {
         const title = document.getElementById('magnet-catch-title');
         const desc = document.getElementById('magnet-catch-desc');
-        if (title) title.innerHTML = `<span class="inline-flex items-center gap-1.5 justify-center">${getMagnetItemSpriteSVG(caught.id, 18)} <span>${caught.name}</span> <span class="text-[7px] text-amber-400">(${caught.rarity.toUpperCase()})</span></span>`;
+        if (title) title.innerHTML = `<span class="inline-flex items-center gap-1.5 justify-center">${getMagnetItemSpriteSVG(caught.id, 18)} <span>${caught.name}</span> <span class="text-[8px] text-amber-400">(${caught.rarity.toUpperCase()})</span></span>`;
         if (desc) desc.textContent = `${caught.desc} | Venda: ${caught.sellValue}G`;
         catchToast.classList.remove('hidden');
         setTimeout(() => catchToast.classList.add('hidden'), 3500);
@@ -547,10 +547,10 @@ export class MagnetMethods {
           class="relative aspect-square bg-slate-900 border-2 flex flex-col items-center justify-center p-1 cursor-pointer transition-all hover:scale-105 select-none ${isSelected ? 'ring-2 ring-amber-400 bg-amber-950/40' : ''}"
           style="border-color: ${borderColor}; box-shadow: 2px 2px 0 #000;">
           <div class="flex items-center justify-center">${getMagnetItemSpriteSVG(item.id, 28)}</div>
-          <span class="absolute bottom-0.5 right-1 text-[7px] font-bold text-white bg-slate-950/90 px-1 border border-slate-700" style="font-family:var(--font-pixel);">
+          <span class="absolute bottom-0.5 right-1 text-[8px] font-bold text-white bg-slate-950/90 px-1 border border-slate-700" style="font-family:var(--font-pixel);">
             x${count}
           </span>
-          ${isDonated ? '<span class="absolute top-0.5 left-1 text-[6.5px] leading-none text-amber-400" title="Já doado ao Museu">★</span>' : ''}
+          ${isDonated ? '<span class="absolute top-0.5 left-1 text-[8px] leading-none text-amber-400" title="Já doado ao Museu">★</span>' : ''}
         </button>
       `;
     });
@@ -599,7 +599,7 @@ export class MagnetMethods {
     if (nameEl) nameEl.textContent = `${item.name} (${count}x)`;
     if (rarityEl) {
       rarityEl.textContent = item.rarity.toUpperCase();
-      rarityEl.className = `text-[6px] px-1 py-0.2 border font-bold uppercase ${
+      rarityEl.className = `text-[8px] px-1 py-0.2 border font-bold uppercase ${
         item.rarity === 'lendario' ? 'bg-amber-950 text-amber-300 border-amber-500' :
         item.rarity === 'epico' ? 'bg-purple-950 text-purple-300 border-purple-500' :
         item.rarity === 'raro' ? 'bg-cyan-950 text-cyan-300 border-cyan-500' :
@@ -618,13 +618,13 @@ export class MagnetMethods {
       // Botão Doar ao Museu
       if (!isDonated && count >= 1) {
         actHtml += `
-          <button onclick="window.game.donateToMuseum('${item.id}')" class="pixel-btn px-2 py-1 bg-cyan-700 hover:bg-cyan-600 text-slate-950 font-bold text-[7px]" style="font-family:var(--font-pixel);">
+          <button onclick="window.game.donateToMuseum('${item.id}')" class="pixel-btn px-2 py-1 bg-cyan-700 hover:bg-cyan-600 text-slate-950 font-bold text-[8px]" style="font-family:var(--font-pixel);">
             🏛 DOAR (+500G +1 Olho)
           </button>
         `;
       } else if (isDonated) {
         actHtml += `
-          <span class="px-1.5 py-0.5 bg-cyan-950 border border-cyan-700/60 text-cyan-300 text-[6.5px]" style="font-family:var(--font-pixel);">
+          <span class="px-1.5 py-0.5 bg-cyan-950 border border-cyan-700/60 text-cyan-300 text-[8px]" style="font-family:var(--font-pixel);">
             ✓ DOADO
           </span>
         `;
@@ -635,13 +635,13 @@ export class MagnetMethods {
         const hasGazua = Boolean(this.forgeUpgrades['gazua_mestre']);
         if (hasGazua) {
           actHtml += `
-            <button onclick="window.game.openMagnetChest()" class="pixel-btn px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[7px] animate-pulse" style="font-family:var(--font-pixel);">
+            <button onclick="window.game.openMagnetChest()" class="pixel-btn px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[8px] animate-pulse" style="font-family:var(--font-pixel);">
               🗝️ ABRIR COFRE
             </button>
           `;
         } else {
           actHtml += `
-            <span class="px-1.5 py-0.5 bg-red-950 border border-red-800 text-red-300 text-[6.5px]" style="font-family:var(--font-pixel);">
+            <span class="px-1.5 py-0.5 bg-red-950 border border-red-800 text-red-300 text-[8px]" style="font-family:var(--font-pixel);">
               🔒 REQUER GAZUA
             </span>
           `;
@@ -651,7 +651,7 @@ export class MagnetMethods {
       // Botão Vender 1x
       if (count >= 1) {
         actHtml += `
-          <button onclick="window.game.sellMagnetItem('${item.id}', 1)" class="pixel-btn px-2 py-1 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-[7px]" style="font-family:var(--font-pixel);">
+          <button onclick="window.game.sellMagnetItem('${item.id}', 1)" class="pixel-btn px-2 py-1 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-[8px]" style="font-family:var(--font-pixel);">
             VENDER (+${item.sellValue}G)
           </button>
         `;

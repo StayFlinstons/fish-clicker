@@ -30,7 +30,7 @@ export class AutomationMethods {
         if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-red-500';
         if (btn) {
           btn.textContent = 'OFF';
-          btn.className = 'px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-red-950/90 text-red-300 border-red-700 hover:bg-red-900';
+          btn.className = 'px-1.5 py-0.5 border text-[8px] font-bold cursor-pointer transition-colors bg-red-950/90 text-red-300 border-red-700 hover:bg-red-900';
         }
         if (cd) {
           cd.textContent = 'PAUSADO';
@@ -42,7 +42,7 @@ export class AutomationMethods {
       if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse';
       if (btn) {
         btn.textContent = 'ON';
-        btn.className = 'px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-emerald-600 text-slate-950 border-emerald-400 hover:bg-emerald-500';
+        btn.className = 'px-1.5 py-0.5 border text-[8px] font-bold cursor-pointer transition-colors bg-emerald-600 text-slate-950 border-emerald-400 hover:bg-emerald-500';
       }
 
       const upgradeList = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
@@ -89,7 +89,7 @@ export class AutomationMethods {
         if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-red-500';
         if (btn) {
           btn.textContent = 'OFF';
-          btn.className = 'px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-red-950/90 text-red-300 border-red-700 hover:bg-red-900';
+          btn.className = 'px-1.5 py-0.5 border text-[8px] font-bold cursor-pointer transition-colors bg-red-950/90 text-red-300 border-red-700 hover:bg-red-900';
         }
         if (countdownEl) {
           countdownEl.textContent = 'PAUSADO';
@@ -101,7 +101,7 @@ export class AutomationMethods {
       if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
       if (btn) {
         btn.textContent = 'ON';
-        btn.className = 'px-1.5 py-0.5 border text-[7.5px] font-bold cursor-pointer transition-colors bg-emerald-600 text-slate-950 border-emerald-400 hover:bg-emerald-500';
+        btn.className = 'px-1.5 py-0.5 border text-[8px] font-bold cursor-pointer transition-colors bg-emerald-600 text-slate-950 border-emerald-400 hover:bg-emerald-500';
       }
       if (countdownEl) {
         countdownEl.className = 'text-emerald-300 font-bold bg-slate-950 px-1.5 py-0.5 border border-slate-700';
@@ -151,6 +151,7 @@ export class AutomationMethods {
             this.renderHeader();
             this.renderInventory();
             this.renderStats();
+            this.renderUpgrades(); // preços/"Faltam X G" da loja acompanham o ouro novo
           }
         }
       }
