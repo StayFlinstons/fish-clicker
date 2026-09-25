@@ -120,19 +120,19 @@ export class EventMethods {
 
     const rewards = [
       {
-        type: 'gold_frenzy', label: 'FRENESI DE OURO!', desc: '+200% ouro por 30s',
+        type: 'gold_frenzy', label: 'FRENESI DE OURO!', desc: '+200% ouro por 30s (acima do limite)',
         duration: 30000, multiplier: 2.0, color: '#ffd700'
       },
       {
-        type: 'luck_surge', label: 'SORTE SUPREMA!', desc: '+100% sorte por 25s',
+        type: 'luck_surge', label: 'SORTE SUPREMA!', desc: '+100% sorte por 25s (acima do limite)',
         duration: 25000, multiplier: 1.0, color: '#a855f7'
       },
       {
-        type: 'speed_burst', label: 'VELOCIDADE EXTREMA!', desc: '+50% velocidade por 20s',
+        type: 'speed_burst', label: 'VELOCIDADE EXTREMA!', desc: '+50% velocidade por 20s (acima do limite)',
         duration: 20000, multiplier: 0.50, color: '#38bdf8'
       },
       {
-        type: 'double_mania', label: 'MANIA DUPLA!', desc: '+50% chance dupla por 25s',
+        type: 'double_mania', label: 'MANIA DUPLA!', desc: '+50% chance dupla por 25s (acima do limite)',
         duration: 25000, multiplier: 0.50, color: '#34d399'
       },
       {
@@ -154,15 +154,30 @@ export class EventMethods {
       reward.desc = '+' + amount.toLocaleString('pt-BR') + ' ouro instantâneo!';
       this.showFloatingText('+' + amount, '#ffd700', -30);
     } else if (reward.type === 'fish_rain') {
+      // Só Incomum ou melhor, mantendo a proporção natural entre essas raridades
       const count = 3 + Math.floor(Math.random() * 5);
       const buffs = this.getActiveBuffs();
+      const chances = Object.entries(this.getRarityChances(buffs)).filter(([r]) => r !== 'COMUM');
+      const total = chances.reduce((acc, [, p]) => acc + p, 0);
+      let added = 0;
       for (let i = 0; i < count; i++) {
         if (this.inventory.length >= this.getMaxInventory()) break;
-        const fish = this.rollFish(buffs);
+        let rand = Math.random() * total;
+        let rarity = chances[chances.length - 1][0];
+        for (const [r, p] of chances) {
+          if (rand <= p) { rarity = r; break; }
+          rand -= p;
+        }
+        const fish = this.rollFish(buffs, { rarity });
         this.inventory.unshift(fish);
         this.totalCatches++;
+        added++;
       }
-      reward.desc = count + ' peixes pescados!';
+      reward.desc = added === 0
+        ? 'Balde cheio: nenhum peixe coube!'
+        : added < count
+          ? `${added} de ${count} peixes (Incomum+) — o balde encheu!`
+          : `${added} peixes Incomuns ou melhores!`;
     } else {
       // Buff temporário
       this.tempBuffs.push({

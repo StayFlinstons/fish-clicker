@@ -111,13 +111,15 @@ export class EconomyMethods {
       if (rede) out.doubleCatchChance += rede.getValue(this.upgradeLevels.rede_dupla || 0);
     }
 
-    // Buffs temporários (golden fish)
+    // Buffs temporários do Peixe Dourado: somados DEPOIS dos limites (ver return), para
+    // valerem mesmo com o atributo no máximo (ex.: 200% de sorte + Sorte Suprema = 300%)
     const now = Date.now();
+    const golden = { gold: 0, luck: 0, speed: 0, double: 0 };
     this.tempBuffs.filter(b => b.endsAt > now).forEach(b => {
-      if (b.type === 'gold_frenzy')   out.goldMultiplier += b.multiplier;
-      if (b.type === 'luck_surge')    out.luckBonus += b.multiplier;
-      if (b.type === 'speed_burst')   out.fishingSpeedBonus += b.multiplier;
-      if (b.type === 'double_mania')  out.doubleCatchChance += b.multiplier;
+      if (b.type === 'gold_frenzy')   golden.gold += b.multiplier;
+      if (b.type === 'luck_surge')    golden.luck += b.multiplier;
+      if (b.type === 'speed_burst')   golden.speed += b.multiplier;
+      if (b.type === 'double_mania')  golden.double += b.multiplier;
     });
 
     // Meta-progressão: Olhos de Peixe (+1% por olho no atributo escolhido)
@@ -149,10 +151,10 @@ export class EconomyMethods {
     const doubleCap = Math.min(1.00, (isW2 ? 1.00 : 0.60) + (fe.double || 0) * 0.01);
 
     return {
-      goldMultiplier: Math.min(out.goldMultiplier, goldCap),
-      luckBonus: Math.min(out.luckBonus, luckCap),
-      fishingSpeedBonus: Math.min(out.fishingSpeedBonus, speedCap),
-      doubleCatchChance: Math.min(out.doubleCatchChance, doubleCap),
+      goldMultiplier: Math.min(out.goldMultiplier, goldCap) + golden.gold,
+      luckBonus: Math.min(out.luckBonus, luckCap) + golden.luck,
+      fishingSpeedBonus: Math.min(out.fishingSpeedBonus, speedCap) + golden.speed,
+      doubleCatchChance: Math.min(out.doubleCatchChance, doubleCap) + golden.double,
       autoFishSpeedBonus: Math.min(out.autoFishSpeedBonus, 0.65)
     };
   }
