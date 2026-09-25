@@ -51,7 +51,7 @@ Same DOM for both, no duplicated markup (code finds elements by id). At ≥1024p
 
 All game state lives on the single `FishingGame` instance. `getSaveData()`/`loadGame()` (in `core/save.js`) serialize a large flat object to `localStorage` under `SAVE_KEY` (`pescaria_clicker_save_v4`) (with fallback read from the older `_v3` key for migration). **Any new piece of persistent state must be added to both `getSaveData()` and the restore logic in `loadGame()`**, or it will silently reset on reload. Autosave runs every 5s (`setInterval`) plus on `beforeunload`.
 
-Offline progress is simulated via `checkOfflineProgress()` using the saved `lastActiveTime`/`timeSavedAt` timestamps.
+Offline progress (`systems/offline.js`, `checkOfflineProgress()`) uses the saved `lastActiveTime` and is computed by expected value (no per-fish rolls). Design rule: everything caught offline is **sold** at the average value of the rarity table; nothing goes to the bucket or the album, so offline farming never stalls and aquarium fish require playing online. Capped at 8h.
 
 ### Time-of-day cycle
 
