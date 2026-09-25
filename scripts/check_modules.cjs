@@ -2,6 +2,8 @@
 // 1. Todo .js em core/, systems/, ui/ e dev/ está no pré-cache do sw.js (senão o PWA quebra offline).
 // 2. Toda classe *Methods exportada pelos módulos está no applyMixins() do game.js.
 // 3. Nenhum método é definido em dois módulos (o applyMixins também acusa isso, mas só no navegador).
+// 4. Todo módulo (raiz + pastas) está na lista MODULES do index.html (carregamento com ?v=).
+// 5. ASSET_VERSION do index.html é igual ao número do CACHE_NAME do sw.js.
 const fs = require('fs');
 const path = require('path');
 
@@ -34,8 +36,21 @@ for (const m of modules) {
   }
 }
 
+const html = read('index.html');
+const listed = ((html.match(/var MODULES = \[([\s\S]*?)\];/) || [])[1] || '').match(/'[^']+'/g) || [];
+const listedSet = new Set(listed.map((q) => q.slice(1, -1)));
+const rootModules = fs.readdirSync(root).filter((f) => f.endsWith('.js') && !['sw.js', 'tailwind.min.js'].includes(f));
+for (const m of [...rootModules, ...modules]) {
+  if (!listedSet.has(m)) problems.push(`index.html: falta '${m}' na lista MODULES (seria carregado sem ?v=)`);
+}
+const assetVersion = (html.match(/var ASSET_VERSION = '([^']+)'/) || [])[1];
+const cacheVersion = (sw.match(/CACHE_NAME = 'fish-clicker-v([^']+)'/) || [])[1];
+if (!assetVersion || assetVersion !== cacheVersion) {
+  problems.push(`versões diferentes: ASSET_VERSION '${assetVersion}' (index.html) x CACHE_NAME v${cacheVersion} (sw.js)`);
+}
+
 if (problems.length) {
   console.error(`✗ ${problems.length} problema(s):\n  - ` + problems.join('\n  - '));
   process.exit(1);
 }
-console.log(`✓ ${modules.length} módulos no sw.js e no applyMixins, ${Object.keys(owner).length} métodos sem duplicata.`);
+console.log(`✓ ${modules.length} módulos no sw.js e no applyMixins, ${Object.keys(owner).length} métodos sem duplicata, versão ${assetVersion} consistente.`);

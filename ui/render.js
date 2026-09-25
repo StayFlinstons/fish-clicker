@@ -50,8 +50,9 @@ export class RenderMethods {
   }
 
   renderBuffs() {
-    const c = document.getElementById('active-buffs-list');
-    if (!c) return;
+    // Mesmo conteúdo no header (desktop) e na faixa acima das estatísticas (mobile)
+    const targets = ['active-buffs-list', 'mobile-buffs-list'].map(id => document.getElementById(id)).filter(Boolean);
+    if (!targets.length) return;
     const b = this.getActiveBuffs();
     const pills = [];
 
@@ -59,9 +60,16 @@ export class RenderMethods {
     if (b.luckBonus > 0)          pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-purple-700 text-purple-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.luckBonus*100)}% ${BUFF_LABELS.luck_bonus.toUpperCase()}</span>`);
     if (b.fishingSpeedBonus > 0)  pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-cyan-700 text-cyan-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.fishingSpeedBonus*100)}% ${BUFF_LABELS.fishing_speed.toUpperCase()}</span>`);
     if (b.doubleCatchChance > 0)  pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-emerald-700 text-emerald-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">+${Math.round(b.doubleCatchChance*100)}% ${BUFF_LABELS.double_catch_chance.toUpperCase()}</span>`);
-    c.innerHTML = pills.length
+    // Buffs do Peixe Dourado com cronômetro (atualizado a cada 1s por renderTempBuffIndicator)
+    const now = Date.now();
+    (this.tempBuffs || []).filter(t => t.endsAt > now).forEach(t => {
+      const secs = Math.ceil((t.endsAt - now) / 1000);
+      pills.push(`<span class="buff-pill px-1.5 py-0.5 border border-yellow-400 bg-yellow-950/60 text-yellow-300 text-[8px] font-bold" style="font-family:var(--font-pixel);">★ ${(t.label || '').replace(/!$/, '')} ${secs}s</span>`);
+    });
+    const html = pills.length
       ? pills.join('')
       : '<span class="text-[8px] text-slate-600 italic" style="font-family:var(--font-pixel);">Nenhum buff ativo</span>';
+    targets.forEach(t => { t.innerHTML = html; });
   }
 
   renderUpgrades() {

@@ -353,22 +353,11 @@ export class EventMethods {
     }, 1000);
   }
 
+  // Os cronômetros dos buffs dourados são pílulas dentro da lista de buffs (renderBuffs).
+  // Chamado a cada 1s: só redesenha enquanto há buff temporário ativo (ou logo após expirar).
   renderTempBuffIndicator() {
-    let container = document.getElementById('temp-buff-bar');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'temp-buff-bar';
-      container.style.cssText = 'position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:45;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;pointer-events:none;';
-      document.body.appendChild(container);
-    }
-
-    const now = Date.now();
-    const active = this.tempBuffs.filter(b => b.endsAt > now);
-    if (active.length === 0) { container.innerHTML = ''; return; }
-
-    container.innerHTML = active.map(b => {
-      const secs = Math.ceil((b.endsAt - now) / 1000);
-      return `<div style="font-family:var(--font-pixel);font-size:8px;padding:3px 8px;border:2px solid #ffd700;background:rgba(15,23,42,0.9);color:#ffd700;box-shadow:2px 2px 0 #000;">${b.label.split(' ')[0]} ${secs}s</div>`;
-    }).join('');
+    const hasActive = this.tempBuffs.some(b => b.endsAt > Date.now());
+    if (hasActive || this._hadTempBuffs) this.renderBuffs();
+    this._hadTempBuffs = hasActive;
   }
 }

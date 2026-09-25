@@ -38,7 +38,7 @@
         </div>
 
         <!-- Buffs inline compactos no header -->
-        <div id="active-buffs-list" class="hidden md:flex items-center gap-1.5 flex-wrap">
+        <div id="active-buffs-list" class="hidden lg:flex items-center gap-1.5 flex-wrap">
           <!-- Renderizado via JS -->
         </div>
       </div>
@@ -2248,6 +2248,9 @@
       </div>
 
       <!-- Stats Bar (Alterna entre Pesca e Ímã) -->
+      <!-- Buffs ativos no layout mobile (no desktop ficam no header); renderBuffs() preenche os dois -->
+      <div id="mobile-buffs-list" class="mobile-only shrink-0 flex items-center justify-center gap-1.5 flex-wrap px-1"></div>
+
       <div id="stats-bar-fishing" class="shrink-0 bg-slate-950 border-2 border-slate-700 px-4 py-2 flex items-center justify-around text-center pixel-border-thin" style="border-color:#334155;">
         <div>
           <div class="text-[8px] text-slate-500" style="font-family:var(--font-pixel);">PESCADOS</div>
@@ -4059,6 +4062,63 @@
     </div>
   </div>
 
-  <script type="module" src="game.js?v=42"></script>
+  <!-- Carregamento versionado dos módulos. ASSET_VERSION é a versão ÚNICA dos arquivos do jogo:
+       suba junto com CACHE_NAME no sw.js a cada publicação (scripts/check_modules.cjs confere).
+       O mapa de imports faz todo módulo ser pedido com ?v=ASSET_VERSION, então o navegador nunca
+       mistura um game.js novo com módulos antigos guardados em cache. Navegadores sem suporte a
+       import maps ignoram o mapa e carregam os arquivos sem ?v= (funciona igual). -->
+  <script>
+    (function () {
+      var ASSET_VERSION = '43';
+      var MODULES = [
+      'game.js',
+      'fishData.js',
+      'itemsData.js',
+      'magnetData.js',
+      'achievementsData.js',
+      'pixelArt.js',
+      'sound.js',
+      'world2Data.js',
+      'core/constants.js',
+      'core/economy.js',
+      'core/mixins.js',
+      'core/save.js',
+      'core/timeCycle.js',
+      'dev/devConsole.js',
+      'dev/testCommands.js',
+      'systems/achievements.js',
+      'systems/automation.js',
+      'systems/chapter1.js',
+      'systems/events.js',
+      'systems/fishEyes.js',
+      'systems/fishing.js',
+      'systems/magnet.js',
+      'systems/offline.js',
+      'systems/shop.js',
+      'systems/world2.js',
+      'ui/album.js',
+      'ui/celebrations.js',
+      'ui/effects.js',
+      'ui/mobileNav.js',
+      'ui/patchNotes.js',
+      'ui/render.js',
+      'ui/settings.js',
+      'ui/sprites.js',
+      'ui/summary.js'
+      ];
+      var imports = {};
+      MODULES.forEach(function (m) {
+        imports[new URL(m, document.baseURI).href] = new URL(m + '?v=' + ASSET_VERSION, document.baseURI).href;
+      });
+      var map = document.createElement('script');
+      map.type = 'importmap';
+      map.textContent = JSON.stringify({ imports: imports });
+      document.currentScript.after(map);
+      var main = document.createElement('script');
+      main.type = 'module';
+      main.src = 'game.js?v=' + ASSET_VERSION;
+      map.after(main);
+    })();
+  </script>
 </body>
 </html>

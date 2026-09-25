@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fish-clicker-v42';
+const CACHE_NAME = 'fish-clicker-v43';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -110,8 +110,9 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       })
       .catch(() => {
-        // Quando offline, busca no cache local
-        return caches.match(event.request).then((cachedResponse) => {
+        // Quando offline, busca no cache local. ignoreSearch: o pré-cache guarda os arquivos sem
+        // ?v=, mas o index.html pede os módulos com ?v=ASSET_VERSION
+        return caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
           // Fallback para index.html se for navegação
           if (event.request.mode === 'navigate') {
