@@ -1,3 +1,8 @@
+// Ponto de entrada do jogo. A classe FishingGame guarda todo o estado (constructor), a
+// inicialização e a ligação dos eventos do DOM. O restante dos métodos mora nos módulos de
+// core/, systems/, ui/ e dev/, aplicados na classe por applyMixins() no fim deste arquivo.
+// Ao criar um módulo novo: importe-o aqui, inclua-o no applyMixins e no ASSETS_TO_CACHE do
+// sw.js, e confira com: node scripts/check_modules.cjs
 import { PixelWaterRenderer, updateFishingLine, updateRodSVG } from './pixelArt.js';
 import { sound } from './sound.js';
 import { GAME_VERSION } from './core/constants.js';
@@ -18,13 +23,15 @@ import { Chapter1Methods } from './systems/chapter1.js';
 import { AchievementMethods } from './systems/achievements.js';
 import { EventMethods } from './systems/events.js';
 import { RenderMethods } from './ui/render.js';
+import { SpriteMethods } from './ui/sprites.js';
 import { EffectMethods } from './ui/effects.js';
 import { CelebrationMethods } from './ui/celebrations.js';
 import { AlbumMethods } from './ui/album.js';
 import { SummaryMethods } from './ui/summary.js';
 import { SettingsMethods } from './ui/settings.js';
 import { PatchNotesMethods } from './ui/patchNotes.js';
-import { DevConsoleMethods, installDevGlobals } from './dev/devConsole.js';
+import { DevConsoleMethods } from './dev/devConsole.js';
+import { TestCommandMethods, installDevGlobals } from './dev/testCommands.js';
 
 class FishingGame {
   constructor() {
@@ -91,12 +98,11 @@ class FishingGame {
     this.timeSavedAt = null;
     this.lastActiveTime = Date.now();
 
-    // Meta-progressão: Olhos de Peixe (Santuário Místico - 00:00)
+    // Meta-progressão: Olhos de Peixe (Santuário Místico - 00:00) & Oferenda de Espécies
     this.speciesDonations = {}; // { [fishId]: true }
     this.donatedSpeciesHistory = {}; // { [fishId]: true } registro permanente para nunca mais exibir botao doar
     this.offeringCycle = 1;
     this.activeFishEyesTab = 'attributes'; // 'attributes' | 'offering'
-    this.world2BiomeOffsetMs = 0;
     this.fishEyesCount = 0;
     this.fishEyesTotal = 0;
     this.fishEyesAllocated = { gold: 0, luck: 0, speed: 0, double: 0 };
@@ -111,19 +117,23 @@ class FishingGame {
     // Fim do Capítulo 1 / Portal Dimensional & Altar das 15 Almas
     this.chapter1Completed = false;
     this.sacrificedFishCount = 0;
-    this.currentWorld = 1; // 1 = Superfície, 2 = Abismo
+
+    // Mundos (1 = Superfície/Neo-Píer, 2 = O Abismo), biomas do Mundo 2 e Batiscafo
+    this.currentWorld = 1;
     this.activeWorld2Biome = 'recife_bioluminescente';
+    this.world2BiomeOffsetMs = 0;
     this.ascensionParts = {
       bateria_neon: false,
       casco_titanio: false,
       helice_galeao: false,
       sistema_lastro_hadal: false
     };
-    this.submarineAssembled = false; // 1 = Neo-Píer (Superfície), 2 = O Abismo (Fundo do Mar)
-    this.world1Data = null;
-    this.world2SavedData = null;
-    this.isResetting = false;
+    this.submarineAssembled = false;
+    this.world1Data = null; // snapshot do Mundo 1 para voltar a ele
+    this.world2SavedData = null; // snapshot do Mundo 2 para voltar a ele
 
+    // Estado de execução (não salvo): pesca manual/automática, abas abertas e renderizador do lago
+    this.isResetting = false; // true bloqueia o autosave (reset/import em andamento)
     this.isFishing = false;
     this.autoFishTimer = null;
     this.lastAutoFishTime = 0;
@@ -131,10 +141,12 @@ class FishingGame {
     this.invTab = 'inventory';
     this.waterRenderer = null;
 
-    // Peixe Dourado (Evento Rápido)
+    // Peixe Dourado (Evento Rápido) & buffs temporários
     this.goldenFishActive = false;
     this.goldenFishTimer = null;
     this.tempBuffs = []; // { type, multiplier, endsAt, label }
+
+    // Console de desenvolvedor
     this.consoleOpen = false;
     this.consoleHistory = [];
 
@@ -156,7 +168,7 @@ class FishingGame {
     this.firstRarityCatches = { LENDARIO: false, MITICO: false, SECRETO: false };
     this.hasSeenBuffFishNotice = false;
 
-    // Cache fish sprites data URLs
+    // Cache de sprites (ui/sprites.js)
     this._fishSpriteCache = {};
     this._fishSilhouetteCache = {};
 
@@ -438,6 +450,7 @@ applyMixins(FishingGame, [
   AchievementMethods,
   EventMethods,
   RenderMethods,
+  SpriteMethods,
   EffectMethods,
   CelebrationMethods,
   AlbumMethods,
@@ -445,6 +458,7 @@ applyMixins(FishingGame, [
   SettingsMethods,
   PatchNotesMethods,
   DevConsoleMethods,
+  TestCommandMethods,
 ]);
 
 function initGame() {

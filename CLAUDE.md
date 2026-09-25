@@ -22,21 +22,24 @@ Then open `http://localhost:3000`. `start_game.bat` does the same (serves on por
 
 ### Module layout
 
-- **`index.html`** — the entire UI (~2000 lines): every screen/modal (fishing view, aquarium, shop, achievements, album/encyclopedia, magnet fishing, forge, museum, profile customization, settings, console) lives in this one file as hidden/shown DOM blocks, styled with Tailwind utility classes. There is no client-side templating engine — `game.js` toggles `hidden` classes and writes `innerHTML` directly.
+- **`index.html`** — the entire UI (~4000 lines): every screen/modal (fishing view, aquarium, shop, achievements, album/encyclopedia, magnet fishing, forge, museum, profile customization, settings, console) lives in this one file as hidden/shown DOM blocks, styled with Tailwind utility classes. There is no client-side templating engine — the JS modules toggle `hidden` classes and writes `innerHTML` directly.
 - **`game.js`** — entry point: the `FishingGame` class (constructor with all state, `init()`, PWA/pixel-art setup, `setupEventListeners()`), instantiated once as `window.game`. Its other methods live in feature modules and are attached with `applyMixins(FishingGame, [...])` at the end of the file.
 - **Feature modules** — each exports a class whose methods become `FishingGame` methods (`this` is the game; `window.game.x()` and HTML `onclick` keep working). `core/mixins.js` throws on load if two modules define the same method name.
   - `core/` — `constants.js` (`GAME_VERSION`, `SAVE_KEY`), `save.js` (save/load/reset/export-import), `economy.js` (buffs, rarity chances, weight/value, `rollFish()`), `timeCycle.js` (day/sunset/night).
   - `systems/` — `fishing.js` (`fish()`, `recordDiscovery()`, selling, bucket/aquarium), `shop.js`, `automation.js` (auto-fisher/auto-seller), `offline.js`, `fishEyes.js` (daily Fish Eyes, Sanctuary, species offerings), `magnet.js` (game modes + Pesca Magnética/Forge/Museum), `world2.js` (Abyss biomes, submarine, world travel), `chapter1.js` (portal/altar/Kraken), `achievements.js`, `events.js` (Golden Fish, Blood Moon Eclipse, temp buffs).
-  - `ui/` — `render.js` (`renderAll()` and fishing-mode panels, sprite cache), `effects.js` (toasts, floating text, catch popups), `celebrations.js`, `album.js`, `summary.js`, `settings.js`, `patchNotes.js`.
-  - `dev/devConsole.js` — in-game dev console, test commands and the `window.test*()` globals.
-- **New feature code goes in a new or matching module, not in `game.js`.** A new module needs: an `import` + entry in the `applyMixins` list in `game.js`, and its path in `ASSETS_TO_CACHE` in `sw.js` (otherwise the offline PWA breaks).
+  - `ui/` — `render.js` (`renderAll()` and fishing-mode panels), `sprites.js` (fish sprite cache), `effects.js` (toasts, floating text, catch popups), `celebrations.js`, `album.js`, `summary.js`, `settings.js`, `patchNotes.js`.
+  - `dev/` — `devConsole.js` (in-game dev console and its commands), `testCommands.js` (browser-console test commands and the `window.test*()` globals).
+- **New feature code goes in a new or matching module, not in `game.js`.** A new module needs: an `import` + entry in the `applyMixins` list in `game.js`, and its path in `ASSETS_TO_CACHE` in `sw.js` (otherwise the offline PWA breaks). Run `node scripts/check_modules.cjs` to verify the wiring (also catches a method defined in two modules).
+- **Methods marked "Sem chamadas no momento"** belong to features paused on purpose (magnet mode entry, Batiscafo/World 3 button). Keep them.
 - **`fishData.js`** — `RARITIES` (7 tiers: COMUM → SECRETO, each with drop `chance` and color) and `FISH_LIST` (species catalog: id, rarity, weight range, baseValue, optional `buff` for aquarium bonuses, optional `timeExclusive` for day/sunset/night-only fish).
 - **`itemsData.js`** — `RODS`, `BAITS`, `UPGRADES` shop catalogs and `isCosmicOrHigherRod()` helper.
 - **`magnetData.js`** — the "Pesca Magnética" (magnet fishing) sub-game data: `MAGNET_TIERS`, `MAGNET_SCENARIOS` (alternate pixel-art scenes), `MAGNET_ITEMS`, `FORGE_RECIPES` (crafting), `MUSEUM_COLLECTIONS` (donate-to-complete-sets).
-- **`achievementsData.js`** — `ACHIEVEMENTS` catalog (22 achievements), checked by `checkAchievements()` in `game.js`.
-- **`pixelArt.js`** (~1700 lines) — all procedural pixel-art generation: fisherman rendering to canvas (`renderFishermanToCanvas`), fish sprites (including silhouettes and Blood Moon variants) as data URLs, the animated water/rod/fishing-line renderers, and icon generators for rods/baits/upgrades/magnet items. Character outfits (`OUTFIT_PRESETS`) and hair colors (`HAIR_COLORS`) live here.
+- **`world2Data.js`** — World 2 (Abyss) catalogs: `WORLD2_BIOMES`, `FISH_WORLD_2` (fixed catalog buffs, per biome), `RODS_WORLD_2`, `BAITS_WORLD_2`, `UPGRADES_WORLD_2`, `ASCENSION_PARTS` (Batiscafo parts).
+- **`achievementsData.js`** — `ACHIEVEMENTS` catalog (22 achievements), checked by `checkAchievements()` in `systems/achievements.js`.
+- **`pixelArt.js`** (~2300 lines) — all procedural pixel-art generation: fisherman rendering to canvas (`renderFishermanToCanvas`), fish sprites (including silhouettes and Blood Moon variants) as data URLs, the animated water/rod/fishing-line renderers, and icon generators for rods/baits/upgrades/magnet items. Character outfits (`OUTFIT_PRESETS`) and hair colors (`HAIR_COLORS`) live here.
 - **`sound.js`** — `sound` singleton: Web Audio API synth SFX (no audio assets).
 - **`sw.js` / `manifest.json`** — Service Worker (offline cache) and PWA manifest; bump the cache name/version in `sw.js` when shipping changes so installed PWAs pick up updates.
+- **`scripts/check_modules.cjs`** — module wiring check (see above).
 - **`scripts/generate_icons.cjs`** — Node script (run manually, not part of any build pipeline) that generates the PWA icon set in `icons/`.
 
 ### State & persistence

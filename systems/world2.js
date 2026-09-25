@@ -134,6 +134,8 @@ export class World2Methods {
     }, 1000);
   }
 
+  // Sem chamadas no momento: troca manual de bioma com aviso. Hoje o bioma muda pelo ciclo
+  // automático (initWorld2BiomeCycle) ou pelo console, ambos via setWorld2Biome().
   switchWorld2Biome(biomeId) {
     const biome = WORLD2_BIOMES.find(b => b.id === biomeId);
     if (!biome) return;
@@ -196,6 +198,8 @@ export class World2Methods {
     }
   }
 
+  // Sem chamadas no momento: o botão #btn-open-submarine (Batiscafo -> Mundo 3) está oculto
+  // a pedido em index.html. Reexibir o botão reativa todo o fluxo. Não remover.
   openSubmarineModal() {
     sound.playClick?.();
     this.renderSubmarineModal();

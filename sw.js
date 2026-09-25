@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fish-clicker-v37';
+const CACHE_NAME = 'fish-clicker-v38';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const ASSETS_TO_CACHE = [
   './core/save.js',
   './core/timeCycle.js',
   './dev/devConsole.js',
+  './dev/testCommands.js',
   './systems/achievements.js',
   './systems/automation.js',
   './systems/chapter1.js',
@@ -27,6 +28,7 @@ const ASSETS_TO_CACHE = [
   './ui/patchNotes.js',
   './ui/render.js',
   './ui/settings.js',
+  './ui/sprites.js',
   './ui/summary.js',
   './itemsData.js',
   './fishData.js',

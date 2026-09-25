@@ -50,6 +50,8 @@ export class MagnetMethods {
     this.saveGame();
   }
 
+  // Sem chamadas no momento: o acesso ao modo ímã foi desativado para jogadores na v1.4.9
+  // (o modo continua funcionando e é ativado pelo console: modoIma()). Não remover.
   openMagnetModal() {
     this.setGameMode('ima');
   }
@@ -123,6 +125,7 @@ export class MagnetMethods {
     this.saveGame();
   }
 
+  // Sem chamadas no momento: troca de cenário do ímã (ponte/praia/floresta), parte do modo ímã pausado.
   switchMagnetScenario(scenarioId) {
     if (this.isCastingMagnet) return;
     if (!MAGNET_SCENARIOS[scenarioId]) return;
@@ -139,6 +142,7 @@ export class MagnetMethods {
     this.saveGame();
   }
 
+  // Sem chamadas no momento: apelido antigo de setMagnetLeftTab(), mantido por compatibilidade.
   switchMagnetSubTab(tabName) {
     this.setMagnetLeftTab(tabName);
   }

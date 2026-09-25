@@ -1,36 +1,11 @@
-// Renderização do modo pesca: header, buffs, loja, balde, aquário e cache de sprites.
+// Renderização do modo pesca: header, buffs, loja, balde e aquário.
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
 import { BUFF_LABELS, RARITIES } from '../fishData.js';
 import { BAITS, RODS, UPGRADES } from '../itemsData.js';
-import { PIXEL_ICONS, getBaitIconDataURL, getBloodMoonFishDataURL, getFishDataURL, getFishSilhouetteDataURL, getRodIconDataURL, getUpgradeIconDataURL } from '../pixelArt.js';
+import { PIXEL_ICONS, getBaitIconDataURL, getRodIconDataURL, getUpgradeIconDataURL } from '../pixelArt.js';
 import { BAITS_WORLD_2, RODS_WORLD_2, UPGRADES_WORLD_2 } from '../world2Data.js';
 
 export class RenderMethods {
-  getFishSpriteURL(iconId) {
-    if (!this._fishSpriteCache) this._fishSpriteCache = {};
-    if (!this._fishSpriteCache[iconId]) {
-      this._fishSpriteCache[iconId] = getFishDataURL(iconId, 3);
-    }
-    return this._fishSpriteCache[iconId];
-  }
-
-  getFishSilhouetteURL(iconId) {
-    if (!this._fishSilhouetteCache) this._fishSilhouetteCache = {};
-    if (!this._fishSilhouetteCache[iconId]) {
-      this._fishSilhouetteCache[iconId] = getFishSilhouetteDataURL(iconId, 3);
-    }
-    return this._fishSilhouetteCache[iconId];
-  }
-
-  getBloodMoonSpriteURL(scale = 3.5) {
-    if (!this._fishSpriteCache) this._fishSpriteCache = {};
-    const key = `blood_moon_${scale}`;
-    if (!this._fishSpriteCache[key]) {
-      this._fishSpriteCache[key] = getBloodMoonFishDataURL(scale);
-    }
-    return this._fishSpriteCache[key];
-  }
-
   renderAll() {
     this.renderHeader();
     this.syncGameModeUI();
