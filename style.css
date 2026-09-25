@@ -276,33 +276,15 @@ body {
   cursor: wait;
 }
 
-/* Barra de recarga embaixo do botão PESCAR */
-.fish-cooldown {
-  position: relative;
-  width: min(200px, 60vw);
+/* Segundos de recarga embaixo do botão PESCAR (altura fixa: o botão não pula quando some) */
+.fish-cooldown-text {
+  display: block;
   height: 12px;
   margin-top: 2px;
-  background: #0f172a;
-  border: 2px solid #334155;
-  box-shadow: 2px 2px 0 #000;
-  overflow: hidden;
-}
-.fish-cooldown-fill {
-  height: 100%;
-  background: #38bdf8;
-}
-.fish-cooldown.ready { border-color: #16a34a; }
-.fish-cooldown.ready .fish-cooldown-fill { background: #22c55e; }
-.fish-cooldown-text {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-family: var(--font-pixel);
-  font-size: 8px;
-  line-height: 1;
-  color: #fff;
+  font-size: 10px;
+  line-height: 12px;
+  color: #e2e8f0;
   text-shadow: 1px 1px 0 #000;
 }
 
