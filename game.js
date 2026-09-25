@@ -36,6 +36,9 @@ import {
 // ══════════════════════════════════════════════════════════════════════════════
 export const GAME_VERSION = '1.5.0';
 
+// Chave única do save: saveGame(), loadGame(), resetProgress() e import/export usam esta
+const SAVE_KEY = 'pescaria_clicker_save_v4';
+
 class FishingGame {
   constructor() {
     window.game = this;
@@ -549,44 +552,93 @@ class FishingGame {
   // ═══════════════════════════════════════════
   // PROGRESSO OFFLINE (AFK REWARD)
   // ═══════════════════════════════════════════
+  // Simula a ausência de forma determinística (valor esperado), sem sortear centenas de peixes:
+  // - peixes que a Peixaria vende viram ouro pela média estatística da tabela de raridades;
+  // - peixes que ela NÃO vende ocupam o balde; quando ele enche, o Mergulhador para;
+  // - só os peixes que realmente entram no balde contam no álbum (na hora de coletar).
   checkOfflineProgress(simulatedSec = null) {
-    const autoLevel = this.upgradeLevels.auto_pescador || 0;
+    if (this.offlinePending) return;
     const now = Date.now();
     const diffSec = simulatedSec !== null ? simulatedSec : Math.floor((now - (this.lastActiveTime || now)) / 1000);
 
     // Mínimo de 60 segundos de ausência para disparar recompensa
     if (diffSec < 60) return;
 
+    const upgradeList = this.currentWorld === 2 ? UPGRADES_WORLD_2 : UPGRADES;
+    const buffs = this.getActiveBuffs();
+
     let intervalSec = 45;
     let sourceText = 'A correnteza suave do lago fisgou peixes durante sua ausência!';
-
+    const autoLevel = this.upgradeLevels.auto_pescador || 0;
     if (autoLevel > 0 && this.autoFisherEnabled) {
-      const u = UPGRADES.find(u => u.id === 'auto_pescador');
-      intervalSec = u ? u.getValue(autoLevel) : 8;
+      const u = upgradeList.find(u => u.id === 'auto_pescador');
+      intervalSec = (u ? u.getValue(autoLevel) : 8) * (1 - buffs.autoFishSpeedBonus);
       sourceText = 'Seu Mergulhador Amigo pescou no fundo do lago enquanto você esteve fora!';
     }
 
     const maxOfflineSec = 8 * 3600; // Máximo de 8 horas AFK
     const effectiveSec = Math.min(diffSec, maxOfflineSec);
-    const totalCatchesSim = Math.floor(effectiveSec / intervalSec);
-    if (totalCatchesSim <= 0) return;
+    const casts = Math.floor(effectiveSec / intervalSec);
+    const potentialCatches = Math.floor(casts * (1 + buffs.doubleCatchChance));
+    if (potentialCatches <= 0) return;
 
-    // Calcular ouro com amostragem inteligente para evitar travamento em longos períodos
-    const buffs = this.getActiveBuffs();
-    const sampleSize = Math.min(totalCatchesSim, 30);
-    let sampleGold = 0;
-    for (let i = 0; i < sampleSize; i++) {
-      const f = this.rollFish(buffs);
-      this.recordDiscovery(f);
-      sampleGold += Math.round(f.baseValue * (1 + buffs.goldMultiplier));
+    // Ausências de 15 min+ atravessam o ciclo inteiro: exclusivos de cada horário entram na média
+    const phases = (this.currentWorld !== 2 && effectiveSec >= 15 * 60)
+      ? ['day', 'sunset', 'night']
+      : [this.timeOfDay];
+
+    const chances = this.getRarityChances(buffs);
+    const rodPower = this.getEquippedRodPower();
+    const expectedValueByRarity = {};
+    Object.keys(chances).forEach(rarity => {
+      let sum = 0;
+      phases.forEach(phase => {
+        const pool = this.getFishPoolForRarity(rarity, phase);
+        sum += pool.reduce((acc, t) => acc + this.getExpectedFishValue(t, rodPower), 0) / pool.length;
+      });
+      expectedValueByRarity[rarity] = sum / phases.length;
+    });
+
+    // Peixaria: raridades vendidas automaticamente não ocupam o balde
+    const sellerLevel = this.upgradeLevels.auto_vendedor || 0;
+    const sellerActive = sellerLevel > 0 && this.autoSellerEnabled;
+    const soldRarities = sellerActive ? (this.autoSellFilter || []) : [];
+    const pSell = soldRarities.reduce((acc, r) => acc + (chances[r] || 0), 0);
+    const pKeep = Math.max(0, 1 - pSell);
+
+    const freeSlots = Math.max(0, this.getMaxInventory() - this.inventory.length);
+    let catches = potentialCatches;
+    if (pKeep > 1e-9) catches = Math.min(catches, Math.floor(freeSlots / pKeep));
+    const bucketFilled = catches < potentialCatches;
+
+    const keptCount = Math.min(freeSlots, Math.round(catches * pKeep));
+    const soldCount = catches - keptCount;
+    const avgSoldValue = pSell > 0
+      ? soldRarities.reduce((acc, r) => acc + (chances[r] || 0) * expectedValueByRarity[r], 0) / pSell
+      : 0;
+    const earnedGold = Math.round(soldCount * avgSoldValue * (1 + buffs.goldMultiplier));
+
+    // Peixes que ficaram no balde são reais: sorteados só entre as raridades que a Peixaria não vende
+    const keptRarities = Object.keys(chances).filter(r => !soldRarities.includes(r));
+    const keptFish = [];
+    for (let i = 0; i < keptCount; i++) {
+      let rand = Math.random() * pKeep;
+      let rarity = keptRarities[keptRarities.length - 1];
+      for (const r of keptRarities) {
+        if (rand <= chances[r]) { rarity = r; break; }
+        rand -= chances[r];
+      }
+      const timeOfDay = phases[Math.floor(Math.random() * phases.length)];
+      keptFish.push(this.rollFish(buffs, { rarity, timeOfDay }));
     }
 
-    let earnedGold = 0;
-    if (totalCatchesSim <= sampleSize) {
-      earnedGold = sampleGold;
-    } else {
-      const avgGold = sampleGold / sampleSize;
-      earnedGold = Math.round(avgGold * totalCatchesSim);
+    if (catches <= 0) {
+      this.showToast('Seu balde estava cheio: nada foi pescado enquanto você esteve fora!', 'warning');
+      return;
+    }
+
+    if (bucketFilled) {
+      sourceText += ' O balde encheu e a pesca parou. Libere espaço ou configure a Peixaria!';
     }
 
     // Formatar tempo ausente
@@ -595,29 +647,43 @@ class FishingGame {
     let timeStr = '';
     if (hours > 0) timeStr += `${hours}h `;
     timeStr += `${Math.max(1, minutes)}m`;
+    if (diffSec > maxOfflineSec) timeStr += ' (máx. 8h)';
 
     // Atualizar e exibir modal
     const modal = document.getElementById('offline-modal');
     const timeEl = document.getElementById('offline-time-text');
     const sourceEl = document.getElementById('offline-source-text');
     const catchesEl = document.getElementById('offline-catches-text');
+    const keptEl = document.getElementById('offline-kept-text');
     const goldEl = document.getElementById('offline-gold-text');
     const collectBtn = document.getElementById('btn-collect-offline');
 
     if (modal && timeEl && catchesEl && goldEl && collectBtn) {
+      // Enquanto o modal está aberto, o autosave não avança lastActiveTime: um F5 aqui não perde a recompensa
+      this.offlinePending = true;
+
       timeEl.textContent = `Você esteve fora por ${timeStr}!`;
       if (sourceEl) sourceEl.textContent = sourceText;
-      catchesEl.textContent = totalCatchesSim.toLocaleString('pt-BR');
+      catchesEl.textContent = catches.toLocaleString('pt-BR');
+      if (keptEl) keptEl.textContent = `${keptFish.length} peixe(s)`;
       goldEl.textContent = `+${earnedGold.toLocaleString('pt-BR')}G`;
 
       collectBtn.onclick = () => {
+        if (!this.offlinePending) return;
+        this.offlinePending = false;
+        this.lastActiveTime = Date.now();
         this.gold += earnedGold;
         this.totalGoldEarned += earnedGold;
-        this.totalCatches += totalCatchesSim;
+        this.totalCatches += catches;
+        keptFish.forEach(fish => {
+          this.inventory.unshift(fish);
+          this.recordDiscovery(fish);
+        });
         sound.playCoin();
         sound.vibrate([40, 40, 80]);
         modal.classList.add('hidden');
         this.renderAll();
+        this.saveGame();
         this.showToast(`+${earnedGold.toLocaleString('pt-BR')}G coletados!`, 'success');
       };
 
@@ -3363,77 +3429,82 @@ class FishingGame {
   }
 
   // ── PERSISTÊNCIA ──
+  getSaveData() {
+    return {
+      gold: this.gold,
+      totalCatches: this.totalCatches,
+      totalGoldEarned: this.totalGoldEarned,
+      inventory: this.inventory,
+      aquarium: this.aquarium,
+      selectedRodId: this.selectedRodId,
+      unlockedRods: this.unlockedRods,
+      selectedBaitId: this.selectedBaitId,
+      unlockedBaits: this.unlockedBaits,
+      upgradeLevels: this.upgradeLevels,
+      discoveredFish: this.discoveredFish,
+      manualSellFilter: this.manualSellFilter,
+      autoSellFilter: this.autoSellFilter,
+      aquariumFilterMode: this.aquariumFilterMode,
+      playerName: this.playerName,
+      playerGender: this.playerGender,
+      playerOutfit: this.playerOutfit,
+      playerHair: this.playerHair,
+      unlockedAchievements: this.unlockedAchievements,
+      goldenFishCatches: this.goldenFishCatches,
+      bloodMoonFishCatches: this.bloodMoonFishCatches || 0,
+      playTimeSeconds: this.playTimeSeconds || 0,
+      totalBloodMoonCatches: this.getTotalBloodMoonCatches(),
+      chapter1Completed: this.chapter1Completed,
+      sacrificedFishCount: this.sacrificedFishCount || 0,
+      currentWorld: this.currentWorld || 1,
+      world1Data: this.world1Data || null,
+      world2SavedData: this.world2SavedData || null,
+      activeWorld2Biome: this.activeWorld2Biome || 'recife_bioluminescente',
+      ascensionParts: this.ascensionParts || { bateria_neon: false, casco_titanio: false, helice_galeao: false, sistema_lastro_hadal: false },
+      submarineAssembled: Boolean(this.submarineAssembled),
+      timeOfDay: this.timeOfDay,
+      timeOffsetMs: this.timeOffsetMs || 0,
+      phaseMsRemaining: this.getRawMsRemaining(),
+      timeSavedAt: Date.now(),
+      speciesDonations: this.speciesDonations || {},
+      donatedSpeciesHistory: this.donatedSpeciesHistory || {},
+      offeringCycle: this.offeringCycle || 1,
+      activeFishEyesTab: this.activeFishEyesTab || 'attributes',
+      world2BiomeOffsetMs: this.world2BiomeOffsetMs || 0,
+      fishEyesCount: this.fishEyesCount || 0,
+      fishEyesTotal: this.fishEyesTotal || 0,
+      fishEyesAllocated: this.fishEyesAllocated || { gold: 0, luck: 0, speed: 0, double: 0 },
+      lastFishEyeDate: this.lastFishEyeDate || null,
+      autoFisherEnabled: this.autoFisherEnabled,
+      autoSellerEnabled: this.autoSellerEnabled,
+      gameMode: this.gameMode || 'pesca',
+      magnetLeftTab: this.magnetLeftTab || 'forge',
+      magnetUnlocked: Boolean(this.magnetUnlocked),
+      magnetTier: this.magnetTier || 1,
+      magnetScenario: this.magnetScenario || 'ponte',
+      magnetInventory: this.magnetInventory || {},
+      museumDonations: this.museumDonations || {},
+      forgeUpgrades: this.forgeUpgrades || {},
+      magnetCatches: this.magnetCatches || 0,
+      magnetGoldEarned: this.magnetGoldEarned || 0,
+      firstRarityCatches: this.firstRarityCatches || { LENDARIO: false, MITICO: false, SECRETO: false },
+      hasSeenBuffFishNotice: Boolean(this.hasSeenBuffFishNotice),
+      settings: this.settings,
+      // Com a coleta offline pendente, mantém o horário antigo para um F5 não perder a recompensa
+      lastActiveTime: this.offlinePending ? this.lastActiveTime : Date.now()
+    };
+  }
+
   saveGame() {
     if (this.isResetting) return;
     try {
-      localStorage.setItem('pescaria_clicker_save_v4', JSON.stringify({
-        gold: this.gold,
-        totalCatches: this.totalCatches,
-        totalGoldEarned: this.totalGoldEarned,
-        inventory: this.inventory,
-        aquarium: this.aquarium,
-        selectedRodId: this.selectedRodId,
-        unlockedRods: this.unlockedRods,
-        selectedBaitId: this.selectedBaitId,
-        unlockedBaits: this.unlockedBaits,
-        upgradeLevels: this.upgradeLevels,
-        discoveredFish: this.discoveredFish,
-        manualSellFilter: this.manualSellFilter,
-        autoSellFilter: this.autoSellFilter,
-        aquariumFilterMode: this.aquariumFilterMode,
-        playerName: this.playerName,
-        playerGender: this.playerGender,
-        playerOutfit: this.playerOutfit,
-        playerHair: this.playerHair,
-        unlockedAchievements: this.unlockedAchievements,
-        goldenFishCatches: this.goldenFishCatches,
-        bloodMoonFishCatches: this.bloodMoonFishCatches || 0,
-        playTimeSeconds: this.playTimeSeconds || 0,
-        totalBloodMoonCatches: this.getTotalBloodMoonCatches(),
-        chapter1Completed: this.chapter1Completed,
-        sacrificedFishCount: this.sacrificedFishCount || 0,
-        currentWorld: this.currentWorld || 1,
-        world1Data: this.world1Data || null,
-        world2SavedData: this.world2SavedData || null,
-        activeWorld2Biome: this.activeWorld2Biome || 'recife_bioluminescente',
-        ascensionParts: this.ascensionParts || { bateria_neon: false, casco_titanio: false, helice_galeao: false, sistema_lastro_hadal: false },
-        submarineAssembled: Boolean(this.submarineAssembled),
-        timeOfDay: this.timeOfDay,
-        timeOffsetMs: this.timeOffsetMs || 0,
-        phaseMsRemaining: this.getRawMsRemaining(),
-        timeSavedAt: Date.now(),
-        speciesDonations: this.speciesDonations || {},
-      donatedSpeciesHistory: this.donatedSpeciesHistory || {},
-        offeringCycle: this.offeringCycle || 1,
-        activeFishEyesTab: this.activeFishEyesTab || 'attributes',
-        world2BiomeOffsetMs: this.world2BiomeOffsetMs || 0,
-        fishEyesCount: this.fishEyesCount || 0,
-        fishEyesTotal: this.fishEyesTotal || 0,
-        fishEyesAllocated: this.fishEyesAllocated || { gold: 0, luck: 0, speed: 0, double: 0 },
-        lastFishEyeDate: this.lastFishEyeDate || null,
-        autoFisherEnabled: this.autoFisherEnabled,
-        autoSellerEnabled: this.autoSellerEnabled,
-        gameMode: this.gameMode || 'pesca',
-        magnetLeftTab: this.magnetLeftTab || 'forge',
-        magnetUnlocked: Boolean(this.magnetUnlocked),
-        magnetTier: this.magnetTier || 1,
-        magnetScenario: this.magnetScenario || 'ponte',
-        magnetInventory: this.magnetInventory || {},
-        museumDonations: this.museumDonations || {},
-        forgeUpgrades: this.forgeUpgrades || {},
-        magnetCatches: this.magnetCatches || 0,
-        magnetGoldEarned: this.magnetGoldEarned || 0,
-        firstRarityCatches: this.firstRarityCatches || { LENDARIO: false, MITICO: false, SECRETO: false },
-        hasSeenBuffFishNotice: Boolean(this.hasSeenBuffFishNotice),
-        settings: this.settings,
-        lastActiveTime: Date.now()
-      }));
+      localStorage.setItem(SAVE_KEY, JSON.stringify(this.getSaveData()));
     } catch(e) { console.warn('Erro ao salvar:', e); }
   }
 
   loadGame() {
     try {
-      const raw = localStorage.getItem('pescaria_clicker_save_v4') || localStorage.getItem('pescaria_clicker_save_v3');
+      const raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem('pescaria_clicker_save_v3');
       const d = JSON.parse(raw);
       if (d) {
         this.gold = d.gold || 0;
@@ -3558,13 +3629,79 @@ class FishingGame {
   resetProgress() {
     if (confirm('RESETAR TODO O PROGRESSO? Esta ação não pode ser desfeita!')) {
       this.isResetting = true;
-      localStorage.removeItem('pescaria_clicker_save_v4');
-      localStorage.removeItem('pescaria_clicker_save_v3');
-      localStorage.removeItem('pescaria_clicker_save_v2');
-      localStorage.removeItem('pescaria_clicker_save_v1');
-      try { localStorage.clear(); } catch(e) {}
+      // Remove só as chaves do jogo: no GitHub Pages a origem (usuario.github.io) é
+      // compartilhada com outros projetos, então localStorage.clear() apagaria dados deles.
+      [SAVE_KEY, 'pescaria_clicker_save_v3', 'pescaria_clicker_save_v2', 'pescaria_clicker_save_v1', 'fc_last_seen_patch_version']
+        .forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
       location.reload();
     }
+  }
+
+  // ── BACKUP DO SAVE (EXPORTAR / IMPORTAR EM BASE64) ──
+  encodeSaveCode(obj) {
+    const bytes = new TextEncoder().encode(JSON.stringify(obj));
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+
+  decodeSaveCode(code) {
+    const bin = atob(code.replace(/\s+/g, ''));
+    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+
+  exportSave() {
+    const code = this.encodeSaveCode({
+      game: 'fish-clicker',
+      version: this.gameVersion,
+      exportedAt: Date.now(),
+      data: this.getSaveData()
+    });
+    const box = document.getElementById('save-code-textarea');
+    if (box) { box.value = code; box.select(); }
+    sound.playClick();
+    const manual = () => this.showToast('Código gerado na caixa abaixo: copie manualmente.', 'info');
+    if (!navigator.clipboard) { manual(); return; }
+    navigator.clipboard.writeText(code)
+      .then(() => this.showToast('Código do save copiado! Guarde-o em lugar seguro.', 'success'))
+      .catch(manual);
+  }
+
+  importSave() {
+    const box = document.getElementById('save-code-textarea');
+    const code = (box ? box.value : '').trim();
+    if (!code) { this.showToast('Cole o código do save na caixa primeiro!', 'warning'); return; }
+
+    let payload;
+    try {
+      payload = this.decodeSaveCode(code);
+    } catch (e) {
+      this.showToast('Código inválido ou incompleto!', 'error');
+      return;
+    }
+    const d = payload && payload.game === 'fish-clicker' ? payload.data : null;
+    if (!d || typeof d !== 'object' || typeof d.gold !== 'number' || !Array.isArray(d.inventory)) {
+      this.showToast('Este código não é um save do Fish Clicker!', 'error');
+      return;
+    }
+
+    const when = payload.exportedAt ? new Date(payload.exportedAt).toLocaleString('pt-BR') : 'data desconhecida';
+    if (!confirm(`Importar save de ${when} (${d.gold.toLocaleString('pt-BR')}G)?\nSeu progresso atual será SUBSTITUÍDO.`)) return;
+
+    // Importar restaura o estado, não conta como tempo AFK desde a exportação
+    d.lastActiveTime = Date.now();
+    this.isResetting = true; // impede o autosave/beforeunload de sobrescrever o save importado
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(d));
+    } catch (e) {
+      this.isResetting = false;
+      this.showToast('Não foi possível gravar o save importado!', 'error');
+      return;
+    }
+    location.reload();
   }
 
   // ── CÁLCULOS ──
@@ -3860,9 +3997,10 @@ class FishingGame {
     this.checkAchievements();
   }
 
-  rollFish(buffs) {
+  // Probabilidade (0–1) de cada raridade, já com a sorte aplicada.
+  // Sorte aplica-se mais fraco em raridades altas para dificultar.
+  getRarityChances(buffs) {
     const luck = 1 + buffs.luckBonus;
-    // Sorte aplica-se mais fraco em raridades altas para dificultar
     const chances = {
       SECRETO:  (RARITIES.SECRETO?.chance || 0.015) * (1 + (luck - 1) * 0.3),
       MITICO:   RARITIES.MITICO.chance   * (1 + (luck - 1) * 0.4),
@@ -3872,58 +4010,87 @@ class FishingGame {
       INCOMUM:  RARITIES.INCOMUM.chance   * (1 + (luck - 1) * 0.3),
       COMUM:    RARITIES.COMUM.chance
     };
+    const total = Object.values(chances).reduce((a, b) => a + b, 0);
+    Object.keys(chances).forEach(k => { chances[k] /= total; });
+    return chances;
+  }
 
-    const totalWeight = Object.values(chances).reduce((a, b) => a + b, 0);
-    let rand = Math.random() * totalWeight;
-    let selectedRarity = 'COMUM';
-    for (const [key, weight] of Object.entries(chances)) {
-      if (rand <= weight) { selectedRarity = key; break; }
-      rand -= weight;
-    }
-
-    let template;
+  // Espécies possíveis para uma raridade no mundo/bioma/horário atual (nunca vazio).
+  getFishPoolForRarity(rarity, timeOfDay = this.timeOfDay) {
     if (this.currentWorld === 2) {
       const activeBiome = this.activeWorld2Biome || 'recife_bioluminescente';
       const biomeFish = FISH_WORLD_2.filter(f => f.biome === activeBiome);
-      const pool = biomeFish.filter(f => f.rarity === selectedRarity);
-      template = pool[Math.floor(Math.random() * pool.length)] ||
-                 biomeFish[Math.floor(Math.random() * biomeFish.length)] ||
-                 FISH_WORLD_2[0];
-    } else {
-      const pool = FISH_LIST.filter(f => {
-        if (f.rarity !== selectedRarity) return false;
-        // Peixes exclusivos de horário só podem ser pescados em seu período do dia
-        if (f.timeExclusive && f.timeExclusive !== this.timeOfDay) return false;
-        return true;
-      });
-      template = pool[Math.floor(Math.random() * pool.length)] || FISH_LIST.find(f => f.rarity === selectedRarity) || FISH_LIST[0];
+      const pool = biomeFish.filter(f => f.rarity === rarity);
+      if (pool.length) return pool;
+      return biomeFish.length ? biomeFish : [FISH_WORLD_2[0]];
     }
+    const pool = FISH_LIST.filter(f => {
+      if (f.rarity !== rarity) return false;
+      // Peixes exclusivos de horário só podem ser pescados em seu período do dia
+      if (f.timeExclusive && f.timeExclusive !== timeOfDay) return false;
+      return true;
+    });
+    if (pool.length) return pool;
+    return [FISH_LIST.find(f => f.rarity === rarity) || FISH_LIST[0]];
+  }
 
-    // Influência do PWR da vara no peso do peixe (viés suave para espécimes maiores)
+  getEquippedRodPower() {
     const equippedRod = this.currentWorld === 2
       ? RODS_WORLD_2.find(r => r.id === this.selectedRodId)
       : RODS.find(r => r.id === this.selectedRodId);
+    if (!equippedRod) return 1.0;
+    if (typeof equippedRod.power === 'number') return equippedRod.power;
+    if (typeof equippedRod.tier === 'number') return 1.0 + (equippedRod.tier - 1) * 2.0; // T1=1.0, T2=3.0, T3=5.0, T4=7.0
+    return 1.0;
+  }
 
-    let rodPower = 1.0;
-    if (equippedRod) {
-      if (typeof equippedRod.power === 'number') {
-        rodPower = equippedRod.power;
-      } else if (typeof equippedRod.tier === 'number') {
-        rodPower = 1.0 + (equippedRod.tier - 1) * 2.0; // T1=1.0, T2=3.0, T3=5.0, T4=7.0
-      }
-    }
-
-    // Viés sutil na distribuição aleatória e leve multiplicador final (+1% a +12% no topo)
+  // Peso a partir de um sorteio uniforme u ∈ [0,1). Influência do PWR da vara:
+  // viés sutil na distribuição e leve multiplicador final (+1% a +12% no topo).
+  computeFishWeight(template, u, rodPower = this.getEquippedRodPower()) {
     const rollExponent = 1 / (1 + (rodPower - 1) * 0.05);
-    const weightRoll = Math.pow(Math.random(), rollExponent);
+    const weightRoll = Math.pow(u, rollExponent);
     const powerWeightMultiplier = 1 + Math.min(0.12, (rodPower - 1) * 0.015);
-
     let weight = +((template.minWeight + weightRoll * (template.maxWeight - template.minWeight)) * powerWeightMultiplier).toFixed(2);
     if (this.forgeUpgrades && this.forgeUpgrades['linha_reforcada']) {
       weight = +(weight * 1.15).toFixed(2);
     }
+    return weight;
+  }
+
+  computeFishValue(template, weight) {
     const weightFactor = weight / template.minWeight;
-    const rawValue = Math.round(template.baseValue * Math.pow(weightFactor, 0.7));
+    return Math.round(template.baseValue * Math.pow(weightFactor, 0.7));
+  }
+
+  // Valor base médio de uma espécie (integração numérica do peso, sem aleatoriedade).
+  getExpectedFishValue(template, rodPower) {
+    const STEPS = 32;
+    let sum = 0;
+    for (let i = 0; i < STEPS; i++) {
+      const u = (i + 0.5) / STEPS;
+      sum += this.computeFishValue(template, this.computeFishWeight(template, u, rodPower));
+    }
+    return sum / STEPS;
+  }
+
+  // opts.rarity força a raridade; opts.timeOfDay sobrescreve o horário (usado pelo offline).
+  rollFish(buffs, opts = {}) {
+    let selectedRarity = opts.rarity;
+    if (!selectedRarity) {
+      const chances = this.getRarityChances(buffs);
+      let rand = Math.random();
+      selectedRarity = 'COMUM';
+      for (const [key, weight] of Object.entries(chances)) {
+        if (rand <= weight) { selectedRarity = key; break; }
+        rand -= weight;
+      }
+    }
+
+    const pool = this.getFishPoolForRarity(selectedRarity, opts.timeOfDay || this.timeOfDay);
+    const template = pool[Math.floor(Math.random() * pool.length)];
+
+    const weight = this.computeFishWeight(template, Math.random());
+    const rawValue = this.computeFishValue(template, weight);
 
     let generatedBuffs = [];
     if (this.currentWorld === 2) {
@@ -6347,6 +6514,8 @@ class FishingGame {
         m.addEventListener('click', (e) => {
           if (e.target === m) {
             if (id === 'patch-notes-modal' && this.patchNotesCooldownActive) return;
+            // Fechar o modal offline equivale a coletar (senão a recompensa se perdia)
+            if (id === 'offline-modal') { document.getElementById('btn-collect-offline')?.click(); return; }
             m.classList.add('hidden');
             sound.playClick();
           }
@@ -6364,6 +6533,7 @@ class FishingGame {
           if (id === 'patch-notes-modal' && this.patchNotesCooldownActive) return;
           const m = document.getElementById(id);
           if (m && !m.classList.contains('hidden')) {
+            if (id === 'offline-modal') { document.getElementById('btn-collect-offline')?.click(); return; }
             m.classList.add('hidden');
           }
         });

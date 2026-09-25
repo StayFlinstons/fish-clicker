@@ -60,3 +60,11 @@ A random "Golden Fish" swims across the lake periodically (`initGoldenFish`/`spa
 - All in-game text, IDs, comments, and commit messages are Portuguese (pt-BR); keep new content consistent with this.
 - No framework, no build step by design ("Sem frameworks pesados, foco em performance pura" per README) — don't introduce a bundler, TypeScript, or a UI framework without discussing it first, since the whole project is intentionally dependency-light and installable as-is.
 - Rarity tiers, fish, items, and achievements are plain data objects in the `*Data.js` files — prefer extending those catalogs over hardcoding new special cases in `game.js`.
+
+## Knowledge graph (graphify)
+
+A local [graphify](https://pypi.org/project/graphifyy/) code graph lives in `graphify-out/` (gitignored — regenerate per machine). It is an aid, not a gate: most of the logic is still inside the single `FishingGame` class, so the graph is star-shaped and plain Grep is often faster for "where is X".
+
+- Use `graphify query "<question>"`, `graphify path "<A>" "<B>"`, `graphify explain "<X>"` or `graphify affected "<X>"` for cross-cutting questions — who calls a method, what a change can break, and especially when moving methods out of `game.js` into separate modules.
+- If `graphify-out/graph.json` is missing, build it with `graphify update .` (AST-only, no API key, a few seconds).
+- After changing code files, run `graphify update .` so the graph stays current.

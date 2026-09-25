@@ -2735,6 +2735,13 @@
         </div>
         <div class="flex justify-between items-center text-[9px]" style="font-family:var(--font-pixel);">
           <span class="flex items-center gap-1.5 text-slate-400">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="1" width="6" height="1" fill="#94a3b8"/><rect x="1" y="2" width="8" height="2" fill="#0284c7"/><rect x="2" y="4" width="6" height="5" fill="#0369a1"/></svg>
+            <span>Guardados no Balde:</span>
+          </span>
+          <span id="offline-kept-text" class="text-purple-300 font-bold">0 peixe(s)</span>
+        </div>
+        <div class="flex justify-between items-center text-[9px]" style="font-family:var(--font-pixel);">
+          <span class="flex items-center gap-1.5 text-slate-400">
             <svg class="w-3.5 h-3.5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="1" width="6" height="8" fill="#eab308"/><rect x="1" y="2" width="8" height="6" fill="#facc15"/><rect x="3" y="3" width="4" height="4" fill="#fef08a"/><rect x="4" y="4" width="2" height="2" fill="#eab308"/></svg>
             <span>Ouro Rendido:</span>
           </span>
@@ -3488,6 +3495,26 @@
             </div>
             <button onclick="window.game.openConsoleFromSettings()" class="pixel-btn px-2.5 py-1 text-[8.5px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-600 shrink-0" style="font-family:var(--font-pixel);">
               ABRIR
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO: BACKUP DO SAVE (EXPORTAR / IMPORTAR) -->
+        <div class="bg-slate-950/80 border-2 border-slate-800 p-2.5 space-y-2">
+          <div>
+            <h4 class="text-[9.5px] font-bold text-amber-300 flex items-center gap-1.5" style="font-family:var(--font-pixel);">
+              <span class="inline-flex"><svg class="w-3.5 h-3.5" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="1" y="1" width="8" height="8" fill="#b45309"/><rect x="3" y="1" width="4" height="3" fill="#fef3c7"/><rect x="2" y="6" width="6" height="3" fill="#78350f"/></svg></span>
+              <span>BACKUP DO SAVE</span>
+            </h4>
+            <p class="text-[7px] text-slate-500 mt-0.5" style="font-family:var(--font-pixel);">Exporte um código para não perder o progresso ao limpar o navegador ou trocar de aparelho</p>
+          </div>
+          <textarea id="save-code-textarea" rows="3" spellcheck="false" placeholder="O código do save aparece aqui. Para importar, cole-o e clique em IMPORTAR." class="w-full bg-slate-900 border border-slate-700 text-[8px] text-slate-300 p-1.5 font-mono resize-none break-all focus:outline-none focus:border-amber-500"></textarea>
+          <div class="flex gap-2 justify-end">
+            <button onclick="window.game.exportSave()" class="pixel-btn px-2.5 py-1 text-[8.5px] font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-600 shrink-0" style="font-family:var(--font-pixel);">
+              EXPORTAR
+            </button>
+            <button onclick="window.game.importSave()" class="pixel-btn px-2.5 py-1 text-[8.5px] font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-600 shrink-0" style="font-family:var(--font-pixel);">
+              IMPORTAR
             </button>
           </div>
         </div>
