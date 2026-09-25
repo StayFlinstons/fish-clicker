@@ -70,23 +70,73 @@ export class EffectMethods {
     setTimeout(() => el.remove(), 1100);
   }
 
-  // Pilha única de avisos no rodapé (acima da barra de abas no celular): toasts e conquistas
-  // entram em fila, no máximo 3 visíveis, sem se sobrepor nem cobrir o topo do lago.
-  pushNotice(el, durationMs = 2500) {
-    let stack = document.getElementById('toast-stack');
-    if (!stack) {
-      stack = document.createElement('div');
-      stack.id = 'toast-stack';
-      document.body.appendChild(stack);
+  // Avisos principais (toasts e conquistas): pilha no topo, logo abaixo do header, máx. 3.
+  // Tocar em qualquer parte do aviso (ou no ✕) fecha. Com `key`, um aviso igual já visível
+  // só renova o tempo em vez de empilhar outro. Os cards de captura de peixe ficam no topo do
+  // lago e descem para baixo desta pilha (layoutNotices).
+  pushNotice(el, durationMs = 2500, key = null) {
+    const stack = this.getNoticeStack();
+    if (key) {
+      const same = [...stack.children].find(n => n.dataset.noticeKey === key && !n._closing);
+      if (same) { same._restartTimer(); return; }
+      el.dataset.noticeKey = key;
     }
-    while (stack.children.length >= 3) stack.firstElementChild.remove();
+    const live = [...stack.children].filter(n => !n._closing);
+    live.slice(0, Math.max(0, live.length - 2)).forEach(n => this.dismissNotice(n, true));
+
     el.classList.add('toast-item');
+    el.title = 'Toque para fechar';
+    const close = document.createElement('span');
+    close.className = 'toast-close';
+    close.textContent = '✕';
+    el.appendChild(close);
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.dismissNotice(el);
+    });
+
+    let timer = null;
+    el._restartTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => this.dismissNotice(el), durationMs);
+    };
+    el._restartTimer();
     stack.appendChild(el);
     requestAnimationFrame(() => el.classList.add('is-shown'));
-    setTimeout(() => {
-      el.classList.remove('is-shown');
-      setTimeout(() => el.remove(), 300);
-    }, durationMs);
+  }
+
+  dismissNotice(el, immediate = false) {
+    if (!el || el._closing) return;
+    el._closing = true;
+    if (immediate) { el.remove(); return; }
+    el.classList.remove('is-shown');
+    setTimeout(() => el.remove(), 300);
+  }
+
+  getNoticeStack() {
+    let stack = document.getElementById('toast-stack');
+    if (stack) return stack;
+    stack = document.createElement('div');
+    stack.id = 'toast-stack';
+    document.body.appendChild(stack);
+    // Reposiciona a pilha e empurra os cards de captura sempre que ela muda de tamanho
+    new ResizeObserver(() => this.layoutNotices()).observe(stack);
+    window.addEventListener('resize', () => this.layoutNotices());
+    this.layoutNotices();
+    return stack;
+  }
+
+  layoutNotices() {
+    const stack = document.getElementById('toast-stack');
+    if (!stack) return;
+    const header = document.querySelector('header');
+    stack.style.top = Math.round((header ? header.getBoundingClientRect().bottom : 0) + 8) + 'px';
+    const catches = document.getElementById('catch-toast-container');
+    const lake = catches && catches.parentElement;
+    if (!catches || !lake) return;
+    const hasNotices = [...stack.children].some(n => !n._closing);
+    const overlap = hasNotices ? stack.getBoundingClientRect().bottom - lake.getBoundingClientRect().top + 6 : 0;
+    catches.style.top = (12 + Math.max(0, overlap)) + 'px';
   }
 
   showToast(msg, type = 'info') {
@@ -103,6 +153,6 @@ export class EffectMethods {
     t.style.fontFamily = 'var(--font-pixel)';
     t.style.boxShadow = '4px 4px 0 #000';
     t.textContent = msg;
-    this.pushNotice(t, 2500);
+    this.pushNotice(t, 2500, type + '|' + msg);
   }
 }

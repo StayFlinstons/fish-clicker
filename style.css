@@ -54,11 +54,12 @@ html, body { height: 100%; overflow: hidden; }
   }
 }
 
-/* Pilha de avisos (pushNotice em ui/effects.js) */
+/* Avisos principais (pushNotice em ui/effects.js): topo, abaixo do header. O `top` é
+   definido em JS (layoutNotices) pela altura real do header. */
 #toast-stack {
   position: fixed;
   left: 50%;
-  bottom: 16px;
+  top: 68px;
   transform: translateX(-50%);
   z-index: 60;
   display: flex;
@@ -69,16 +70,29 @@ html, body { height: 100%; overflow: hidden; }
   max-width: min(92vw, 420px);
   pointer-events: none;
 }
-@media (max-width: 1023.98px) {
-  #toast-stack { bottom: calc(76px + env(safe-area-inset-bottom)); }
-}
 .toast-item {
+  position: relative;
   max-width: 100%;
+  padding-right: 26px !important;
+  cursor: pointer;
+  pointer-events: auto;
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(-8px);
   transition: opacity 0.3s, transform 0.3s;
 }
 .toast-item.is-shown { opacity: 1; transform: none; }
+.toast-close {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  font-size: 8px;
+  line-height: 1;
+  opacity: 0.7;
+}
+.toast-item:hover .toast-close { opacity: 1; }
+
+/* Cards de captura: descem para baixo dos avisos principais (top definido em layoutNotices) */
+#catch-toast-container { transition: top 0.2s; }
 
 .mobile-tab-btn {
   display: flex;

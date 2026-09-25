@@ -44,7 +44,7 @@ Then open `http://localhost:3000`. `start_game.bat` does the same (serves on por
 
 ### Layout: desktop vs mobile
 
-Same DOM for both, no duplicated markup (code finds elements by id). At ≥1024px the `<main>` grid shows three columns (shop | scene | bucket). Below 1024px (`style.css`, "LAYOUT MOBILE") only one panel is shown at a time: the three panels carry `data-mpanel="loja|pescar|balde"`, `body[data-mobile-tab]` picks the visible one, and the `#mobile-nav` tab bar switches it via `setMobileTab()`. Elements with `.mobile-only` exist only in the mobile layout. Toasts and achievement popups go through `pushNotice()` (`ui/effects.js`), a single bottom stack (max 3), so they never overlap each other or the catch popup at the top of the lake. Minimum text size is 8px (Press Start 2P's native grid; smaller sizes blur).
+Same DOM for both, no duplicated markup (code finds elements by id). At ≥1024px the `<main>` grid shows three columns (shop | scene | bucket). Below 1024px (`style.css`, "LAYOUT MOBILE") only one panel is shown at a time: the three panels carry `data-mpanel="loja|pescar|balde"`, `body[data-mobile-tab]` picks the visible one, and the `#mobile-nav` tab bar switches it via `setMobileTab()`. Elements with `.mobile-only` exist only in the mobile layout. Toasts and achievement popups go through `pushNotice()` (`ui/effects.js`): one stack at the top, below the header (max 3; tap anywhere on a notice or its ✕ to close; a `key` dedupes identical notices). Fish-catch popups (`#catch-toast-container`, can be turned off in settings) stay at the top of the lake and are pushed below that stack by `layoutNotices()`. Minimum text size is 8px (Press Start 2P's native grid; smaller sizes blur).
 
 ### State & persistence
 
