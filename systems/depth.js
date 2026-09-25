@@ -3,13 +3,6 @@
 import { DEPTH_LAYERS, formatDepth, getDepthLayer } from '../depthData.js';
 import { sound } from '../sound.js';
 
-const SCENERY_ELEMENTS = {
-  recife_bioluminescente: 'scenery-recife',
-  fendas_vulcanicas: 'scenery-vulcanicas',
-  cemiterio_naufragios: 'scenery-naufragios',
-  zona_hadal: 'scenery-hadal'
-};
-
 export class DepthMethods {
   // Da Zona do Crepúsculo para baixo o pescador vira mergulhador e a água vira abismo.
   isDeepLayer() {
@@ -41,9 +34,8 @@ export class DepthMethods {
       sound.playWaterSplash?.();
       this.showToast(`${layer.icon} ${layer.name} · ${formatDepth(layer.minDepth)} a ${formatDepth(layer.maxDepth)}`, 'info');
     }
-    this.applyTimeOfDay();
+    this.applyLayerScenery();
     this.updateFisherman();
-    this.resetSonar();
     this.renderDepthSelector();
     this.saveGame();
     this.renderAll();
@@ -107,37 +99,31 @@ export class DepthMethods {
     }
   }
 
-  // Fundo do lago da camada atual. Camada 1 usa o lago do rio (com dia/pôr do sol/noite);
-  // as outras reaproveitam os cenários de pixel art do fundo do mar.
+  // Fundo do lago da camada atual (uma imagem por camada) e o visual do Eclipse Vermelho por cima.
   applyLayerScenery() {
     const layer = getDepthLayer(this.getCurrentLayer());
-    const sceneryContainer = document.getElementById('world2-lake-scenery');
-    const lakeBg = document.getElementById('world1-lake-bg');
+    const bgImg = document.getElementById('lake-bg-img');
+    const bgEclipse = document.getElementById('lake-bg-eclipse');
+    const overlay = document.getElementById('lake-bg-overlay');
     const lakeArea = document.getElementById('fishing-lake-area');
-    const stars = document.getElementById('world1-sky-stars');
+    const isEclipse = Boolean(this.bloodMoonEventActive);
+    // O rio tem um fundo próprio para o Eclipse; nas outras camadas só a água fica vermelha
+    const riverEclipse = isEclipse && !layer.scenery;
 
-    if (!layer.scenery) {
-      sceneryContainer?.classList.add('hidden');
-      lakeBg?.classList.remove('hidden');
-      stars?.classList.remove('hidden');
-      this.waterRenderer?.setWorldMode(false, null, this.getSwimmingFishIcons(), layer.id);
-      return false;
+    if (bgImg) {
+      if (bgImg.getAttribute('src') !== layer.image) bgImg.setAttribute('src', layer.image);
+      bgImg.style.opacity = riverEclipse ? '0' : '1';
+    }
+    if (bgEclipse) bgEclipse.style.opacity = riverEclipse ? '1' : '0';
+    if (overlay) overlay.style.background = isEclipse ? 'rgba(185, 28, 28, 0.12)' : 'transparent';
+    if (lakeArea) {
+      lakeArea.style.background = isEclipse
+        ? 'linear-gradient(to bottom, #2a0303, #450a0a 40%, #150202)'
+        : (layer.gradient || 'linear-gradient(to bottom, #7dd3fc, #38bdf8 35%, #0284c7 65%, #0369a1)');
     }
 
-    sceneryContainer?.classList.remove('hidden');
-    if (sceneryContainer) sceneryContainer.style.filter = layer.sceneryFilter || '';
-    lakeBg?.classList.add('hidden');
-    stars?.classList.add('hidden');
-    Object.entries(SCENERY_ELEMENTS).forEach(([id, elemId]) => {
-      const el = document.getElementById(elemId);
-      if (!el) return;
-      const on = id === layer.scenery;
-      el.classList.toggle('hidden', !on);
-      el.style.opacity = on ? '1' : '0';
-    });
-    if (lakeArea && layer.gradient) lakeArea.style.background = layer.gradient;
-    this.waterRenderer?.setWorldMode(true, layer.scenery, this.getSwimmingFishIcons(), layer.id);
-    return true;
+    this.waterRenderer?.setWorldMode(Boolean(layer.scenery), layer.scenery, this.getSwimmingFishIcons(), layer.id);
+    this.waterRenderer?.setFishStyle(layer.fishStyle);
   }
 
   // Peixes comuns e incomuns da camada que nadam de enfeite no cenário (até 4).

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fish-clicker-v47';
+const CACHE_NAME = 'fish-clicker-v54';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -9,13 +9,11 @@ const ASSETS_TO_CACHE = [
   './core/economy.js',
   './core/mixins.js',
   './core/save.js',
-  './core/timeCycle.js',
   './dev/devConsole.js',
   './dev/testCommands.js',
   './systems/achievements.js',
   './systems/analytics.js',
   './systems/automation.js',
-  './systems/chapter1.js',
   './systems/events.js',
   './systems/fishEyes.js',
   './systems/fishing.js',
@@ -28,6 +26,7 @@ const ASSETS_TO_CACHE = [
   './ui/celebrations.js',
   './ui/effects.js',
   './ui/lakeBackground.js',
+  './ui/pixelEmoji.js',
   './ui/mobileNav.js',
   './ui/patchNotes.js',
   './ui/render.js',
@@ -47,9 +46,12 @@ const ASSETS_TO_CACHE = [
   './icons/icon-512.png',
   './icons/btn_pescar.png',
   './icons/fishing_hook.png',
-  './fundo-lago-dia.png',
-  './fundo-lago-sunset.png',
-  './fundo-lago-noite.png',
+  './zonas/zona_1.png',
+  './zonas/zona_2.png',
+  './zonas/zona_3.png',
+  './zonas/zona_4.png',
+  './zonas/zona_5.png',
+  './zonas/zona_6.png',
   './fundo-lago-eclipse.png',
   './icons/baits/hook_minhoca.png',
   './icons/baits/hook_camarao.png',
@@ -57,14 +59,12 @@ const ASSETS_TO_CACHE = [
   './icons/baits/hook_queijo_mistico.png',
   './icons/baits/hook_ouro_liquido.png',
   './icons/baits/hook_essencia_travessia.png',
-  './icons/baits/hook_isca_kraken_ancestral.png',
   './icons/baits/anzol_minhoca.png',
   './icons/baits/anzol_camarao.png',
   './icons/baits/anzol_glow_neon.png',
   './icons/baits/anzol_massa_mistica.png',
   './icons/baits/anzol_gota_eter_divino.png',
-  './icons/baits/anzol_vortice_dimensional.png',
-  './icons/baits/anzol_kraken.png'
+  './icons/baits/anzol_vortice_dimensional.png'
 ];
 
 // Instalação: pré-cacheia todos os assets do jogo

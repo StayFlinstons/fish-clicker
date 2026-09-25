@@ -276,19 +276,6 @@ export class EventMethods {
       this.waterRenderer.setBloodMoonActive(true);
     }
 
-    const skyEl = document.getElementById('blood-eclipse-sky');
-    if (skyEl) {
-      // Com o novo fundo pixel art dedicado do Eclipse com o sol negro centralizado, oculta o sol procedural extra
-      const hasEclipseBg = !!document.getElementById('world1-bg-eclipse');
-      if (hasEclipseBg) {
-        skyEl.classList.add('hidden');
-        skyEl.style.display = 'none';
-      } else {
-        skyEl.classList.remove('hidden');
-        skyEl.style.display = 'flex';
-      }
-    }
-
     const bannerEl = document.getElementById('blood-eclipse-banner');
     if (bannerEl) {
       bannerEl.classList.remove('hidden');
@@ -307,7 +294,7 @@ export class EventMethods {
       }
     }, 500);
 
-    this.applyTimeOfDay();
+    this.applyLayerScenery();
     this.showToast('🌑 O Eclipse Vermelho começou! O Mar Sangrento despertou por 60s!', 'error');
   }
 
@@ -335,7 +322,7 @@ export class EventMethods {
       bannerEl.style.display = 'none';
     }
 
-    this.applyTimeOfDay();
+    this.applyLayerScenery();
     this.showToast('O Eclipse Vermelho se dissipou e o mar voltou ao normal.', 'info');
   }
 

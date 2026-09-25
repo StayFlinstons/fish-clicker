@@ -1,6 +1,5 @@
 // Progresso offline (recompensa AFK por valor esperado).
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
-import { getDepthLayer } from '../depthData.js';
 import { sound } from '../sound.js';
 
 export class OfflineMethods {
@@ -37,21 +36,12 @@ export class OfflineMethods {
     const catches = Math.floor(casts * (1 + buffs.doubleCatchChance));
     if (catches <= 0) return;
 
-    // Ausências de 15 min+ atravessam o ciclo inteiro: exclusivos de cada horário entram na média
     const layer = this.getCurrentLayer();
-    const phases = (getDepthLayer(layer).sunlit && effectiveSec >= 15 * 60)
-      ? ['day', 'sunset', 'night']
-      : [this.timeOfDay];
-
     const chances = this.getRarityChances(buffs);
     let avgValue = 0;
     Object.keys(chances).forEach(rarity => {
-      let sum = 0;
-      phases.forEach(phase => {
-        const pool = this.getFishPoolForRarity(rarity, phase, layer);
-        sum += pool.reduce((acc, t) => acc + this.getExpectedFishValue(t), 0) / pool.length;
-      });
-      avgValue += chances[rarity] * (sum / phases.length);
+      const pool = this.getFishPoolForRarity(rarity, layer);
+      avgValue += chances[rarity] * pool.reduce((acc, t) => acc + this.getExpectedFishValue(t), 0) / pool.length;
     });
     const earnedGold = Math.round(catches * avgValue * (1 + buffs.goldMultiplier));
 
@@ -60,7 +50,7 @@ export class OfflineMethods {
     const minutes = Math.floor((diffSec % 3600) / 60);
     let timeStr = '';
     if (hours > 0) timeStr += `${hours}h `;
-    timeStr += `${Math.max(1, minutes)}m`;
+    timeStr += `${hours > 0 ? minutes : Math.max(1, minutes)}m`;
     if (diffSec > maxOfflineSec) timeStr += ` (máx. ${maxHours}h)`;
 
     // Atualizar e exibir modal

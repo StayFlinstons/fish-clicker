@@ -26,13 +26,12 @@ const PALETTES = {
   celacanto: { body:'#1a237e', belly:'#7986cb', eye:'#ffd600', fin:'#0d47a1', outline:'#0a1647' },
   leviata:   { body:'#0d47a1', belly:'#42a5f5', eye:'#76ff03', fin:'#0b3d91', outline:'#072660' },
   serpente:  { body:'#ff6f00', belly:'#ffe082', eye:'#e040fb', fin:'#e65100', outline:'#bf360c' },
-  // Exclusivos de horário
+  // Lendários e míticos da Zona do Sol
   peixe_sol:      { body:'#facc15', belly:'#fef9c3', eye:'#ea580c', fin:'#eab308', outline:'#a16207' },
   prisma_solar:   { body:'#f59e0b', belly:'#fffbeb', eye:'#06b6d4', fin:'#fbbf24', outline:'#b45309' },
   crepusculo:     { body:'#c026d3', belly:'#fbcfe8', eye:'#fde047', fin:'#9333ea', outline:'#581c87' },
   fenix_ocaso:    { body:'#ea580c', belly:'#fdf2f8', eye:'#38bdf8', fin:'#db2777', outline:'#831843' },
   tubarao_lunar:  { body:'#94a3b8', belly:'#f1f5f9', eye:'#38bdf8', fin:'#64748b', outline:'#334155' },
-  kraken_estelar: { body:'#312e81', belly:'#c7d2fe', eye:'#c084fc', fin:'#4338ca', outline:'#1e1b4b' },
   lampreia_negra: { body:'#09090b', belly:'#18181b', eye:'#ff1a1a', fin:'#7f1d1d', outline:'#450a0a' },
   // ═══════════════════════════════════════════
   // PEIXES DAS CAMADAS FUNDAS (antigo Mundo 2)
@@ -442,7 +441,6 @@ const FISH_ANATOMY = {
   crepusculo:     SPRITE_RAY,
   fenix_ocaso:    SPRITE_PHOENIX,
   tubarao_lunar:  SPRITE_SHARK,
-  kraken_estelar: SPRITE_KRAKEN,
   lampreia_negra: SPRITE_LAMPREY,
   // Camadas fundas (antigo Mundo 2)
   camarao_neon:         SPRITE_SLENDER,
@@ -768,7 +766,6 @@ export const BAIT_VISUALS = {
   queijo_mistico:     { color1:'#ffd700', color2:'#b8860b' },
   ouro_liquido:       { color1:'#e040fb', color2:'#7c4dff' },
   essencia_travessia: { color1:'#06b6d4', color2:'#8b5cf6' },
-  isca_kraken_ancestral: { color1:'#c084fc', color2:'#e11d48' },
   isca_plankton_neon:    { color1:'#22d3ee', color2:'#06b6d4' },
   isca_camarao_brasa:    { color1:'#f97316', color2:'#dc2626' },
   isca_alga_espectral:   { color1:'#34d399', color2:'#059669' },
@@ -888,24 +885,6 @@ const BAIT_SPRITES = {
     [0,0,0,1,1,2,2,3,2,2,1,1,0,0,0,0],
     [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  ],
-  isca_kraken_ancestral: [
-    [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
-    [0,0,0,1,1,5,5,5,5,5,1,1,0,0,0,0],
-    [0,0,1,5,2,2,3,3,3,2,2,5,1,0,0,0],
-    [0,1,5,2,3,3,4,4,4,3,3,2,5,1,0,0],
-    [0,1,5,2,3,4,4,1,4,4,3,2,5,1,0,0],
-    [1,5,2,3,4,4,1,1,1,4,4,3,2,5,1,0],
-    [1,5,2,3,4,4,1,1,1,4,4,3,2,5,1,0],
-    [1,5,2,3,4,4,1,1,1,4,4,3,2,5,1,0],
-    [1,5,2,3,4,4,1,1,1,4,4,3,2,5,1,0],
-    [0,1,5,2,3,4,4,1,4,4,3,2,5,1,0,0],
-    [0,1,5,2,3,3,4,4,4,3,3,2,5,1,0,0],
-    [0,0,1,5,2,2,3,3,3,2,2,5,1,0,0,0],
-    [0,0,0,1,1,5,5,5,5,5,1,1,0,0,0,0],
-    [0,0,1,6,1,0,1,6,1,0,1,6,1,0,0,0],
-    [0,0,1,6,1,0,1,6,1,0,1,6,1,0,0,0],
-    [0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0],
   ]
 };
 
@@ -928,24 +907,6 @@ const UPGRADE_SPRITES = {
     [0,0,0,0,0,1,1,2,1,1,0,0,0,0,0,0],
     [0,0,0,1,1,2,2,2,2,2,1,1,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  ],
-  sonar: [
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
-    [0,1,2,3,3,3,3,3,3,3,3,3,3,2,1,0],
-    [0,1,2,3,3,3,4,4,4,3,3,3,3,2,1,0],
-    [0,1,2,3,3,4,3,3,3,4,3,3,3,2,1,0],
-    [0,1,2,3,4,3,3,3,3,3,4,3,3,2,1,0],
-    [0,1,2,3,4,3,3,5,4,3,4,3,3,2,1,0],
-    [0,1,2,3,4,3,4,4,4,3,4,3,3,2,1,0],
-    [0,1,2,3,3,4,3,3,3,4,3,3,3,2,1,0],
-    [0,1,2,3,3,3,4,4,4,3,3,3,3,2,1,0],
-    [0,1,2,3,3,3,3,3,3,3,3,3,3,2,1,0],
-    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
-    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
   ],
   encomendas: [
     [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
@@ -1233,8 +1194,6 @@ export function getBaitIconDataURL(baitId, scale = 2.5) {
     pal = { 1: '#3b0764', 2: '#a855f7', 3: '#c084fc', 4: '#e879f9' };
   } else if (baitId === 'essencia_travessia') {
     pal = { 1: '#082f49', 2: '#0891b2', 3: '#8b5cf6', 4: '#67e8f9', 5: '#f472b6' };
-  } else if (baitId === 'isca_kraken_ancestral') {
-    pal = { 1: '#0f172a', 2: '#1e1b4b', 3: '#4338ca', 4: '#c084fc', 5: '#f43f5e', 6: '#38bdf8' };
   } else if (baitId === 'isca_plankton_neon') {
     pal = { 1: '#083344', 2: '#06b6d4', 3: '#22d3ee', 4: '#a5f3fc', 5: '#ffffff' };
   } else if (baitId === 'isca_camarao_brasa') {
@@ -1273,8 +1232,6 @@ export function getUpgradeIconDataURL(upgradeId, scale = 2.5) {
   } else if (upgradeId === 'ima_dourado') {
     pal = { 1: '#0f172a', 2: '#d97706', 3: '#facc15', 4: '#cbd5e1', 5: '#38bdf8', 6: '#f59e0b' };  } else if (upgradeId === 'carretilha') {
     pal = { 1: '#0f172a', 2: '#475569', 3: '#94a3b8', 4: '#e2e8f0', 5: '#f97316' };
-  } else if (upgradeId === 'sonar') {
-    pal = { 1: '#0f172a', 2: '#334155', 3: '#052e16', 4: '#4ade80', 5: '#ef4444' };
   } else if (upgradeId === 'encomendas') {
     pal = { 1: '#0f172a', 2: '#92400e', 3: '#f8fafc', 4: '#94a3b8', 5: '#16a34a', 6: '#cbd5e1' };
   } else if (upgradeId === 'rede_espera') {
@@ -1300,7 +1257,6 @@ export function renderFishToCanvas(canvas, fishIconId, scale = 4) {
   else if (fishIconId === 'serpente') specialColor = '#fef08a'; // Chifre místico dourado celestial
   else if (fishIconId === 'prisma_solar') specialColor = '#67e8f9'; // Cristais prismáticos celestes
   else if (fishIconId === 'fenix_ocaso') specialColor = '#fef08a'; // Brasas e plumas douradas solares
-  else if (fishIconId === 'kraken_estelar') specialColor = '#38bdf8'; // Ventosas astrais bioluminescentes
   else if (fishIconId === 'crepusculo') specialColor = pal.outline;
   else if (fishIconId === 'tubarao_lunar') specialColor = '#f8fafc';
   else if (fishIconId === 'peixe_sol') specialColor = '#fef08a';
@@ -1395,16 +1351,25 @@ export function updateRodSVG(rodId, baitId) {
       'isca_brilhante': 'icons/baits/anzol_glow_neon.png',
       'queijo_mistico': 'icons/baits/anzol_massa_mistica.png',
       'ouro_liquido': 'icons/baits/anzol_gota_eter_divino.png',
-      'essencia_travessia': 'icons/baits/anzol_vortice_dimensional.png',
-      'isca_kraken_ancestral': 'icons/baits/anzol_kraken.png'
+      'essencia_travessia': 'icons/baits/anzol_vortice_dimensional.png'
     };
     hookImg.src = baitHookMap[validBait] || `icons/baits/hook_${validBait}.png`;
   }
 }
 
 // ═══════════════════════════════════════════════
-// LAGO ANIMADO COM ONDAS, PEIXES E CICLO DIA/NOITE
+// LAGO ANIMADO COM ONDAS E PEIXES
 // ═══════════════════════════════════════════════
+// Cores '#rrggbb' para [r, g, b] (cor inválida vira verde-água) e mistura de duas cores (t = peso da segunda)
+function hexToRgb(hex) {
+  const h = /^#[0-9a-f]{6}$/i.test(hex || '') ? hex : '#34d399';
+  return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+}
+function mixHex(a, b, t) {
+  const ca = hexToRgb(a), cb = hexToRgb(b);
+  return '#' + ca.map((v, i) => Math.round(v + (cb[i] - v) * t).toString(16).padStart(2, '0')).join('');
+}
+
 export class PixelWaterRenderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -1416,7 +1381,7 @@ export class PixelWaterRenderer {
     this.waterDrops = [];
     this.splashRipples = [];
     this.vanishingFish = [];
-    this.timeOfDay = 'night'; // 'day' | 'sunset' | 'night'
+    this.fishStyle = null; // visual dos peixinhos da camada (ver fishStyle em depthData.js)
     this.diverActive = false;
     this.diver = {
       x: -80,
@@ -1461,10 +1426,8 @@ export class PixelWaterRenderer {
     this.bloodMoonActive = !!active;
   }
 
-  setTimeOfDay(tod) {
-    if (['day', 'sunset', 'night'].includes(tod)) {
-      this.timeOfDay = tod;
-    }
+  setFishStyle(style) {
+    this.fishStyle = style || null;
   }
 
   _resize() {
@@ -1514,8 +1477,6 @@ export class PixelWaterRenderer {
       } else {
         dropColors = ['#ffffff', '#cffafe', '#a5f3fc', '#22d3ee', '#0891b2'];
       }
-    } else if (this.timeOfDay === 'sunset') {
-      dropColors = ['#ffffff', '#fed7aa', '#fb923c', '#f472b6', '#bae6fd'];
     } else {
       dropColors = ['#ffffff', '#e0f2fe', '#bae6fd', '#7dd3fc', '#38bdf8', '#0284c7'];
     }
@@ -1642,7 +1603,7 @@ export class PixelWaterRenderer {
       return;
     }
 
-    // Paletas por horário
+    // Paletas do rio (normal e Eclipse)
     let wc, lightColor, lightAlpha, waveColor1, waveColor2;
 
     if (this.bloodMoonActive) {
@@ -1652,31 +1613,16 @@ export class PixelWaterRenderer {
       lightAlpha = 0.12;
       waveColor1 = 'rgba(239, 68, 68, 0.8)';
       waveColor2 = 'rgba(185, 28, 28, 0.6)';
-    } else if (this.timeOfDay === 'day') {
-      // Dia claro e cristalino
+    } else {
       wc = ['#0284c7','#0369a1','#075985','#0c4a6e','#0f3b56','#103147','#0f283a','#0d202e'];
       lightColor = '#bae6fd';
       lightAlpha = 0.08;
       waveColor1 = 'rgba(255, 255, 255, 0.6)';
       waveColor2 = 'rgba(186, 230, 253, 0.45)';
-    } else if (this.timeOfDay === 'sunset') {
-      // Pôr do sol alaranjado/violeta
-      wc = ['#7c2d12','#9a3412','#701a75','#581c87','#3b0764','#2e1065','#1e1b4b','#0f172a'];
-      lightColor = '#fdba74';
-      lightAlpha = 0.07;
-      waveColor1 = 'rgba(254, 215, 170, 0.55)';
-      waveColor2 = 'rgba(244, 114, 182, 0.35)';
-    } else {
-      // Noite estrelada profunda
-      wc = ['#081c30','#0a2440','#0d2d50','#103760','#134170','#174b80','#1b5590','#1f5fa0'];
-      lightColor = '#38bdf8';
-      lightAlpha = 0.04;
-      waveColor1 = 'rgba(186, 230, 253, 0.45)';
-      waveColor2 = 'rgba(56, 189, 248, 0.35)';
     }
 
-    // Fundo do Mundo 1: se houver fundo customizado no DOM, preserva a transparência
-    const customBg = document.getElementById('world1-lake-bg');
+    // Se houver fundo em imagem no DOM, preserva a transparência
+    const customBg = document.getElementById('lake-bg');
     const hasCustomBg = customBg && !customBg.classList.contains('hidden');
 
     if (!hasCustomBg) {
@@ -1990,9 +1936,14 @@ export class PixelWaterRenderer {
     }
   }
 
+  // Peixinho de enfeite do lago. fishStyle (da camada, ver depthData.js) dá o visual de cada zona.
   _drawMinifish(f, wy) {
     const { ctx } = this; const s = f.size;
     const m = [[0,0,1,1,1,0,0,0],[0,1,2,2,2,1,0,0],[1,5,2,4,2,2,1,1],[0,1,3,3,2,2,1,1],[0,0,1,1,1,1,0,0]];
+    const style = this.bloodMoonActive ? null : this.fishStyle;
+    if (f.glowSeed === undefined) f.glowSeed = Math.random() * Math.PI * 2;
+    const t = this.time + f.glowSeed;
+    const x0 = Math.round(f.x), y0 = Math.round(f.y + wy);
     let cm;
     if (this.bloodMoonActive) {
       // Peixinhos vermelhos brilhantes durante o Eclipse / Lua Sangrenta
@@ -2003,15 +1954,94 @@ export class PixelWaterRenderer {
         4: '#fef08a', // olho dourado místico
         5: '#f87171'  // nadadeiras vermelho vivo
       };
+    } else if (style === 'charred') {
+      // Carbonizados: corpo de carvão, olho de brasa
+      cm = {
+        1: '#0c0a09',
+        2: mixHex(f.pal.body, '#1c1917', 0.8),
+        3: mixHex(f.pal.belly, '#292524', 0.75),
+        4: '#fbbf24',
+        5: mixHex(f.pal.fin, '#1c1917', 0.8)
+      };
+    } else if (style === 'ghost') {
+      // Fantasmas translúcidos da fossa, puxados para o violeta
+      cm = {
+        1: '#a78bfa',
+        2: mixHex(f.pal.body, '#c4b5fd', 0.6),
+        3: mixHex(f.pal.belly, '#ede9fe', 0.6),
+        4: '#f5f3ff',
+        5: mixHex(f.pal.fin, '#8b5cf6', 0.6)
+      };
     } else {
       cm = { 1: f.pal.outline, 2: f.pal.body, 3: f.pal.belly, 4: f.pal.eye, 5: f.pal.fin };
     }
+
+    // Aura atrás do corpo
+    if (style === 'glow') {
+      this._drawFishGlow(f, wy, mixHex(mixHex(cm[2], '#ffffff', 0.5), '#6ee7b7', 0.5), 0.8, 15);
+    } else if (style === 'charred') {
+      this._drawFishGlow(f, wy, '#f97316', 0.35, 8);
+    } else if (style === 'photophores') {
+      this._drawFishGlow(f, wy, '#22d3ee', 0.25, 7);
+    } else if (style === 'ghost') {
+      this._drawFishGlow(f, wy, '#a855f7', 0.3, 10);
+    }
+
+    ctx.save();
+    if (style === 'ghost') ctx.globalAlpha *= 0.5 + 0.15 * Math.sin(t * 1.5);
     for (let y = 0; y < m.length; y++)
       for (let x = 0; x < m[y].length; x++) {
         if (!m[y][x]) continue;
         ctx.fillStyle = cm[m[y][x]] || '#fff';
-        ctx.fillRect(Math.round(f.x) + x * s, Math.round(f.y + wy) + y * s, s, s);
+        ctx.fillRect(x0 + x * s, y0 + y * s, s, s);
       }
+    ctx.restore();
+
+    if (style === 'charred') {
+      // Rachaduras em brasa que tremulam e fagulhas subindo (viram bolhas laranja no cenário vulcânico)
+      [[1, 3], [2, 5], [3, 2], [3, 5]].forEach(([y, x], i) => {
+        const heat = Math.sin(t * 4 + i * 1.7);
+        ctx.fillStyle = heat > 0.3 ? '#fbbf24' : heat > -0.4 ? '#f97316' : '#7c2d12';
+        ctx.fillRect(x0 + x * s, y0 + y * s, s, s);
+      });
+      if (Math.random() < 0.015) {
+        this.bubbles.push({ x: x0 + 4 * s, y: y0, speed: 0.4 + Math.random() * 0.4, drift: (Math.random() - 0.5) * 0.3 });
+      }
+    } else if (style === 'photophores') {
+      // Fotóforos: pontinhos azuis acendendo em sequência ao longo da barriga
+      [[3, 2], [3, 4], [2, 6]].forEach(([y, x], i) => {
+        const on = Math.sin(t * 2.5 - i * 1.2);
+        if (on < -0.2) return;
+        ctx.fillStyle = on > 0.5 ? '#cffafe' : '#22d3ee';
+        ctx.fillRect(x0 + x * s, y0 + y * s, s, s);
+      });
+    } else if (style === 'sunlit') {
+      // Reflexo do sol correndo pelas costas do peixe de vez em quando
+      const col = Math.floor((t * 3) % 14);
+      if (col >= 2 && col <= 4) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillRect(x0 + col * s, y0 + s, s, s);
+      }
+    }
+  }
+
+  // Aura de luz atrás do peixinho (radial, pulsando devagar). strength: opacidade no centro;
+  // size: raio em "pixels" do peixe
+  _drawFishGlow(f, wy, color, strength, size) {
+    const { ctx } = this; const s = f.size;
+    const cx = Math.round(f.x) + 4 * s, cy = Math.round(f.y + wy) + 2.5 * s;
+    const pulse = 0.75 + 0.25 * Math.sin(this.time * 3 + f.glowSeed);
+    const r = s * size * pulse;
+    const [cr, cg, cb] = hexToRgb(color);
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, ${strength * pulse})`);
+    g.addColorStop(0.3, `rgba(${cr}, ${cg}, ${cb}, ${strength * 0.38 * pulse})`);
+    g.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0)`);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = g;
+    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    ctx.restore();
   }
 
   _updateAndDrawSplashEffects(ctx, px) {
@@ -2118,7 +2148,6 @@ export const PIXEL_ICONS = {
   trophy: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="5" fill="#facc15" stroke="#ca8a04" stroke-width="0.8"/><rect x="1" y="2" width="2" height="3" fill="#f59e0b"/><rect x="9" y="2" width="2" height="3" fill="#f59e0b"/><rect x="5" y="6" width="2" height="2" fill="#ca8a04"/><rect x="3" y="8" width="6" height="2" fill="#b45309"/><rect x="4" y="2" width="4" height="2" fill="#fef08a"/></svg>`,
   lockedTrophy: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="3" y="1" width="6" height="5" fill="#334155" stroke="#1e293b" stroke-width="0.8"/><rect x="1" y="2" width="2" height="3" fill="#1e293b"/><rect x="9" y="2" width="2" height="3" fill="#1e293b"/><rect x="5" y="6" width="2" height="2" fill="#1e293b"/><rect x="3" y="8" width="6" height="2" fill="#0f172a"/><rect x="4" y="2" width="4" height="2" fill="#475569"/></svg>`,
   bait: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 10 10" style="image-rendering:pixelated;"><rect x="2" y="2" width="6" height="2" fill="#cd853f"/><rect x="4" y="4" width="4" height="2" fill="#8b4513"/><rect x="2" y="6" width="4" height="2" fill="#cd853f"/></svg>`,
-  portal: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;"><rect x="4" y="1" width="4" height="1" fill="#a855f7"/><rect x="2" y="2" width="8" height="1" fill="#06b6d4"/><rect x="1" y="3" width="10" height="6" fill="#8b5cf6"/><rect x="3" y="4" width="6" height="4" fill="#0891b2"/><rect x="4" y="5" width="4" height="2" fill="#67e8f9"/><rect x="5" y="5" width="2" height="2" fill="#ffffff"/><rect x="2" y="9" width="8" height="1" fill="#06b6d4"/><rect x="4" y="10" width="4" height="1" fill="#a855f7"/></svg>`,
   fishEye: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;" shape-rendering="crispEdges"><rect x="3" y="1" width="6" height="1" fill="#38bdf8"/><rect x="1" y="2" width="10" height="8" fill="#0284c7"/><rect x="0" y="4" width="12" height="4" fill="#0369a1"/><rect x="2" y="3" width="8" height="6" fill="#f8fafc"/><rect x="4" y="4" width="4" height="4" fill="#0f172a"/><rect x="5" y="4" width="2" height="2" fill="#38bdf8"/><rect x="6" y="5" width="1" height="1" fill="#ffffff"/><rect x="3" y="10" width="6" height="1" fill="#38bdf8"/></svg>`,
   magnet: `<svg class="w-4 h-4 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;" shape-rendering="crispEdges"><rect x="2" y="1" width="3" height="3" fill="#cbd5e1"/><rect x="7" y="1" width="3" height="3" fill="#38bdf8"/><rect x="2" y="4" width="3" height="4" fill="#dc2626"/><rect x="7" y="4" width="3" height="4" fill="#dc2626"/><rect x="3" y="8" width="6" height="2" fill="#dc2626"/><rect x="4" y="10" width="4" height="1" fill="#991b1b"/></svg>`,
   scenPonte: `<svg class="w-3.5 h-3.5 inline-block align-middle shrink-0" viewBox="0 0 12 12" style="image-rendering:pixelated;" shape-rendering="crispEdges"><rect x="0" y="6" width="12" height="2" fill="#64748b"/><rect x="1" y="3" width="2" height="7" fill="#334155"/><rect x="9" y="3" width="2" height="7" fill="#334155"/><rect x="3" y="4" width="6" height="1" fill="#94a3b8"/><rect x="0" y="8" width="12" height="4" fill="#0284c7"/></svg>`,

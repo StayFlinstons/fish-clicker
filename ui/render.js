@@ -23,7 +23,6 @@ export class RenderMethods {
       this.renderStats();
     }
     this.updateAlbumBadge();
-    this.updateChapter1Badge();
   }
 
   renderHeader() {
@@ -234,9 +233,6 @@ export class RenderMethods {
     }
 
     const buffs = this.getActiveBuffs();
-    const canSacrifice = this.unlockedRods.includes('vara_travessia') && 
-                         this.unlockedBaits.includes('essencia_travessia') && 
-                         (this.sacrificedFishCount || 0) < 15;
 
     // Ordenação configurável
     const rarityRank = { SECRETO: 7, MITICO: 6, LENDARIO: 5, EPICO: 4, RARO: 3, INCOMUM: 2, COMUM: 1 };
@@ -301,9 +297,6 @@ export class RenderMethods {
               <button onclick="window.game.donateFish('${fish.id}', '${fish.uid}')" ${fish.locked ? 'disabled' : ''} title="Doar 1 exemplar desta espécie para o Santuário dos Olhos de Peixe" class="pixel-btn px-2 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-amber-950 border border-amber-500 text-amber-300 hover:bg-amber-900'} text-[8px] font-bold shrink-0 flex items-center gap-1 cursor-pointer" style="font-family:var(--font-pixel);">
                 <span>🏺</span><span>DOAR</span>
               </button>
-            ` : ''}
-            ${canSacrifice && (fish.rarity === 'LENDARIO' || fish.rarity === 'MITICO') ? `
-              <button onclick="window.game.sacrificeSpecificFish('${fish.uid}')" ${fish.locked ? 'disabled' : ''} title="Sacrificar no Altar das Almas" class="pixel-btn px-2 py-1 ${fish.locked ? 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed' : 'bg-purple-950 border border-rose-500 text-rose-300 hover:bg-rose-900'} text-[8px] font-bold shrink-0 cursor-pointer" style="font-family:var(--font-pixel);">SACRIFICAR</button>
             ` : ''}
             ${hasBuff ? `<button onclick="window.game.moveToAquarium('${fish.uid}')" title="Mover ao Aquário para ativar os buffs" class="pixel-btn px-2 py-1 text-[8px] font-bold bg-purple-950/80 border border-purple-500 text-purple-300 hover:bg-purple-900 shrink-0 cursor-pointer flex items-center gap-1" style="font-family:var(--font-pixel);"><span>🐠</span><span>AQUÁRIO</span></button>` : ''}
             <button onclick="window.game.toggleLockFish('${fish.uid}')" title="${fish.locked ? 'Destravar peixe' : 'Travar peixe'}" class="pixel-btn px-2 py-1 text-[10px] ${fish.locked ? 'bg-amber-950/90 border-amber-500 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'} shrink-0 cursor-pointer">${fish.locked ? PIXEL_ICONS.lockClosed : PIXEL_ICONS.lockOpen}</button>

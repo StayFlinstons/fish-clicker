@@ -98,7 +98,6 @@ export class AchievementMethods {
       else if (ach.icon === 'fish' && isUnlocked) iconHTML = PIXEL_ICONS.fish;
       else if (ach.icon === 'sparkle' && isUnlocked) iconHTML = PIXEL_ICONS.sparkle;
       else if (ach.icon === 'aquarium' && isUnlocked) iconHTML = PIXEL_ICONS.aquarium;
-      else if (ach.icon === 'portal' && isUnlocked) iconHTML = PIXEL_ICONS.portal;
 
       return `
         <div class="p-2.5 border-2 flex items-start gap-2.5 transition-all ${

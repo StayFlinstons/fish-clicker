@@ -31,17 +31,10 @@ export class SaveMethods {
       bloodMoonFishCatches: this.bloodMoonFishCatches || 0,
       playTimeSeconds: this.playTimeSeconds || 0,
       totalBloodMoonCatches: this.getTotalBloodMoonCatches(),
-      chapter1Completed: this.chapter1Completed,
-      sacrificedFishCount: this.sacrificedFishCount || 0,
       depthLayersVersion: 1,
       currentLayer: this.getCurrentLayer(),
-      krakenCinematicSeen: Boolean(this.krakenCinematicSeen),
       orders: Array.isArray(this.orders) ? this.orders : [],
       ordersCompleted: this.ordersCompleted || 0,
-      timeOfDay: this.timeOfDay,
-      timeOffsetMs: this.timeOffsetMs || 0,
-      phaseMsRemaining: this.getRawMsRemaining(),
-      timeSavedAt: Date.now(),
       speciesDonations: this.speciesDonations || {},
       donatedSpeciesHistory: this.donatedSpeciesHistory || {},
       offeringCycle: this.offeringCycle || 1,
@@ -69,6 +62,34 @@ export class SaveMethods {
       // Com a coleta offline pendente, mantém o horário antigo para um F5 não perder a recompensa
       lastActiveTime: this.offlinePending ? this.lastActiveTime : Date.now()
     };
+  }
+
+  // Tira do save o que saiu do jogo (Kraken e a Isca do Kraken, junto com o Portal/Altar; Sonar):
+  // peixes e iscas sem cadastro somem, a isca equipada vira a melhor que o jogador ainda tem e o
+  // ouro do Sonar volta.
+  dropRetiredContent() {
+    const fishIds = new Set(FISH_LIST.map(f => f.id));
+    this.inventory = this.inventory.filter(f => f && fishIds.has(f.id));
+    this.aquarium = this.aquarium.filter(f => f && fishIds.has(f.id));
+    this.orders = this.orders.filter(o => fishIds.has(o.fishId));
+    Object.keys(this.discoveredFish).forEach(id => { if (!fishIds.has(id)) delete this.discoveredFish[id]; });
+
+    const baitOrder = BAITS.map(b => b.id);
+    this.unlockedBaits = this.unlockedBaits.filter(id => baitOrder.includes(id));
+    if (!this.unlockedBaits.length) this.unlockedBaits = ['minhoca'];
+    if (!this.unlockedBaits.includes(this.selectedBaitId)) {
+      this.selectedBaitId = [...this.unlockedBaits].sort((a, b) => baitOrder.indexOf(b) - baitOrder.indexOf(a))[0];
+    }
+
+    // Sonar de Pesca (removido): devolve o ouro gasto nos níveis comprados (5.000G × 6 por nível)
+    const sonarLvl = this.upgradeLevels.sonar || 0;
+    delete this.upgradeLevels.sonar;
+    if (sonarLvl > 0) {
+      let refund = 0;
+      for (let i = 0; i < sonarLvl; i++) refund += 5000 * Math.pow(6, i);
+      this.gold += refund;
+      setTimeout(() => this.showToast?.(`O Sonar de Pesca saiu do jogo: +${refund.toLocaleString('pt-BR')}G devolvidos.`, 'info'), 2000);
+    }
   }
 
   saveGame() {
@@ -106,16 +127,9 @@ export class SaveMethods {
         this.bloodMoonFishCatches = typeof d.bloodMoonFishCatches === 'number' ? d.bloodMoonFishCatches : 0;
         this.playTimeSeconds = typeof d.playTimeSeconds === 'number' ? d.playTimeSeconds : 0;
         this.totalBloodMoonCatches = typeof d.totalBloodMoonCatches === 'number' ? d.totalBloodMoonCatches : 0;
-        this.chapter1Completed = Boolean(d.chapter1Completed);
-        this.sacrificedFishCount = typeof d.sacrificedFishCount === 'number' ? d.sacrificedFishCount : 0;
         this.currentLayer = typeof d.currentLayer === 'number' ? d.currentLayer : 1;
-        this.krakenCinematicSeen = Boolean(d.krakenCinematicSeen);
         this.orders = Array.isArray(d.orders) ? d.orders.filter(o => o && o.fishId && o.count > 0) : [];
         this.ordersCompleted = typeof d.ordersCompleted === 'number' ? d.ordersCompleted : 0;
-        this.timeOfDay = d.timeOfDay || 'day';
-        this.timeOffsetMs = d.timeOffsetMs || 0;
-        this.savedPhaseMsRemaining = typeof d.phaseMsRemaining === 'number' ? d.phaseMsRemaining : null;
-        this.timeSavedAt = typeof d.timeSavedAt === 'number' ? d.timeSavedAt : null;
         this.speciesDonations = (d.speciesDonations && typeof d.speciesDonations === 'object') ? d.speciesDonations : {};
         this.donatedSpeciesHistory = (d.donatedSpeciesHistory && typeof d.donatedSpeciesHistory === 'object') ? d.donatedSpeciesHistory : {};
         Object.keys(this.speciesDonations).forEach(k => { if (this.speciesDonations[k]) this.donatedSpeciesHistory[k] = true; });
@@ -171,6 +185,8 @@ export class SaveMethods {
 
         // Saves de antes das camadas de profundidade (Mundo 1/Mundo 2 separados)
         if (d.depthLayersVersion !== 1) this.migrateToDepthLayers(d);
+
+        this.dropRetiredContent();
 
         // Limpeza de chaves de versões legadas para liberar espaço do localStorage
         ['pescaria_clicker_save_v3', 'pescaria_clicker_save_v2', 'pescaria_clicker_save_v1'].forEach(k => {

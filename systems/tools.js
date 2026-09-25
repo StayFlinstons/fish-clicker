@@ -1,69 +1,12 @@
-// Ferramentas compradas nos upgrades: Sonar de Pesca e Quadro de Encomendas.
+// Ferramenta comprada nos upgrades: Quadro de Encomendas.
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
 import { FISH_LIST, RARITIES } from '../fishData.js';
 import { UPGRADES } from '../itemsData.js';
 import { sound } from '../sound.js';
 
 const ORDER_COUNTS = { COMUM: [4, 7], INCOMUM: [2, 4], RARO: [1, 2] };
-const SONAR_ALERT = ['LENDARIO', 'MITICO', 'SECRETO'];
 
 export class ToolMethods {
-  // ───────── Sonar ─────────
-  getSonarLevel() {
-    return this.upgradeLevels.sonar || 0;
-  }
-
-  // Sorteia agora o peixe do próximo arremesso manual, para o Sonar poder mostrá-lo.
-  peekSonar() {
-    if (this.getSonarLevel() <= 0 || this.gameMode === 'ima') {
-      this.sonarNext = null;
-      this.renderSonar();
-      return;
-    }
-    if (!this.sonarNext) {
-      this.sonarNext = this.rollFish(this.getActiveBuffs());
-      if (this.getSonarLevel() >= 2 && SONAR_ALERT.includes(this.sonarNext.rarity)) {
-        sound.playUpgrade?.();
-      }
-    }
-    this.renderSonar();
-  }
-
-  takeSonarFish() {
-    const fish = this.sonarNext || this.rollFish(this.getActiveBuffs());
-    this.sonarNext = null;
-    return fish;
-  }
-
-  // Camada, isca ou horário mudaram: a leitura antiga não vale mais.
-  resetSonar() {
-    this.sonarNext = null;
-    this.peekSonar();
-  }
-
-  renderSonar() {
-    const el = document.getElementById('sonar-readout');
-    if (!el) return;
-    const lvl = this.getSonarLevel();
-    const f = this.sonarNext;
-    if (lvl <= 0 || !f) {
-      el.classList.add('hidden');
-      return;
-    }
-    const r = RARITIES[f.rarity] || RARITIES.COMUM;
-    const known = !!this.discoveredFish[f.id];
-    const parts = [`<span style="color:${r.color}">${r.label.toUpperCase()}</span>`];
-    if (lvl >= 2) parts.push(known ? f.name : '???');
-    if (lvl >= 3) {
-      const heavy = f.weight > this.getRodMaxWeight();
-      parts.push(`<span class="${heavy ? 'text-red-400' : 'text-slate-300'}">${f.weight.toLocaleString('pt-BR')}kg${heavy ? ' ⚠' : ''}</span>`);
-    }
-    el.innerHTML = `📡 ${parts.join(' · ')}`;
-    el.classList.remove('hidden');
-    el.classList.toggle('animate-pulse', lvl >= 2 && SONAR_ALERT.includes(f.rarity));
-    el.style.borderColor = r.border;
-  }
-
   // ───────── Quadro de Encomendas ─────────
   getOrderSlots() {
     const u = UPGRADES.find(x => x.id === 'encomendas');

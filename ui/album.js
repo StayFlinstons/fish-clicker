@@ -173,16 +173,6 @@ export class AlbumMethods {
       const r = RARITIES[fish.rarity] || RARITIES.COMUM;
       const spriteURL = isDiscovered ? this.getFishSpriteURL(fish.icon) : this.getFishSilhouetteURL(fish.icon);
 
-      let timeBadge = '';
-      if (fish.timeExclusive === 'day') {
-        timeBadge = '<span class="text-[8px] font-bold px-1.5 py-0.5 border text-amber-300 border-amber-500/80 bg-amber-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">☀️ DIA</span>';
-      } else if (fish.timeExclusive === 'sunset') {
-        timeBadge = '<span class="text-[8px] font-bold px-1.5 py-0.5 border text-orange-300 border-orange-500/80 bg-orange-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">🌅 PÔR DO SOL</span>';
-      } else if (fish.timeExclusive === 'night') {
-        timeBadge = '<span class="text-[8px] font-bold px-1.5 py-0.5 border text-indigo-300 border-indigo-500/80 bg-indigo-950/80 shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);">🌙 NOITE</span>';
-      }
-
-
       const isSecretCard = fish.secret && isDiscovered;
 
       return header + `
@@ -197,7 +187,6 @@ export class AlbumMethods {
                 <span class="text-[8px] font-bold px-1.5 py-0.5 border text-red-300 border-red-500/80 bg-red-950/90 shrink-0 whitespace-nowrap shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" style="font-family:var(--font-pixel);">🌌 SECRETO</span>
               ` : `
                 <span class="text-[8px] font-bold px-1 py-0.5 border shrink-0 whitespace-nowrap" style="font-family:var(--font-pixel);color:${isDiscovered ? r.color : '#64748b'};border-color:${isDiscovered ? r.border : '#334155'};background:rgba(0,0,0,0.5);">${r.label}</span>
-                ${timeBadge}
               `}
             </div>
             ${isDiscovered ? `

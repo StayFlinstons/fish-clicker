@@ -1,4 +1,5 @@
 // Base de dados das Conquistas (Sala de Troféus)
+import { UPGRADES } from './itemsData.js';
 
 export const ACHIEVEMENTS = [
   // ── VARAS (7 individuais + 1 mestre) ──
@@ -140,11 +141,10 @@ export const ACHIEVEMENTS = [
     id: 'all_upgrades_level1',
     category: 'upgrades',
     title: 'Oficina Completa',
-    desc: 'Adquira pelo menos 1 nível de todos os 7 upgrades da loja.',
+    desc: 'Adquira pelo menos 1 nível de todos os upgrades da loja.',
     icon: 'tools',
     check: (g) => {
-      const required = ['balde', 'auto_pescador', 'boia_sorte', 'rede_dupla', 'aquario_cap', 'auto_vendedor', 'ima_dourado'];
-      return required.every(uId => (g.upgradeLevels[uId] || 0) >= 1);
+      return UPGRADES.every(u => (g.upgradeLevels[u.id] || 0) >= 1);
     }
   },
 
@@ -188,13 +188,5 @@ export const ACHIEVEMENTS = [
     desc: 'Coloque o seu primeiro peixe com buff para viver no aquário.',
     icon: 'aquarium',
     check: (g) => (g.aquarium || []).length >= 1
-  },
-  {
-    id: 'chapter1_complete',
-    category: 'fish',
-    title: 'Fim do Capítulo 1: O Portal',
-    desc: 'Obtenha a Vara da Travessia e a Essência do Vórtice para despertar o Portal Dimensional!',
-    icon: 'portal',
-    check: (g) => g.unlockedRods.includes('vara_travessia') && g.unlockedBaits.includes('essencia_travessia')
   }
 ];

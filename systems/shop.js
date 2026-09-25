@@ -17,14 +17,12 @@ export class ShopMethods {
     this.updateFisherman();
     this.renderAll();
     this.checkAchievements();
-    this.checkChapter1Completion(true);
     this.onRodUnlocked(prevMaxLayer);
-    this.resetSonar();
   }
 
   equipRod(rodId) {
     if (this.unlockedRods.includes(rodId)) {
-      this.selectedRodId = rodId; sound.playClick(); this.updateFisherman(); this.resetSonar(); this.renderAll();
+      this.selectedRodId = rodId; sound.playClick(); this.updateFisherman(); this.renderAll();
     }
   }
 
@@ -39,15 +37,13 @@ export class ShopMethods {
     sound.playUpgrade();
     this.showToast('COMPROU: ' + bait.name, 'success');
     this.updateFisherman();
-    this.resetSonar();
     this.renderAll();
     this.checkAchievements();
-    this.checkChapter1Completion(true);
   }
 
   equipBait(baitId) {
     if (this.unlockedBaits.includes(baitId)) {
-      this.selectedBaitId = baitId; sound.playClick(); this.updateFisherman(); this.resetSonar(); this.renderAll();
+      this.selectedBaitId = baitId; sound.playClick(); this.updateFisherman(); this.renderAll();
     }
   }
 
@@ -74,7 +70,6 @@ export class ShopMethods {
       document.getElementById('auto-sell-bar')?.classList.remove('hidden');
     }
 
-    if (upgradeId === 'sonar' || upgradeId === 'carretilha') this.resetSonar();
     if (upgradeId === 'encomendas') this.ensureOrders();
 
     sound.playUpgrade();

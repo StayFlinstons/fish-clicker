@@ -24,15 +24,15 @@
 
 **Fish Clicker** é um jogo incremental (*clicker / idle*) que recria a atmosfera aconchegante dos clássicos de pesca retrô. 
 
-Começando como um pescador com uma humilde vara de bambu e minhocas simples, você acumula ouro, expande seus equipamentos, explora horários diferentes do dia e desvenda os mistérios do **Lago Sagrado (Mundo 1)** e do **Abismo das Sombras (Mundo 2)**.
+Começando como um pescador com uma humilde vara de bambu e minhocas simples, você acumula ouro, expande seus equipamentos e desce do rio até a **Fossa Hadal**, passando por 6 camadas de profundidade do oceano.
 
 ---
 
 ## ✨ Funcionalidades Principais
 
-### 🌅 1. Cenários Vivos & Ciclo Dinâmico
-* **4 Fases do Dia em Pixel Art:** O lago evolui visualmente em tempo real entre **Dia Claro**, **Pôr do Sol Dourado**, **Noite Estrelada** e o lendário **Eclipse Vermelho**.
-* **Espécies Exclusivas por Horário:** Determinados peixes lendários e míticos só emergem durante o meio-dia, no poente ou sob a meia-noite.
+### 🌊 1. Cenários Vivos por Camada
+* **6 Camadas em Pixel Art:** Rio e Lagoa, Zona do Sol, Zona do Crepúsculo, Zona da Meia-Noite, Planície Abissal e Fossa Hadal, cada uma com fundo próprio animado (água ondulando, plantas balançando, fumaça e calor da lava).
+* **Peixinhos com a Cara da Zona:** Os peixes que nadam no fundo mudam de visual em cada camada: reflexo do sol, luzinhas bioluminescentes, carbonizados na lava, fantasmas na fossa.
 * **Evento do Mar Sangrento:** Ao fisgar o raro Peixe da Lua Sangrenta, o lago se tinge de carmesim, cardumes avermelhados nadam no fundo e todos os peixes fisgados ganham auras poderosas por 60 segundos.
 
 ### 🐟 2. Ecossistema Rico (50+ Espécies)

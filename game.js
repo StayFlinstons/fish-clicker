@@ -5,6 +5,7 @@
 // sw.js, e confira com: node scripts/check_modules.cjs
 import { PixelWaterRenderer, updateFishingLine, updateRodSVG } from './pixelArt.js';
 import { LakeBackgroundAnimator } from './ui/lakeBackground.js';
+import { startPixelEmoji } from './ui/pixelEmoji.js';
 import { sound } from './sound.js';
 import { GAME_VERSION } from './core/constants.js';
 import { applyMixins } from './core/mixins.js';
@@ -12,7 +13,6 @@ import { applyMixins } from './core/mixins.js';
 // Cada arquivo abaixo guarda um grupo de métodos do FishingGame (veja applyMixins no fim do arquivo)
 import { SaveMethods } from './core/save.js';
 import { EconomyMethods } from './core/economy.js';
-import { TimeCycleMethods } from './core/timeCycle.js';
 import { FishingMethods } from './systems/fishing.js';
 import { ShopMethods } from './systems/shop.js';
 import { AutomationMethods } from './systems/automation.js';
@@ -21,7 +21,6 @@ import { FishEyesMethods } from './systems/fishEyes.js';
 import { MagnetMethods } from './systems/magnet.js';
 import { DepthMethods } from './systems/depth.js';
 import { ToolMethods } from './systems/tools.js';
-import { Chapter1Methods } from './systems/chapter1.js';
 import { AnalyticsMethods } from './systems/analytics.js';
 import { AchievementMethods } from './systems/achievements.js';
 import { EventMethods } from './systems/events.js';
@@ -95,11 +94,6 @@ class FishingGame {
     // Álbum de Peixes (Enciclopédia)
     this.discoveredFish = {}; // { [id]: { maxWeight, count } }
 
-    // Ciclo Dia / Pôr do Sol / Noite
-    this.timeOfDay = 'day'; // 'day' | 'sunset' | 'night'
-    this.timeOffsetMs = 0;
-    this.savedPhaseMsRemaining = null;
-    this.timeSavedAt = null;
     this.lastActiveTime = Date.now();
 
     // Meta-progressão: Olhos de Peixe (Santuário Místico - 00:00) & Oferenda de Espécies
@@ -118,16 +112,10 @@ class FishingGame {
     this.bloodMoonInterval = null;
     this.goldenFishCountSinceBlood = 0;
 
-    // Fim do Capítulo 1 / Portal Dimensional & Altar das 15 Almas
-    this.chapter1Completed = false;
-    this.sacrificedFishCount = 0;
-
     // Camada de profundidade onde o jogador pesca (1 = Rio ... 6 = Fossa Hadal)
     this.currentLayer = 1;
-    this.krakenCinematicSeen = false; // a Isca do Kraken só dispara a cinemática uma vez
 
-    // Sonar (peixe do próximo arremesso) e Quadro de Encomendas
-    this.sonarNext = null;
+    // Quadro de Encomendas
     this.orders = [];
     this.ordersCompleted = 0;
 
@@ -178,14 +166,14 @@ class FishingGame {
   }
 
   init() {
+    startPixelEmoji();
     this.loadGame();
     this.setMobileTab('pescar', true);
     this.applySettings();
     this.initPixelArt();
-    this.initTimeOfDay();
+    this.applyLayerScenery();
     this.setupEventListeners();
     this.renderAll();
-    this.peekSonar();
     this.showMigrationNotice();
     this.startAutoFisher();
     this.startAutoSeller();
@@ -195,8 +183,6 @@ class FishingGame {
     this.checkOfflineProgress();
     this.checkAchievements(false);
     this.updateAchievementsBadge();
-    this.checkChapter1Completion(false);
-    this.updateChapter1Badge();
     this.checkMidnightFishEye(false);
     this.startMidnightTimerLoop();
     this.renderFishEyesBadge();
@@ -267,13 +253,15 @@ class FishingGame {
     const waterCanvas = document.getElementById('water-particles-canvas');
     if (waterCanvas) {
       this.waterRenderer = new PixelWaterRenderer(waterCanvas);
-      this.waterRenderer.setTimeOfDay(this.timeOfDay);
       ['lambari','carpa','truta','robalo'].forEach(f => this.waterRenderer.addSwimmingFish(f));
       this.updateDiverVisual();
-      // Superfície e plantas do fundo pixel art se mexendo (desliga junto com as partículas)
-      const bgAnimCanvas = document.getElementById('world1-bg-anim');
+      // Fundo pixel art da camada se mexendo (desliga junto com as partículas)
+      const bgAnimCanvas = document.getElementById('lake-bg-anim');
       if (bgAnimCanvas) {
-        this.lakeBgAnimator = new LakeBackgroundAnimator(bgAnimCanvas);
+        this.lakeBgAnimator = new LakeBackgroundAnimator(bgAnimCanvas, [
+          document.getElementById('lake-bg-img'),
+          document.getElementById('lake-bg-eclipse')
+        ]);
         this.lakeBgAnimator.setEnabled(this.settings.waterParticles);
       }
       const animLoop = () => {
@@ -387,12 +375,6 @@ class FishingGame {
       });
     });
 
-    // Capítulo 1 / Portal Dimensional & Altar de Sacrifício
-    document.getElementById('btn-close-chapter1')?.addEventListener('click', () => this.closeChapter1Modal());
-    document.getElementById('btn-chapter1-confirm')?.addEventListener('click', () => this.closeChapter1Modal());
-    document.getElementById('btn-sacrifice-fish')?.addEventListener('click', () => this.sacrificeFish());
-    document.getElementById('btn-summon-kraken')?.addEventListener('click', () => this.triggerKrakenCinematic());
-
 
     // Fechar dropdown de menu ao clicar fora dele
     document.addEventListener('click', (e) => {
@@ -403,7 +385,7 @@ class FishingGame {
     });
 
     // Fechar modais ao clicar fora (backdrop click) e via tecla Escape
-    const allModals = ['sell-filter-modal', 'album-modal', 'offline-modal', 'achievements-modal', 'chapter1-modal', 'settings-modal', 'fish-eyes-modal', 'patch-notes-modal', 'summary-modal'];
+    const allModals = ['sell-filter-modal', 'album-modal', 'offline-modal', 'achievements-modal', 'settings-modal', 'fish-eyes-modal', 'patch-notes-modal', 'summary-modal'];
     allModals.forEach(id => {
       const m = document.getElementById(id);
       if (m) {
@@ -441,7 +423,6 @@ class FishingGame {
 applyMixins(FishingGame, [
   SaveMethods,
   EconomyMethods,
-  TimeCycleMethods,
   FishingMethods,
   ShopMethods,
   AutomationMethods,
@@ -450,7 +431,6 @@ applyMixins(FishingGame, [
   MagnetMethods,
   DepthMethods,
   ToolMethods,
-  Chapter1Methods,
   AchievementMethods,
   AnalyticsMethods,
   EventMethods,

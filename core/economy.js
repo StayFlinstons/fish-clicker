@@ -2,7 +2,7 @@
 // Métodos do FishingGame: aplicados via applyMixins() em game.js (o `this` é o jogo).
 import { FISH_LIST, RARITIES, formatBuffText, generateFishBuffs } from '../fishData.js';
 import { BAITS, RODS, UPGRADES } from '../itemsData.js';
-import { DEPTH_LAYERS, getDepthLayer } from '../depthData.js';
+import { DEPTH_LAYERS } from '../depthData.js';
 
 export class EconomyMethods {
   // Catálogos do jogo (um só mundo, dividido em camadas de profundidade).
@@ -216,23 +216,15 @@ export class EconomyMethods {
     return chances;
   }
 
-  // Espécies possíveis numa camada. Horários só valem nas camadas com sol; à noite
-  // alguns bichos da Zona do Crepúsculo sobem para a Zona do Sol (migração vertical).
-  getLayerFish(layer = this.getCurrentLayer(), timeOfDay = this.timeOfDay) {
-    const info = getDepthLayer(layer);
-    return FISH_LIST.filter(f => {
-      if (f.layer === layer) {
-        if (f.timeExclusive && info.sunlit && f.timeExclusive !== timeOfDay) return false;
-        return true;
-      }
-      return layer === 2 && timeOfDay === 'night' && f.layer === 3 && f.migratesUp;
-    });
+  // Espécies possíveis numa camada.
+  getLayerFish(layer = this.getCurrentLayer()) {
+    return FISH_LIST.filter(f => f.layer === layer);
   }
 
-  // Espécies possíveis para uma raridade na camada/horário atual (nunca vazio).
+  // Espécies possíveis para uma raridade na camada (nunca vazio).
   // Se a camada não tem a raridade, usa a mais próxima abaixo (ou acima).
-  getFishPoolForRarity(rarity, timeOfDay = this.timeOfDay, layer = this.getCurrentLayer()) {
-    const layerFish = this.getLayerFish(layer, timeOfDay);
+  getFishPoolForRarity(rarity, layer = this.getCurrentLayer()) {
+    const layerFish = this.getLayerFish(layer);
     const order = ['COMUM', 'INCOMUM', 'RARO', 'EPICO', 'LENDARIO', 'MITICO', 'SECRETO'];
     const idx = order.indexOf(rarity);
     for (let d = 0; d < order.length; d++) {
@@ -273,7 +265,7 @@ export class EconomyMethods {
     return sum / STEPS;
   }
 
-  // opts.rarity força a raridade; opts.timeOfDay sobrescreve o horário (usado pelo offline).
+  // opts.rarity força a raridade; opts.layer sobrescreve a camada.
   rollFish(buffs, opts = {}) {
     let selectedRarity = opts.rarity;
     if (!selectedRarity) {
@@ -287,7 +279,7 @@ export class EconomyMethods {
     }
 
     const layer = opts.layer || this.getCurrentLayer();
-    const pool = this.getFishPoolForRarity(selectedRarity, opts.timeOfDay || this.timeOfDay, layer);
+    const pool = this.getFishPoolForRarity(selectedRarity, layer);
     const template = pool[Math.floor(Math.random() * pool.length)];
 
     const weight = this.computeFishWeight(template, Math.random());

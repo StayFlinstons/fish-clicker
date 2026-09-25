@@ -122,15 +122,8 @@ export class SummaryMethods {
     const currentRod = RODS.find(r => r.id === this.selectedRodId)?.name || this.selectedRodId;
     const currentBait = BAITS.find(b => b.id === this.selectedBaitId)?.name || this.selectedBaitId;
 
-    // Camada / Horário
-    let locationDetail = '';
-    const layer = getDepthLayer(this.getCurrentLayer());
-    if (layer.sunlit) {
-      const timeNames = { day: 'Dia Claro', sunset: 'Pôr do Sol', night: 'Noite' };
-      locationDetail = `${layer.name} (${timeNames[this.timeOfDay] || 'Dia'})`;
-    } else {
-      locationDetail = layer.name;
-    }
+    // Camada
+    const locationDetail = getDepthLayer(this.getCurrentLayer()).name;
 
     // Ícones Pixel Art para o Sumário
     const pxlRod = `<svg class="w-4 h-4 inline-block" viewBox="0 0 16 16" fill="none" style="image-rendering:pixelated; shape-rendering:crispEdges;"><rect x="2" y="13" width="2" height="2" fill="#78350f"/><rect x="3" y="12" width="2" height="2" fill="#92400e"/><rect x="4" y="11" width="2" height="2" fill="#b45309"/><rect x="2" y="11" width="2" height="2" fill="#cbd5e1"/><rect x="5" y="10" width="2" height="2" fill="#0284c7"/><rect x="6" y="9" width="2" height="2" fill="#0284c7"/><rect x="7" y="8" width="2" height="2" fill="#38bdf8"/><rect x="8" y="7" width="2" height="2" fill="#38bdf8"/><rect x="9" y="6" width="2" height="2" fill="#38bdf8"/><rect x="10" y="5" width="2" height="2" fill="#7dd3fc"/><rect x="11" y="4" width="2" height="2" fill="#7dd3fc"/><rect x="12" y="3" width="2" height="2" fill="#bae6fd"/><rect x="13" y="2" width="1" height="2" fill="#ffffff"/><rect x="13" y="4" width="1" height="6" fill="#94a3b8"/><rect x="12" y="10" width="2" height="1" fill="#facc15"/><rect x="11" y="9" width="1" height="2" fill="#facc15"/></svg>`;
@@ -329,7 +322,7 @@ export class SummaryMethods {
           </span>
           <span class="text-[8px] text-slate-400" style="font-family:var(--font-pixel);">Metas permanentes</span>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[8px]" style="font-family:var(--font-pixel);">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[8px]" style="font-family:var(--font-pixel);">
           <div class="bg-slate-900 border border-slate-800 p-2">
             <div class="text-slate-400 text-[8px]">SALA DE TROFÉUS</div>
             <div class="text-[10px] font-mono font-bold text-amber-300 mt-0.5">${unlockedAchCount} / ${totalAchievements}</div>
@@ -344,11 +337,6 @@ export class SummaryMethods {
             <div class="text-slate-400 text-[8px]">OFERENDAS SANTUÁRIO</div>
             <div class="text-[10px] font-mono font-bold text-purple-300 mt-0.5">Ciclo ${this.offeringCycle || 1}</div>
             <div class="text-[8px] text-slate-500">${Object.keys(this.speciesDonations || {}).length} espécies doadas</div>
-          </div>
-          <div class="bg-slate-900 border border-slate-800 p-2">
-            <div class="text-slate-400 text-[8px]">ALTAR DAS ALMAS</div>
-            <div class="text-[10px] font-mono font-bold text-red-400 mt-0.5">${this.sacrificedFishCount || 0} / 15</div>
-            <div class="text-[8px] text-slate-500">${this.chapter1Completed ? 'Portal Ativado!' : 'Em andamento'}</div>
           </div>
         </div>
 

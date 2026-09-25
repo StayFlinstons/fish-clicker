@@ -693,3 +693,20 @@ body.disable-fish-glow .aura-eclipse img {
   animation: hook-tug 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.28);
 }
 
+/* Emojis trocados por ícones pixel art (ui/pixelEmoji.js): do tamanho da fonte, alinhados ao texto */
+.pixel-emoji-wrap { display: inline-block; width: 1em; height: 1em; line-height: 1; vertical-align: -0.125em; }
+.pixel-emoji { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+
+/* Menu do topo no celular: centralizado na tela, logo abaixo do cabeçalho, com rolagem se não couber */
+@media (max-width: 639px) {
+  #main-dropdown-menu {
+    position: fixed;
+    top: 56px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(380px, calc(100vw - 16px));
+    max-height: calc(100dvh - 72px);
+    overflow-y: auto;
+  }
+}

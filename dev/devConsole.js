@@ -116,10 +116,8 @@ export class DevConsoleMethods {
         this.consoleLog('  buff <tipo> [s]        - Ativa buff temporário (gold/luck/speed/double)', cmdColor);
         this.consoleLog('  offline [minutos]      - Simula tempo ausente AFK (default: 60 min)', cmdColor);
 
-        this.consoleLog('🌍 CAMADAS, TEMPO & EVENTOS', headerColor);
+        this.consoleLog('🌍 CAMADAS & EVENTOS', headerColor);
         this.consoleLog('  camada <1-6>           - Desce/sobe até a camada (libera as varas)', cmdColor);
-        this.consoleLog('  time [fase]            - Consulta ou define horário (day/sunset/night)', cmdColor);
-        this.consoleLog('  skiptime               - Avança para o próximo horário do dia', cmdColor);
         this.consoleLog('  eclipse                - Inicia Eclipse e Mar Sangrento por 60s', cmdColor);
 
         this.consoleLog('🧲 PESCA MAGNÉTICA', headerColor);
@@ -134,7 +132,7 @@ export class DevConsoleMethods {
         this.consoleLog('  testbuff               - Celebração do 1º Peixe com Buff (Aquário)', cmdColor);
         this.consoleLog('  testsplash             - Animação de gotas d\'água no lago', cmdColor);
         this.consoleLog('  testrepetir            - Testa captura repetida (sem duplicate overlay)', cmdColor);
-        this.consoleLog('  isca <nome>            - Troca anzol e isca (minhoca, neon, ouro, kraken)', cmdColor);
+        this.consoleLog('  isca <nome>            - Troca anzol e isca (minhoca, neon, ouro, vortice)', cmdColor);
         this.consoleLog('  patchnotes             - Abre Notas de Atualização com timer de 5s', cmdColor);
 
         this.consoleLog('🔄 RESETS & RESTAURAÇÃO', headerColor);
@@ -165,43 +163,6 @@ export class DevConsoleMethods {
         const amount = isNaN(val) ? 0 : Math.max(0, val);
         this.setGold(amount);
         this.consoleLog(`Ouro definido exatamente para: ${amount.toLocaleString('pt-BR')} G`, '#ffd700');
-        break;
-      }
-
-      case 'skiptime':
-      case 'skipday':
-      case 'skip':
-      case 'nexttime': {
-        const validPhases = ['day', 'sunset', 'night'];
-        const target = arg && validPhases.includes(arg.toLowerCase()) ? arg.toLowerCase() : null;
-        const names = { day: 'DAY ☀️', sunset: 'SUNSET 🌅', night: 'NIGHT 🌙' };
-
-        if (target) {
-          this.setTimeOfDay(target);
-          this.consoleLog(`Horário alterado para: ${names[this.timeOfDay]} (05:00 restantes)`, '#38bdf8');
-        } else {
-          const newPhase = this.skipTimeOfDay();
-          this.consoleLog(`Horário pulado para: ${names[newPhase] || newPhase.toUpperCase()} (05:00 restantes)`, '#38bdf8');
-        }
-        break;
-      }
-
-      case 'time':
-      case 'tod': {
-        const validPhases = ['day', 'sunset', 'night'];
-        const names = { day: 'DAY ☀️', sunset: 'SUNSET 🌅', night: 'NIGHT 🌙' };
-
-        if (arg === 'skip' || arg === 'next') {
-          const newPhase = this.skipTimeOfDay();
-          this.consoleLog(`Horário pulado para: ${names[newPhase] || newPhase.toUpperCase()} (05:00 restantes)`, '#38bdf8');
-        } else if (arg && validPhases.includes(arg.toLowerCase())) {
-          this.setTimeOfDay(arg.toLowerCase());
-          this.consoleLog(`Horário alterado para: ${names[this.timeOfDay]} (05:00 restantes)`, '#38bdf8');
-        } else {
-          const remaining = this.getTimeRemainingInPhase();
-          this.consoleLog(`Horário atual: ${names[this.timeOfDay] || this.timeOfDay.toUpperCase()} (próxima mudança em ${remaining.text})`, '#38bdf8');
-          this.consoleLog(`Uso: 'skiptime' | 'time <day|sunset|night>' | 'tod skip'`, '#888');
-        }
         break;
       }
 
@@ -457,11 +418,6 @@ export class DevConsoleMethods {
       case 'modopesca':
         this.setGameMode('pesca');
         this.consoleLog('🎣 Retornou para o modo de Pesca tradicional!', '#38bdf8');
-        break;
-
-      case 'kraken':
-        this.triggerKrakenCinematic();
-        this.consoleLog('🦑 Cinemática do Kraken Ancestral iniciada!', '#a855f7');
         break;
 
       case 'clearinv':

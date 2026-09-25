@@ -6,12 +6,6 @@ export class FishingMethods {
   fish(isAuto = false) {
     if (this.isFishing && !isAuto) return;
 
-    // Primeira pescada com a Isca do Kraken Ancestral: cinemática que termina com o Kraken fisgado
-    if (this.selectedBaitId === 'isca_kraken_ancestral' && !isAuto && !this.krakenCinematicSeen) {
-      this.triggerKrakenCinematic();
-      return;
-    }
-
     const maxInv = this.getMaxInventory();
     if (this.inventory.length >= maxInv) {
       this.showToast('INVENTÁRIO CHEIO!', 'warning');
@@ -39,8 +33,7 @@ export class FishingMethods {
 
     const buffs = this.getActiveBuffs();
     const caught = [];
-    // Arremesso manual com Sonar: sai o peixe que o Sonar mostrou
-    caught.push(!isAuto && this.getSonarLevel() > 0 ? this.takeSonarFish() : this.rollFish(buffs));
+    caught.push(this.rollFish(buffs));
 
     if (Math.random() < buffs.doubleCatchChance && this.inventory.length + caught.length < maxInv) {
       caught.push(this.rollFish(buffs));
@@ -58,8 +51,6 @@ export class FishingMethods {
         this.showToast(`🎣 A linha arrebentou! ${big.name} pesado demais para sua vara (aguenta ${this.getRodMaxWeight().toLocaleString('pt-BR')}kg).`, 'warning');
       }
     }
-
-    if (!isAuto) this.peekSonar();
 
     landed.forEach((fish, idx) => {
       setTimeout(() => {

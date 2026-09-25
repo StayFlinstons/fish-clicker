@@ -145,10 +145,7 @@ export class TestCommandMethods {
       'vortice': 'essencia_travessia',
       'vórtice': 'essencia_travessia',
       'essencia': 'essencia_travessia',
-      'essencia_travessia': 'essencia_travessia',
-      'kraken': 'isca_kraken_ancestral',
-      'ancestral': 'isca_kraken_ancestral',
-      'isca_kraken_ancestral': 'isca_kraken_ancestral'
+      'essencia_travessia': 'essencia_travessia'
     };
     const key = String(nameOrId).toLowerCase().trim();
     const targetId = aliasMap[key] || nameOrId;
@@ -213,7 +210,7 @@ export class TestCommandMethods {
   • testLiberarOferendas() / testTravarOferendas()
 
 🪝 ANZOL, BÓIA & ISCA:
-  • testIsca('nome')       -> Troca isca ('minhoca', 'neon', 'ouro', 'kraken')
+  • testIsca('nome')       -> Troca isca ('minhoca', 'neon', 'ouro', 'vortice')
   • testFisgada()          -> Animação física de puxão no anzol
 
 🔄 RESTAURAÇÃO DE PROGRESSO:
