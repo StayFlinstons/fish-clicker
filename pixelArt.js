@@ -885,7 +885,83 @@ const BAIT_SPRITES = {
     [0,0,0,1,1,2,2,3,2,2,1,1,0,0,0,0],
     [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  ]
+  ],
+  // Plâncton Neon: bolha com organismos brilhando
+  isca_plankton_neon: [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,9,4,0],
+    [0,4,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,1,3,3,1,1,0,0,0,0,0],
+    [0,0,0,0,1,3,3,3,3,4,2,1,0,0,0,0],
+    [0,0,0,1,3,2,2,2,4,5,4,2,1,0,0,0],
+    [0,0,1,3,2,2,4,2,2,4,2,2,2,1,0,0],
+    [0,0,1,3,2,4,5,4,2,2,2,2,2,1,0,0],
+    [0,1,3,3,2,2,4,2,2,2,2,4,2,2,1,0],
+    [0,1,3,3,4,2,2,2,2,2,4,2,2,2,1,0],
+    [0,0,1,2,2,4,2,2,2,4,5,4,2,1,0,0],
+    [0,0,1,2,4,5,4,2,2,2,4,2,2,1,0,0],
+    [0,0,0,1,2,4,2,2,2,4,2,2,1,0,0,0],
+    [0,0,0,0,1,2,2,2,2,2,2,1,0,0,4,0],
+    [0,0,4,0,0,1,1,2,2,1,1,0,0,0,0,0],
+    [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
+  ],
+  // Enxofre Hidrotermal: pedra vulcânica com brasa e fumaça
+  isca_camarao_brasa: [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,5,0,0,5,0,0,5,0,0,0,0],
+    [0,0,0,0,5,0,0,0,5,0,0,5,0,0,0,0],
+    [0,0,0,0,5,0,0,5,0,0,5,0,0,0,0,0],
+    [0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,2,2,1,1,0,0,0,0,0],
+    [0,0,0,0,1,2,6,2,2,6,2,1,1,0,0,0],
+    [0,0,0,1,2,6,6,3,2,2,3,2,2,1,0,0],
+    [0,0,1,2,6,2,2,3,2,2,2,3,2,1,0,0],
+    [0,1,2,2,3,3,2,4,4,3,3,2,2,2,1,0],
+    [0,1,2,2,2,2,3,3,3,2,2,3,2,2,1,0],
+    [0,0,1,2,2,2,3,4,4,3,2,2,3,2,1,0],
+    [0,0,1,2,2,3,2,2,2,2,3,2,2,1,0,0],
+    [0,0,0,1,1,2,2,2,2,2,2,1,1,0,0,0],
+    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+  ],
+  // Alga Espectral: fronde fosforescente
+  isca_alga_espectral: [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0],
+    [0,0,0,0,0,0,0,1,3,1,1,2,1,0,0,0],
+    [0,0,0,1,0,0,0,1,3,1,4,1,0,5,0,0],
+    [0,0,1,4,1,1,1,3,1,4,2,1,0,0,0,0],
+    [0,0,0,1,2,4,1,3,1,2,1,0,1,0,0,0],
+    [0,5,0,0,1,2,4,3,1,1,1,1,4,1,0,0],
+    [0,0,0,1,0,1,2,1,3,1,4,2,1,0,0,0],
+    [0,0,1,4,1,1,1,1,3,4,2,1,0,0,0,0],
+    [0,0,0,1,2,4,1,1,3,2,1,0,1,0,0,0],
+    [0,0,0,0,1,2,4,3,1,1,1,1,4,1,0,0],
+    [0,0,0,0,0,1,2,3,1,1,4,2,1,0,0,0],
+    [0,0,5,0,0,0,1,3,1,4,2,1,0,0,0,0],
+    [0,0,0,0,0,0,0,1,3,2,1,0,0,5,0,0],
+    [0,0,0,0,0,0,0,1,3,1,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+  ],
+  // Cristal Hadal: prisma facetado
+  isca_cristal_hadal: [
+    [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,1,2,3,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,6,3,3,1,0,0,0,0,0],
+    [0,0,5,0,1,2,4,6,3,3,3,1,0,0,0,0],
+    [0,0,0,1,2,2,4,6,3,3,3,3,1,5,0,0],
+    [0,0,0,0,1,2,4,6,3,3,3,1,0,0,0,0],
+    [0,0,0,0,1,2,4,6,3,3,3,1,0,0,0,0],
+    [0,0,0,0,1,2,4,6,3,3,3,1,0,0,0,0],
+    [0,0,0,0,1,2,4,6,3,3,3,1,0,1,0,0],
+    [0,0,0,0,1,2,4,6,3,3,3,1,1,6,1,0],
+    [0,0,0,0,1,2,4,6,3,3,3,1,1,3,3,1],
+    [0,0,0,0,1,2,4,6,3,3,3,1,1,6,3,1],
+    [0,0,5,0,0,1,2,6,3,3,1,0,1,3,3,1],
+    [0,0,0,0,0,0,1,2,3,1,0,0,1,3,1,0],
+    [0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  ],
 };
 
 // Sprites de Upgrades Gerais (16x16)
@@ -1174,6 +1250,10 @@ export function getRodIconDataURL(rodId, scale = 2.5) {
 }
 
 export function getBaitIconDataURL(baitId, scale = 2.5) {
+  return baitIconCanvas(baitId, scale).toDataURL();
+}
+
+function baitIconCanvas(baitId, scale) {
   const c = document.createElement('canvas');
   const ctx = c.getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -1195,17 +1275,94 @@ export function getBaitIconDataURL(baitId, scale = 2.5) {
   } else if (baitId === 'essencia_travessia') {
     pal = { 1: '#082f49', 2: '#0891b2', 3: '#8b5cf6', 4: '#67e8f9', 5: '#f472b6' };
   } else if (baitId === 'isca_plankton_neon') {
-    pal = { 1: '#083344', 2: '#06b6d4', 3: '#22d3ee', 4: '#a5f3fc', 5: '#ffffff' };
+    pal = { 1: '#083344', 2: '#0e7490', 3: '#67e8f9', 4: '#22d3ee', 5: '#ecfeff', 9: '#a5f3fc' };
   } else if (baitId === 'isca_camarao_brasa') {
-    pal = { 1: '#450a0a', 2: '#ea580c', 3: '#f97316', 4: '#fed7aa', 5: '#ef4444' };
+    pal = { 1: '#0c0a09', 2: '#292524', 3: '#f97316', 4: '#fde047', 5: '#a8a29e', 6: '#44403c' };
   } else if (baitId === 'isca_alga_espectral') {
-    pal = { 1: '#064e3b', 2: '#059669', 3: '#34d399', 4: '#a7f3d0', 5: '#6ee7b7' };
+    pal = { 1: '#022c22', 2: '#10b981', 3: '#047857', 4: '#a7f3d0', 5: '#ecfdf5' };
   } else if (baitId === 'isca_cristal_hadal') {
-    pal = { 1: '#3b0764', 2: '#7c3aed', 3: '#a855f7', 4: '#e9d5ff', 5: '#c084fc' };
+    pal = { 1: '#1e0a3c', 2: '#6d28d9', 3: '#4c1d95', 4: '#c4b5fd', 5: '#f5d0fe', 6: '#a78bfa' };
   }
 
   drawPixelGrid(ctx, sprite, pal, scale);
-  return c.toDataURL();
+  return c;
+}
+
+// Anzol do lago para iscas sem arte própria em PNG: bóia + linha + isca (o ícone 16x16) + anzol.
+// Grade de 32x48 (mesma proporção 2:3 das artes anzol_*.png), com brilho na cor da isca.
+const HOOK_BOBBER = [
+  '.....66.....',
+  '....1661....',
+  '...122221...',
+  '..12232221..',
+  '.1223322221.',
+  '.1222222221.',
+  '.1444444441.',
+  '.1444444451.',
+  '..14444451..',
+  '...145541...',
+  '....1111....',
+];
+const HOOK_SHAPE = [
+  '....161.....',
+  '....171.....',
+  '....161.....',
+  '....171.....',
+  '.1..161.....',
+  '161.171.....',
+  '1671161.....',
+  '.167671.....',
+  '..1771......',
+  '...11.......',
+];
+const HOOK_SWIVEL = [
+  '.161.',
+  '16.61',
+  '.161.',
+];
+const HOOK_COLORS = { 1: '#0f172a', 2: '#dc2626', 3: '#f87171', 4: '#f1f5f9', 5: '#cbd5e1', 6: '#e2e8f0', 7: '#94a3b8' };
+const _hookCache = {};
+
+function drawCharGrid(ctx, rows, colors, scale, ox, oy) {
+  rows.forEach((row, y) => [...row].forEach((ch, x) => {
+    const c = colors[ch];
+    if (!c) return;
+    ctx.fillStyle = c;
+    ctx.fillRect((ox + x) * scale, (oy + y) * scale, scale, scale);
+  }));
+}
+
+export function getBaitHookDataURL(baitId, scale = 8) {
+  const key = baitId + '@' + scale;
+  if (_hookCache[key]) return _hookCache[key];
+  const c = document.createElement('canvas');
+  c.width = 32 * scale;
+  c.height = 48 * scale;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  // Brilho atrás da isca
+  const vis = BAIT_VISUALS[baitId] || BAIT_VISUALS.minhoca;
+  const cx = 16 * scale, cy = 27 * scale;
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 13 * scale);
+  glow.addColorStop(0, vis.color1 + '88');
+  glow.addColorStop(1, vis.color1 + '00');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 14 * scale, 32 * scale, 26 * scale);
+
+  drawCharGrid(ctx, HOOK_BOBBER, HOOK_COLORS, scale, 10, 0);
+  // Linha da bóia até a isca, e da isca até o anzol
+  ctx.fillStyle = HOOK_COLORS[6];
+  for (const y of [11, 12, 13, 17, 37]) ctx.fillRect(15 * scale, y * scale, scale, scale);
+  drawCharGrid(ctx, HOOK_SWIVEL, HOOK_COLORS, scale, 13, 14);
+  drawCharGrid(ctx, HOOK_SWIVEL, HOOK_COLORS, scale, 13, 34);
+
+  // Isca no meio, com a mesma arte da loja
+  ctx.drawImage(baitIconCanvas(baitId, scale), 8 * scale, 18 * scale);
+
+  drawCharGrid(ctx, HOOK_SHAPE, HOOK_COLORS, scale, 10, 38);
+  _hookCache[key] = c.toDataURL();
+  return _hookCache[key];
 }
 
 export function getUpgradeIconDataURL(upgradeId, scale = 2.5) {
@@ -1353,7 +1510,7 @@ export function updateRodSVG(rodId, baitId) {
       'ouro_liquido': 'icons/baits/anzol_gota_eter_divino.png',
       'essencia_travessia': 'icons/baits/anzol_vortice_dimensional.png'
     };
-    hookImg.src = baitHookMap[validBait] || `icons/baits/hook_${validBait}.png`;
+    hookImg.src = baitHookMap[validBait] || getBaitHookDataURL(validBait);
   }
 }
 
